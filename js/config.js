@@ -8,9 +8,73 @@
 window.isMuted = false;
 window.friendlyFireEnabled = false;
 window.scrapCollected = 0;
+window.hideDebugOverlays = false; // Quando true, oculta wireframes/grids de debug (útil para versão final/preview)
+
+/**
+ * Cache global de Imagens/Sprites (suporta Base64 Data URLs e caminhos relativos ex: 'assets/sprite.png')
+ */
+window.SpriteCache = {
+  _cache: new Map(),
+
+  get(src) {
+    if (!src || typeof src !== 'string') return null;
+    let entry = this._cache.get(src);
+    if (!entry) {
+      const img = new Image();
+      entry = { img, loaded: false, error: false, src };
+      img.onload = () => {
+        entry.loaded = true;
+      };
+      img.onerror = () => {
+        entry.error = true;
+      };
+      img.src = src;
+      this._cache.set(src, entry);
+    }
+    return entry.loaded && !entry.error ? entry.img : null;
+  },
+
+  /**
+   * Desenha um sprite em (x, y, w, h) respeitando o modo ('stretch' | 'contain' | 'tile')
+   */
+  draw(ctx, src, x, y, w, h, fit = 'stretch', alpha = 1) {
+    const img = this.get(src);
+    if (!img) return false;
+
+    ctx.save();
+    if (alpha < 1) ctx.globalAlpha *= alpha;
+
+    if (fit === 'contain') {
+      const scale = Math.min(w / img.naturalWidth, h / img.naturalHeight);
+      const dw = img.naturalWidth * scale;
+      const dh = img.naturalHeight * scale;
+      const dx = x + (w - dw) / 2;
+      const dy = y + (h - dh) / 2;
+      ctx.drawImage(img, dx, dy, dw, dh);
+    } else if (fit === 'tile') {
+      const pattern = ctx.createPattern(img, 'repeat');
+      if (pattern) {
+        ctx.translate(x, y);
+        ctx.fillStyle = pattern;
+        ctx.fillRect(0, 0, w, h);
+      } else {
+        ctx.drawImage(img, x, y, w, h);
+      }
+    } else {
+      ctx.drawImage(img, x, y, w, h);
+    }
+
+    ctx.restore();
+    return true;
+  }
+};
 
 window.GameConfig = {
   // Configurações de Grid e Escala
+  PLAYER_SPRITES: {
+    p1: null,
+    p2: null
+  },
   TILE_SIZE: 64,
   MAJOR_GRID_STEP: 320, // A cada 5 tiles (320px), linha de referência forte com coordenadas
 

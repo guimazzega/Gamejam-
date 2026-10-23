@@ -3,7 +3,7 @@
  * Motor Principal do Protótipo 2D Top-Down (Sprint 2 • Debug / Developer Mode).
  * Coordena o Game Loop, Máquina de Estados de Fases, Trava de Câmera/Viewport no Multiplayer,
  * Geração e Coleta de Lixo/Sucata nos 3 Mapas Grandes, Estações da Safe Room (Loja e Craft),
- * Renderização de Debug no Canvas e Atalhos de Desenvolvedor.
+ * Suporte a Sprites Customizados e Hooks para o Map Editor (F2).
  */
 
 class Game {
@@ -24,15 +24,26 @@ class Game {
     // Timer regressivo da fase (em segundos)
     this.stageTimeRemaining = window.GameConfig.STAGE_DURATION_SECONDS;
 
+    // Sucata acumulada no início da fase atual (evita exploit ao reiniciar fase)
+    this.stageStartScrap = 0;
+
     // Tempo de permanência na Zona de Transição (para auto-avançar ao encostar, além de E/Espaço)
     this.zoneHoldTimer = 0;
     this.zoneHoldDuration = 1.15; // Segundos encostando para ativar automaticamente
+
+    // Hooks opcionais para o Map Editor (js/editor.js)
+    this.editorFreezeGameplay = false;
+    this.editorFreeCamera = false;
+    this.onRenderWorldOverlay = null;
+    this.onRenderScreenOverlay = null;
 
     // Instancia os 2 Personagens em cena (5 slots de inventário cada)
     this.p1 = new window.Player({
       id: 1,
       name: 'Jogador 1',
       role: 'Batedor',
+      x: this.currentMap.spawnP1.x,
+      y: this.currentMap.spawnP1.y,
       primaryColor: '#38bdf8',
       secondaryColor: '#0284c7',
       inventory: window.GameConfig.createDefaultInventoryP1()
@@ -42,6 +53,8 @@ class Game {
       id: 2,
       name: 'Jogador 2',
       role: 'Suporte',
+      x: this.currentMap.spawnP2.x,
+      y: this.currentMap.spawnP2.y,
       primaryColor: '#fb923c',
       secondaryColor: '#ea580c',
       inventory: window.GameConfig.createDefaultInventoryP2()
@@ -64,8 +77,8 @@ class Game {
       onSwitchPlayer: () => this.handleSwitchPlayer(),
       onTogglePause: () => this.handlePauseShortcut(),
       onInteract: () => this.handleInteractShortcut(),
-      onDebugDamage: () => this.handleDebugDamage(),
-      onDebugHeal: () => this.handleDebugHeal(),
+      onDebugDamage: (e) => this.handleDebugDamage(e),
+      onDebugHeal: (e) => this.handleDebugHeal(e),
       onDebugNextStage: () => this.handleDebugNextStage(),
       onSelectSlot: (slotIndex) => this.selectHotbarSlot(slotIndex, null),
       onCycleSlot: (direction) => this.cycleHotbarSlot(direction)
@@ -79,8 +92,10 @@ class Game {
     window.addEventListener('resize', this._onResize);
     this._onResize();
 
-    // Inicializa entidades de lixo no mapa inicial para preview de fundo
+    // Inicializa entidades de lixo e câmera no mapa inicial para preview de fundo
     this._spawnRandomTrashForMap(this.currentMap);
+    const initialTarget = this._getCameraTargetPoint();
+    this.camera.snapToTarget(initialTarget.x, initialTarget.y, this.currentMap);
 
     // Controle de Tempo do Loop
     this.lastTimestamp = performance.now();
@@ -107,6 +122,16 @@ class Game {
   }
 
   /**
+   * Retorna a lista de jogadores atualmente sob controle ativo
+   */
+  getControlledPlayers() {
+    if (this.gameMode === 'singleplayer') {
+      return [this.players[this.activePlayerIndex]];
+    }
+    return this.players;
+  }
+
+  /**
    * Inicia uma nova partida a partir do Menu Principal carregando o Mapa 1
    */
   startNewGame() {
@@ -117,6 +142,7 @@ class Game {
     this.activePlayerIndex = 0;
     this.floatingTexts = [];
     window.scrapCollected = 0;
+    this.stageStartScrap = 0;
 
     this.loadStageByFlowIndex(0);
     this.appState = 'PLAYING';
@@ -137,6 +163,9 @@ class Game {
     const stageMeta = this.getCurrentStageMeta();
     this.currentMap = window.GameMaps[stageMeta.mapKey];
 
+    // Salva a sucata acumulada no início desta fase
+    this.stageStartScrap = window.scrapCollected || 0;
+
     // Posiciona ambos os personagens nos pontos de spawn do mapa atual
     this.p1.setPosition(this.currentMap.spawnP1.x, this.currentMap.spawnP1.y);
     this.p2.setPosition(this.currentMap.spawnP2.x, this.currentMap.spawnP2.y);
@@ -147,6 +176,9 @@ class Game {
       this._spawnRandomTrashForMap(this.currentMap);
     } else {
       this.trashItems = [];
+      if (Array.isArray(this.currentMap.customTrash) && this.currentMap.customTrash.length > 0) {
+        this._spawnCustomTrashForMap(this.currentMap);
+      }
     }
 
     this.zoneHoldTimer = 0;
@@ -159,21 +191,49 @@ class Game {
     this.ui.updateHUD();
   }
 
+  _spawnCustomTrashForMap(map) {
+    if (!Array.isArray(map.customTrash)) return;
+    const types = window.GameConfig.TRASH_TYPES;
+    map.customTrash.forEach((ct, idx) => {
+      const typeInfo = types.find((t) => t.id === ct.typeId) || types[idx % types.length];
+      this.trashItems.push(
+        new window.TrashItem({
+          id: ct.id || `custom_trash_${map.id}_${idx}`,
+          x: ct.x,
+          y: ct.y,
+          size: ct.size || window.GameConfig.TRASH_SIZE || 26,
+          typeInfo,
+          sprite: ct.sprite || null,
+          rotation: ct.rotation || 0,
+          bobPhase: ct.bobPhase || 0,
+          isCustomPlaced: true
+        })
+      );
+    });
+  }
+
   /**
    * Gera entidades de "Lixo / Sucata" espalhadas aleatoriamente pelo chão dos 3 mapas grandes,
-   * evitando obstáculos, zonas de extração e posição exata de spawn.
+   * evitando obstáculos, zonas de extração e posição exata de spawn, além de carregar customTrash.
    */
   _spawnRandomTrashForMap(map) {
     this.trashItems = [];
-    if (!map || map.isSafeRoom) return;
+    if (!map) return;
 
-    const count = window.GameConfig.TRASH_COUNT_PER_MAP || 28;
+    // 1. Carrega itens de lixo posicionados manualmente via Map Editor (se houver)
+    this._spawnCustomTrashForMap(map);
+
+    if (map.isSafeRoom || map.disableRandomTrash) return;
+
+    const count = typeof map.trashCount === 'number'
+      ? map.trashCount
+      : (window.GameConfig.TRASH_COUNT_PER_MAP || 28);
     const trashSize = window.GameConfig.TRASH_SIZE || 26;
     const types = window.GameConfig.TRASH_TYPES;
     const margin = 90;
 
     let attempts = 0;
-    const maxAttempts = count * 30;
+    const maxAttempts = Math.max(100, count * 30);
 
     while (this.trashItems.length < count && attempts < maxAttempts) {
       attempts++;
@@ -230,8 +290,9 @@ class Game {
       return false;
     }
 
-    // Não gerar dentro de obstáculos/paredes
+    // Não gerar dentro de obstáculos/paredes com colisão ativa
     for (const obs of map.obstacles) {
+      if (obs.noCollision) continue;
       if (this._boxesOverlap(box, obs)) return false;
     }
 
@@ -258,6 +319,7 @@ class Game {
   restartCurrentStage() {
     this.p1.hp = this.p1.maxHp;
     this.p2.hp = this.p2.maxHp;
+    window.scrapCollected = this.stageStartScrap || 0;
     this.loadStageByFlowIndex(this.stageFlowIndex);
     this.togglePause(false);
     this.ui.showToast('Fase atual reiniciada! Posições, Lixo do Mapa e Timer restaurados.');
@@ -334,7 +396,13 @@ class Game {
   handleInteractShortcut() {
     if (this.appState !== 'PLAYING') return;
 
-    // 1. Verifica se algum jogador está encostando na Lojinha ou na Mesa de Craft da Safe Room
+    // 1. Verifica primeiro se um jogador controlado está na Zona de Extração / Porta da Van
+    if (this.isAnyPlayerInTransitionZone()) {
+      this.advanceToNextStage('Interação na Zona de Saída');
+      return;
+    }
+
+    // 2. Verifica se algum jogador controlado está encostando na Lojinha ou na Mesa de Craft da Safe Room
     const touchedStation = this.getTouchedSafeRoomStation();
     if (touchedStation) {
       const centerX = touchedStation.x + touchedStation.w / 2;
@@ -346,24 +414,22 @@ class Game {
       return;
     }
 
-    // 2. Verifica se está na Zona de Extração / Porta da Van
-    if (this.isAnyPlayerInTransitionZone()) {
-      this.advanceToNextStage('Interação na Zona de Saída');
-    } else {
-      const zoneName = this.getCurrentStageMeta().isSafeRoom
-        ? 'a Porta da Van (ou das estações de Loja/Craft)'
-        : 'a Zona de Extração';
-      this.ui.showToast(`Aproxime-se d${zoneName} para interagir!`, 1600);
-    }
+    const zoneName = this.getCurrentStageMeta().isSafeRoom
+      ? 'a Porta da Van (ou das estações de Loja/Craft)'
+      : 'a Zona de Extração';
+    this.ui.showToast(`Aproxime-se d${zoneName} para interagir!`, 1600);
   }
 
   /**
-   * Atalho de Debug [H]: Causa -10 de dano no personagem ativo
+   * Atalho de Debug [H]: Causa -10 de dano no personagem em foco (Shift+H no Multiplayer afeta P2)
    */
-  handleDebugDamage() {
+  handleDebugDamage(e) {
     if (this.appState !== 'PLAYING' && this.appState !== 'PAUSED') return;
+    if (this.ui && this.ui.isSettingsModalOpen()) return;
 
-    const target = this.getHudFocusPlayer();
+    const target = (this.gameMode === 'multiplayer' && e && e.shiftKey)
+      ? this.p2
+      : this.getHudFocusPlayer();
     target.takeDamage(10);
     this.camera.triggerShake(0.16, 5);
 
@@ -379,12 +445,15 @@ class Game {
   }
 
   /**
-   * Atalho Extra de Debug [J]: Cura +20 HP no personagem ativo
+   * Atalho Extra de Debug [J]: Cura +20 HP no personagem em foco (Shift+J no Multiplayer afeta P2)
    */
-  handleDebugHeal() {
+  handleDebugHeal(e) {
     if (this.appState !== 'PLAYING' && this.appState !== 'PAUSED') return;
+    if (this.ui && this.ui.isSettingsModalOpen()) return;
 
-    const target = this.getHudFocusPlayer();
+    const target = (this.gameMode === 'multiplayer' && e && e.shiftKey)
+      ? this.p2
+      : this.getHudFocusPlayer();
     target.heal(20);
 
     this.floatingTexts.push(
@@ -464,23 +533,25 @@ class Game {
   }
 
   /**
-   * Verifica se pelo menos um personagem está dentro da Zona de Extração / Porta da Van
+   * Verifica se pelo menos um personagem controlado está dentro da Zona de Extração / Porta da Van
    */
   isAnyPlayerInTransitionZone() {
     const zone = this.currentMap.transitionZone;
     if (!zone) return false;
-    return this.p1.isTouchingZone(zone) || this.p2.isTouchingZone(zone);
+    const controlled = this.getControlledPlayers();
+    return controlled.some((p) => p.isTouchingZone(zone));
   }
 
   /**
-   * Retorna a Estação Interativa da Safe Room (Lojinha ou Mesa de Craft) caso algum jogador esteja encostando nela
+   * Retorna a Estação Interativa da Safe Room (Lojinha ou Mesa de Craft) caso algum jogador controlado esteja encostando nela
    */
   getTouchedSafeRoomStation() {
     const stations = this.currentMap.interactiveStations;
     if (!stations || !stations.length) return null;
 
+    const controlled = this.getControlledPlayers();
     for (const st of stations) {
-      if (this.p1.isTouchingZone(st) || this.p2.isTouchingZone(st)) {
+      if (controlled.some((p) => p.isTouchingZone(st))) {
         return st;
       }
     }
@@ -521,31 +592,35 @@ class Game {
   }
 
   _updateGameplay(dt) {
-    // 1. Movimentação dos Personagens conforme o Modo Selecionado
-    if (this.gameMode === 'singleplayer') {
-      const wasd = this.input.getWASDVector();
-      const activePlayer = this.players[this.activePlayerIndex];
-      const inactivePlayer = this.players[this.activePlayerIndex === 0 ? 1 : 0];
+    // 1. Movimentação dos Personagens conforme o Modo Selecionado (salvo se câmera livre do Editor estiver ativa)
+    if (!this.editorFreeCamera) {
+      if (this.gameMode === 'singleplayer') {
+        const wasd = this.input.getWASDVector();
+        const activePlayer = this.players[this.activePlayerIndex];
+        const inactivePlayer = this.players[this.activePlayerIndex === 0 ? 1 : 0];
 
-      activePlayer.update(dt, wasd, this.currentMap, null);
-      inactivePlayer.update(dt, { dx: 0, dy: 0 }, this.currentMap, null);
+        activePlayer.update(dt, wasd, this.currentMap, null);
+        inactivePlayer.update(dt, { dx: 0, dy: 0 }, this.currentMap, null);
 
-      const camTarget = this._getCameraTargetPoint();
-      this.camera.update(dt, camTarget.x, camTarget.y, this.currentMap, null);
-    } else {
-      // Multiplayer Local: P1 em WASD, P2 nas Setas Direcionais + Trava de Câmera/Viewport (Clamp)
-      const wasd = this.input.getWASDVector();
-      const arrows = this.input.getArrowsVector();
+        const camTarget = this._getCameraTargetPoint();
+        this.camera.update(dt, camTarget.x, camTarget.y, this.currentMap, null);
+      } else {
+        // Multiplayer Local: P1 em WASD, P2 nas Setas Direcionais + Trava de Câmera/Viewport (Clamp)
+        const wasd = this.input.getWASDVector();
+        const arrows = this.input.getArrowsVector();
 
-      this._updateMultiplayerWithViewportClamp(dt, wasd, arrows);
+        this._updateMultiplayerWithViewportClamp(dt, wasd, arrows);
+      }
     }
 
-    // 2. Coleta de Lixo / Sucata pelo chão dos 3 Mapas Grandes (Sprint 2)
-    this._checkTrashCollection();
+    // 2. Coleta de Lixo / Sucata pelo chão dos 3 Mapas Grandes (pausado durante edição de mapa se congelado)
+    if (!this.editorFreezeGameplay) {
+      this._checkTrashCollection();
+    }
 
-    // 3. Cronômetro da Fase (Apenas nos 3 Mapas Grandes; pausado na Safe Room Van)
+    // 3. Cronômetro da Fase (Apenas nos 3 Mapas Grandes; pausado na Safe Room Van ou quando Editor congela timer)
     const stageMeta = this.getCurrentStageMeta();
-    if (!stageMeta.isSafeRoom) {
+    if (!stageMeta.isSafeRoom && !this.editorFreezeGameplay) {
       this.stageTimeRemaining = Math.max(0, this.stageTimeRemaining - dt);
       if (this.stageTimeRemaining <= 0) {
         this.restartCurrentStage();
@@ -555,7 +630,7 @@ class Game {
     }
 
     // 4. Verificação da Zona de Extração / Porta da Van (Auto-embarque ao permanecer na zona)
-    if (this.isAnyPlayerInTransitionZone()) {
+    if (!this.editorFreezeGameplay && this.isAnyPlayerInTransitionZone()) {
       this.zoneHoldTimer += dt;
       if (this.zoneHoldTimer >= this.zoneHoldDuration) {
         this.advanceToNextStage('Zona de Transição concluída');
@@ -590,14 +665,18 @@ class Game {
     const maxSpanX = Math.max(80, Math.min(map.width, this.camera.viewportWidth) - pad * 2);
     const maxSpanY = Math.max(80, Math.min(map.height, this.camera.viewportHeight) - pad * 2);
 
-    // Se ambos estiverem caminhando na mesma direção nos extremos da tela,
+    // Se ambos estiverem caminhando na mesma direção nos extremos da tela (X ou Y),
     // atualiza primeiro o jogador que está diminuindo a distância relativa
     const p1InwardX = (this.p1.x < this.p2.x && wasd.dx > 0) || (this.p1.x > this.p2.x && wasd.dx < 0);
     const p2InwardX = (this.p2.x < this.p1.x && arrows.dx > 0) || (this.p2.x > this.p1.x && arrows.dx < 0);
+    const p1InwardY = (this.p1.y < this.p2.y && wasd.dy > 0) || (this.p1.y > this.p2.y && wasd.dy < 0);
+    const p2InwardY = (this.p2.y < this.p1.y && arrows.dy > 0) || (this.p2.y > this.p1.y && arrows.dy < 0);
+
+    const p1Inward = p1InwardX || p1InwardY;
+    const p2Inward = p2InwardX || p2InwardY;
 
     const buildClampFor = (otherPlayer) => {
       const viewBounds = this.camera.getViewportBounds(map);
-      // Se os dois jogadores não estão caminhando juntos naquela direção, trava também na borda atual da câmera
       return {
         minX: Math.max(
           otherPlayer.x - maxSpanX,
@@ -618,7 +697,7 @@ class Game {
       };
     };
 
-    if (p2InwardX && !p1InwardX) {
+    if (p2Inward && !p1Inward) {
       this.p2.update(dt, arrows, map, buildClampFor(this.p1));
       this.p1.update(dt, wasd, map, buildClampFor(this.p2));
     } else {
@@ -630,23 +709,38 @@ class Game {
     const camTarget = this._getCameraTargetPoint();
     this.camera.update(dt, camTarget.x, camTarget.y, map, this.players);
 
-    // Garantia estrita pós-câmera: nenhum personagem pode ultrapassar os limites visíveis do Viewport
+    // Garantia estrita pós-câmera respeitando colisões de obstáculos
     const finalBounds = this.camera.getViewportBounds(map);
     for (const player of this.players) {
-      if (player.x < finalBounds.minX + pad) {
-        player.x = finalBounds.minX + pad;
+      let clampedX = player.x;
+      let clampedY = player.y;
+
+      if (clampedX < finalBounds.minX + pad) {
+        clampedX = finalBounds.minX + pad;
         player.clampedByViewport = true;
-      } else if (player.x > finalBounds.maxX - pad) {
-        player.x = finalBounds.maxX - pad;
+      } else if (clampedX > finalBounds.maxX - pad) {
+        clampedX = finalBounds.maxX - pad;
         player.clampedByViewport = true;
       }
 
-      if (player.y < finalBounds.minY + pad) {
-        player.y = finalBounds.minY + pad;
+      if (clampedY < finalBounds.minY + pad) {
+        clampedY = finalBounds.minY + pad;
         player.clampedByViewport = true;
-      } else if (player.y > finalBounds.maxY - pad) {
-        player.y = finalBounds.maxY - pad;
+      } else if (clampedY > finalBounds.maxY - pad) {
+        clampedY = finalBounds.maxY - pad;
         player.clampedByViewport = true;
+      }
+
+      // Só aplica o deslocamento pós-câmera se não empurrar o jogador para dentro de uma parede sólida
+      if (clampedX !== player.x) {
+        const testBoxX = player.getBoundingBox(clampedX, player.y);
+        const hitsWallX = map.obstacles.some((obs) => !obs.noCollision && this._boxesOverlap(testBoxX, obs));
+        if (!hitsWallX) player.x = clampedX;
+      }
+      if (clampedY !== player.y) {
+        const testBoxY = player.getBoundingBox(player.x, clampedY);
+        const hitsWallY = map.obstacles.some((obs) => !obs.noCollision && this._boxesOverlap(testBoxY, obs));
+        if (!hitsWallY) player.y = clampedY;
       }
     }
   }
@@ -689,6 +783,7 @@ class Game {
     const ctx = this.ctx;
     const map = this.currentMap;
     const { width: viewW, height: viewH } = this.canvas;
+    const hideDebug = Boolean(window.hideDebugOverlays);
 
     // Limpa o fundo da tela (caso o mapa seja menor que o viewport, como na Van)
     ctx.fillStyle = '#090d14';
@@ -698,12 +793,17 @@ class Game {
     const { offsetX, offsetY } = this.camera.getRenderOffset();
     ctx.translate(offsetX, offsetY);
 
-    // 1. Piso Base do Mapa
+    // 1. Piso Base do Mapa + Background Sprite Opcional
     ctx.fillStyle = map.palette.bg;
     ctx.fillRect(0, 0, map.width, map.height);
+    if (map.bgSprite && window.SpriteCache) {
+      window.SpriteCache.draw(ctx, map.bgSprite, 0, 0, map.width, map.height, map.bgSpriteFit || 'stretch');
+    }
 
     // 2. Grid de Referência no Chão (Percepção de Velocidade e Escala)
-    this._drawDebugGrid(ctx, map);
+    if (!hideDebug) {
+      this._drawDebugGrid(ctx, map);
+    }
 
     // 3. Zonas de Referência / Trilhas no Chão
     this._drawFloorZones(ctx, map);
@@ -720,11 +820,11 @@ class Game {
     // 7. Entidades Coletáveis de "Lixo / Sucata" no Chão (Sprint 2)
     this._drawTrashItems(ctx);
 
-    // 8. Caixas de Colisão Visíveis para Paredes, Estruturas e Estações da Van
+    // 8. Caixas de Colisão / Sprites para Paredes, Estruturas, Props e Estações da Van
     this._drawObstacles(ctx, map);
 
     // 9. Linha de Ponto Médio e Moldura de Limite da Câmera (no modo Multiplayer Local)
-    if (this.gameMode === 'multiplayer') {
+    if (!hideDebug && this.gameMode === 'multiplayer') {
       this._drawMultiplayerMidpointDebug(ctx);
     }
 
@@ -745,12 +845,24 @@ class Game {
       ft.draw(ctx);
     }
 
+    // Hook de Overlay no Espaço do Mundo para o Map Editor (seleção, handles, preview)
+    if (typeof this.onRenderWorldOverlay === 'function') {
+      this.onRenderWorldOverlay(ctx, map);
+    }
+
     ctx.restore();
 
     // 13. Indicadores de Tela Fixa no Canvas (Bússola de Extração + Minimapa Debug)
     if (this.appState === 'PLAYING' || this.appState === 'PAUSED') {
       this._drawExtractionCompass(ctx);
-      this._drawDebugMinimap(ctx);
+      if (!hideDebug) {
+        this._drawDebugMinimap(ctx);
+      }
+    }
+
+    // Hook de Overlay no Espaço de Tela para o Map Editor
+    if (typeof this.onRenderScreenOverlay === 'function') {
+      this.onRenderScreenOverlay(ctx, map);
     }
   }
 
@@ -811,21 +923,31 @@ class Game {
 
   _drawFloorZones(ctx, map) {
     if (!map.floorZones) return;
+    const hideDebug = Boolean(window.hideDebugOverlays);
     ctx.save();
     for (const z of map.floorZones) {
-      ctx.fillStyle = map.palette.pathFill;
-      ctx.strokeStyle = map.palette.pathStroke;
-      ctx.lineWidth = 1.5;
-      ctx.setLineDash([8, 6]);
-      ctx.fillRect(z.x, z.y, z.w, z.h);
-      ctx.strokeRect(z.x, z.y, z.w, z.h);
-      ctx.setLineDash([]);
+      const drewSprite = z.sprite && window.SpriteCache
+        ? window.SpriteCache.draw(ctx, z.sprite, z.x, z.y, z.w, z.h, z.spriteFit || 'stretch')
+        : false;
 
-      if (z.label) {
-        ctx.fillStyle = map.palette.coordText;
-        ctx.font = 'bold 11px Consolas, monospace';
-        ctx.textAlign = 'center';
-        ctx.fillText(z.label, z.x + z.w / 2, z.y + z.h / 2 + 4);
+      if (!drewSprite) {
+        ctx.fillStyle = z.customFill || map.palette.pathFill;
+        ctx.fillRect(z.x, z.y, z.w, z.h);
+      }
+
+      if (!hideDebug) {
+        ctx.strokeStyle = z.customStroke || map.palette.pathStroke;
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([8, 6]);
+        ctx.strokeRect(z.x, z.y, z.w, z.h);
+        ctx.setLineDash([]);
+
+        if (z.label) {
+          ctx.fillStyle = map.palette.coordText;
+          ctx.font = 'bold 11px Consolas, monospace';
+          ctx.textAlign = 'center';
+          ctx.fillText(z.label, z.x + z.w / 2, z.y + z.h / 2 + 4);
+        }
       }
     }
     ctx.restore();
@@ -836,41 +958,52 @@ class Game {
    */
   _drawSafeRoomStationsZones(ctx, map) {
     if (!map.interactiveStations) return;
+    const hideDebug = Boolean(window.hideDebugOverlays);
 
     ctx.save();
     for (const st of map.interactiveStations) {
       const isTouched = this.p1.isTouchingZone(st) || this.p2.isTouchingZone(st);
 
-      ctx.fillStyle = st.fillColor;
-      ctx.fillRect(st.x, st.y, st.w, st.h);
+      const drewSprite = st.sprite && window.SpriteCache
+        ? window.SpriteCache.draw(ctx, st.sprite, st.x, st.y, st.w, st.h, st.spriteFit || 'stretch')
+        : false;
 
-      ctx.strokeStyle = st.strokeColor;
-      ctx.lineWidth = isTouched ? 3 : 2;
-      ctx.setLineDash([8, 5]);
-      ctx.strokeRect(st.x, st.y, st.w, st.h);
-      ctx.setLineDash([]);
+      if (!drewSprite) {
+        ctx.fillStyle = st.fillColor;
+        ctx.fillRect(st.x, st.y, st.w, st.h);
+      }
 
-      // Rótulo de Piso da Estação
-      const labelY = st.id === 'shop' ? st.y + st.h - 14 : st.y + 20;
-      ctx.fillStyle = st.strokeColor;
-      ctx.font = 'bold 11px Consolas, monospace';
-      ctx.textAlign = 'center';
-      ctx.fillText(st.zoneLabel, st.x + st.w / 2, labelY);
+      if (!hideDebug || isTouched) {
+        ctx.strokeStyle = st.strokeColor;
+        ctx.lineWidth = isTouched ? 3 : 2;
+        ctx.setLineDash([8, 5]);
+        ctx.strokeRect(st.x, st.y, st.w, st.h);
+        ctx.setLineDash([]);
+      }
+
+      if (!hideDebug && st.zoneLabel) {
+        const labelY = st.id === 'shop' ? st.y + st.h - 14 : st.y + 20;
+        ctx.fillStyle = st.strokeColor;
+        ctx.font = 'bold 11px Consolas, monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText(st.zoneLabel, st.x + st.w / 2, labelY);
+      }
     }
     ctx.restore();
   }
 
   /**
-   * Exibe o texto flutuante no Canvas quando um jogador encosta na Lojinha ou na Mesa de Craft
+   * Exibe o texto flutuante no Canvas quando um jogador controlado encosta na Lojinha ou na Mesa de Craft
    */
   _drawSafeRoomStationFloatingNotice(ctx, map) {
     if (!map.interactiveStations) return;
 
     const floatOffset = Math.sin(this.elapsedTime * 6) * 4;
+    const controlled = this.getControlledPlayers();
 
     ctx.save();
     for (const st of map.interactiveStations) {
-      const isTouched = this.p1.isTouchingZone(st) || this.p2.isTouchingZone(st);
+      const isTouched = controlled.some((p) => p.isTouchingZone(st));
       if (!isTouched) continue;
 
       const text = st.promptText;
@@ -905,6 +1038,7 @@ class Game {
   }
 
   _drawSpawnMarkers(ctx, map) {
+    const hideDebug = Boolean(window.hideDebugOverlays);
     const spawns = [
       { pos: map.spawnP1, label: 'SPAWN P1', color: '#38bdf8' },
       { pos: map.spawnP2, label: 'SPAWN P2', color: '#fb923c' }
@@ -912,18 +1046,23 @@ class Game {
 
     ctx.save();
     for (const sp of spawns) {
-      ctx.strokeStyle = sp.color;
-      ctx.lineWidth = 1.5;
-      ctx.setLineDash([4, 4]);
-      ctx.beginPath();
-      ctx.arc(sp.pos.x, sp.pos.y, 26, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.setLineDash([]);
+      if (sp.pos.sprite && window.SpriteCache) {
+        window.SpriteCache.draw(ctx, sp.pos.sprite, sp.pos.x - 26, sp.pos.y - 26, 52, 52, 'contain');
+      }
+      if (!hideDebug) {
+        ctx.strokeStyle = sp.color;
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([4, 4]);
+        ctx.beginPath();
+        ctx.arc(sp.pos.x, sp.pos.y, 26, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.setLineDash([]);
 
-      ctx.fillStyle = sp.color;
-      ctx.font = 'bold 10px Consolas, monospace';
-      ctx.textAlign = 'center';
-      ctx.fillText(sp.label, sp.pos.x, sp.pos.y + 38);
+        ctx.fillStyle = sp.color;
+        ctx.font = 'bold 10px Consolas, monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText(sp.label, sp.pos.x, sp.pos.y + 38);
+      }
     }
     ctx.restore();
   }
@@ -933,37 +1072,47 @@ class Game {
     if (!z) return;
 
     const pulse = 0.5 + 0.5 * Math.sin(this.elapsedTime * 5);
+    const hideDebug = Boolean(window.hideDebugOverlays);
 
     ctx.save();
-    // Preenchimento da Zona de Transição
-    ctx.fillStyle = z.fillColor;
-    ctx.fillRect(z.x, z.y, z.w, z.h);
+    const drewSprite = z.sprite && window.SpriteCache
+      ? window.SpriteCache.draw(ctx, z.sprite, z.x, z.y, z.w, z.h, z.spriteFit || 'stretch')
+      : false;
 
-    // Borda Externa + Borda Interna Pulsante
-    ctx.strokeStyle = z.strokeColor;
-    ctx.lineWidth = 3;
-    ctx.strokeRect(z.x, z.y, z.w, z.h);
+    if (!drewSprite) {
+      // Preenchimento da Zona de Transição
+      ctx.fillStyle = z.fillColor;
+      ctx.fillRect(z.x, z.y, z.w, z.h);
+    }
 
-    ctx.strokeStyle = '#ffffff';
-    ctx.globalAlpha = 0.35 + pulse * 0.45;
-    ctx.lineWidth = 2;
-    ctx.setLineDash([10, 6]);
-    ctx.strokeRect(z.x + 8, z.y + 8, z.w - 16, z.h - 16);
-    ctx.setLineDash([]);
-    ctx.globalAlpha = 1;
+    if (!hideDebug || !drewSprite) {
+      // Borda Externa + Borda Interna Pulsante
+      ctx.strokeStyle = z.strokeColor;
+      ctx.lineWidth = 3;
+      ctx.strokeRect(z.x, z.y, z.w, z.h);
 
-    // Textos da Zona de Extração / Porta da Van
+      ctx.strokeStyle = '#ffffff';
+      ctx.globalAlpha = 0.35 + pulse * 0.45;
+      ctx.lineWidth = 2;
+      ctx.setLineDash([10, 6]);
+      ctx.strokeRect(z.x + 8, z.y + 8, z.w - 16, z.h - 16);
+      ctx.setLineDash([]);
+      ctx.globalAlpha = 1;
+    }
+
     const centerX = z.x + z.w / 2;
     const centerY = z.y + z.h / 2;
 
-    ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 13px Consolas, monospace';
-    ctx.textAlign = 'center';
-    ctx.fillText(z.label, centerX, centerY - 12);
+    if (!hideDebug) {
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 13px Consolas, monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(z.label, centerX, centerY - 12);
 
-    ctx.fillStyle = '#e2e8f0';
-    ctx.font = '11px Consolas, monospace';
-    ctx.fillText(z.subLabel, centerX, centerY + 8);
+      ctx.fillStyle = '#e2e8f0';
+      ctx.font = '11px Consolas, monospace';
+      ctx.fillText(z.subLabel, centerX, centerY + 8);
+    }
 
     // Barra de progresso se o jogador estiver pisando na zona
     if (this.zoneHoldTimer > 0) {
@@ -986,41 +1135,56 @@ class Game {
   }
 
   _drawObstacles(ctx, map) {
+    const hideDebug = Boolean(window.hideDebugOverlays);
     ctx.save();
     for (const obs of map.obstacles) {
-      // Preenchimento do obstáculo (suporta cor customizada para Lojinha e Mesa de Craft)
-      ctx.fillStyle = obs.customFill || map.palette.wallFill;
-      ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
+      const drewSprite = obs.sprite && window.SpriteCache
+        ? window.SpriteCache.draw(ctx, obs.sprite, obs.x, obs.y, obs.w, obs.h, obs.spriteFit || 'stretch')
+        : false;
 
-      // Caixa de Colisão Visível (Debug Wireframe)
-      ctx.strokeStyle = obs.customStroke || map.palette.wallStroke;
-      ctx.lineWidth = obs.customStroke ? 2.5 : 2;
-      ctx.strokeRect(obs.x, obs.y, obs.w, obs.h);
+      if (!drewSprite) {
+        // Preenchimento do obstáculo (suporta cor customizada para Lojinha, Mesa de Craft e Props)
+        ctx.fillStyle = obs.customFill || map.palette.wallFill;
+        ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
+      }
 
-      // Linhas diagonais internas para evidenciar área bloqueada de colisão
-      ctx.beginPath();
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
-      ctx.lineWidth = 1;
-      ctx.moveTo(obs.x, obs.y);
-      ctx.lineTo(obs.x + obs.w, obs.y + obs.h);
-      ctx.moveTo(obs.x + obs.w, obs.y);
-      ctx.lineTo(obs.x, obs.y + obs.h);
-      ctx.stroke();
+      if (!hideDebug) {
+        // Caixa de Colisão Visível (Debug Wireframe)
+        ctx.strokeStyle = obs.noCollision
+          ? 'rgba(148, 163, 184, 0.55)'
+          : (obs.customStroke || map.palette.wallStroke);
+        ctx.lineWidth = obs.customStroke ? 2.5 : 2;
+        if (obs.noCollision) ctx.setLineDash([4, 4]);
+        ctx.strokeRect(obs.x, obs.y, obs.w, obs.h);
+        if (obs.noCollision) ctx.setLineDash([]);
 
-      // Nome e dimensões do obstáculo (apenas para obstáculos internos maiores)
-      if (obs.w >= 120 && obs.h >= 70) {
-        ctx.fillStyle = '#f8fafc';
-        ctx.font = 'bold 11px Consolas, monospace';
-        ctx.textAlign = 'center';
-        ctx.fillText(obs.label || 'COLISÃO', obs.x + obs.w / 2, obs.y + obs.h / 2 - 4);
+        if (!drewSprite && !obs.noCollision) {
+          // Linhas diagonais internas para evidenciar área bloqueada de colisão
+          ctx.beginPath();
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+          ctx.lineWidth = 1;
+          ctx.moveTo(obs.x, obs.y);
+          ctx.lineTo(obs.x + obs.w, obs.y + obs.h);
+          ctx.moveTo(obs.x + obs.w, obs.y);
+          ctx.lineTo(obs.x, obs.y + obs.h);
+          ctx.stroke();
+        }
 
-        ctx.fillStyle = obs.customStroke || 'rgba(226, 232, 240, 0.65)';
-        ctx.font = '10px Consolas, monospace';
-        ctx.fillText(
-          obs.subTag || `[${obs.w}x${obs.h}px]`,
-          obs.x + obs.w / 2,
-          obs.y + obs.h / 2 + 12
-        );
+        // Nome e dimensões do obstáculo (apenas para obstáculos internos maiores)
+        if (obs.w >= 90 && obs.h >= 50) {
+          ctx.fillStyle = '#f8fafc';
+          ctx.font = 'bold 11px Consolas, monospace';
+          ctx.textAlign = 'center';
+          ctx.fillText(obs.label || (obs.noCollision ? 'PROP' : 'COLISÃO'), obs.x + obs.w / 2, obs.y + obs.h / 2 - 4);
+
+          ctx.fillStyle = obs.customStroke || 'rgba(226, 232, 240, 0.65)';
+          ctx.font = '10px Consolas, monospace';
+          ctx.fillText(
+            obs.subTag || `[${Math.round(obs.w)}x${Math.round(obs.h)}px]`,
+            obs.x + obs.w / 2,
+            obs.y + obs.h / 2 + 12
+          );
+        }
       }
     }
     ctx.restore();

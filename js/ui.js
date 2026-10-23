@@ -371,7 +371,7 @@ window.UIManager = class UIManager {
       const badgeLabel = showKeyNumbers ? `${index + 1}` : `S${index + 1}`;
       slotEl.innerHTML = `
         <span class="slot-key-num">${badgeLabel}</span>
-        <span class="slot-icon">${item.icon}</span>
+        <span class="slot-icon">${item.sprite ? `<img src="${item.sprite}" alt="${item.shortName}" style="width:24px;height:24px;object-fit:contain;image-rendering:pixelated;" />` : item.icon}</span>
         <span class="slot-short-name">${item.shortName}</span>
       `;
 
@@ -525,7 +525,7 @@ window.UIManager = class UIManager {
       if (item.isEmpty) div.classList.add('empty');
 
       div.innerHTML = `
-        <div class="pause-slot-icon">${item.icon}</div>
+        <div class="pause-slot-icon">${item.sprite ? `<img src="${item.sprite}" alt="${item.shortName}" style="width:28px;height:28px;object-fit:contain;image-rendering:pixelated;" />` : item.icon}</div>
         <div class="pause-slot-name">Slot ${idx + 1}: ${item.name}</div>
         <div class="pause-slot-tag">${idx === player.selectedSlot ? '★ EQUIPADO' : item.type}</div>
       `;

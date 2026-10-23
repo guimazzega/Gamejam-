@@ -1,7 +1,7 @@
 /**
  * js/input.js
  * Gerenciador de Input (Teclado + Scroll do Mouse)
- * Garante e.preventDefault() na tecla Tab, Espaço e Setas Direcionais.
+ * Garante e.preventDefault() na tecla Tab, Espaço e Setas Direcionais durante o jogo.
  * Teclas 1 a 5 selecionam slots da Hotbar (P1 no Multiplayer / Ativo no Singleplayer).
  * Scroll do Mouse alterna slots da Hotbar (P2 no Multiplayer / Ativo no Singleplayer).
  */
@@ -22,18 +22,44 @@ window.InputManager = class InputManager {
     window.addEventListener('blur', this._onBlur);
   }
 
+  _isFormInputFocused(e) {
+    const el = e && e.target;
+    if (!el || !el.tagName) return false;
+    const tag = el.tagName.toUpperCase();
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') {
+      const type = (el.type || '').toLowerCase();
+      if (type !== 'checkbox' && type !== 'radio' && type !== 'button') {
+        return true;
+      }
+    }
+    return Boolean(el.isContentEditable);
+  }
+
   _onKeyDown(e) {
+    // Se estiver digitando em um campo de texto (ex: no Map Editor), ignora atalhos do jogo
+    if (this._isFormInputFocused(e)) {
+      if (e.code === 'Escape' && e.target && e.target.blur) {
+        e.target.blur();
+      }
+      return;
+    }
+
     const code = e.code;
 
-    // Previne que Tab mude o foco do navegador ou que Setas/Espaço rolem a página
+    // Previne que Tab mude o foco do navegador ou que Setas/Espaço rolem a página durante o jogo
+    const tag = e.target && e.target.tagName ? e.target.tagName.toUpperCase() : '';
+    const isInteractiveControl = tag === 'BUTTON' || tag === 'INPUT' || tag === 'LABEL';
     if (
-      code === 'Tab' ||
-      code === 'Space' ||
-      code === 'ArrowUp' ||
-      code === 'ArrowDown' ||
-      code === 'ArrowLeft' ||
-      code === 'ArrowRight'
+      !isInteractiveControl &&
+      (code === 'Tab' ||
+        code === 'Space' ||
+        code === 'ArrowUp' ||
+        code === 'ArrowDown' ||
+        code === 'ArrowLeft' ||
+        code === 'ArrowRight')
     ) {
+      e.preventDefault();
+    } else if (code === 'Tab') {
       e.preventDefault();
     }
 
@@ -47,12 +73,12 @@ window.InputManager = class InputManager {
       if (this.callbacks.onSwitchPlayer) this.callbacks.onSwitchPlayer();
     } else if (code === 'Escape' || code === 'KeyP') {
       if (this.callbacks.onTogglePause) this.callbacks.onTogglePause();
-    } else if (code === 'KeyE' || code === 'Space') {
+    } else if (code === 'KeyE' || (code === 'Space' && !isInteractiveControl)) {
       if (this.callbacks.onInteract) this.callbacks.onInteract();
     } else if (code === 'KeyH') {
-      if (this.callbacks.onDebugDamage) this.callbacks.onDebugDamage();
+      if (this.callbacks.onDebugDamage) this.callbacks.onDebugDamage(e);
     } else if (code === 'KeyJ') {
-      if (this.callbacks.onDebugHeal) this.callbacks.onDebugHeal();
+      if (this.callbacks.onDebugHeal) this.callbacks.onDebugHeal(e);
     } else if (code === 'KeyN') {
       if (this.callbacks.onDebugNextStage) this.callbacks.onDebugNextStage();
     } else if (code.startsWith('Digit')) {
@@ -74,6 +100,10 @@ window.InputManager = class InputManager {
 
   _onWheel(e) {
     if (e.deltaY === 0) return;
+    // Ignora scroll caso ocorra dentro do painel do Editor ou Menus
+    if (e.target && e.target.closest && e.target.closest('.map-editor-ui, .menu-overlay')) {
+      return;
+    }
     const direction = e.deltaY > 0 ? 1 : -1;
     if (this.callbacks.onCycleSlot) {
       this.callbacks.onCycleSlot(direction);
