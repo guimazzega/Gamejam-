@@ -3,7 +3,8 @@
  * Definições dos 3 Mapas Grandes (2500x2500px) e da Safe Room Expandida (A Van).
  * Inclui paleta de cores de debug, obstáculos com caixas de colisão visíveis,
  * estações interativas de placeholder (Lojinha e Mesa de Craft),
- * pontos de Spawn para P1/P2 e Zonas de Extração / Transição.
+ * pontos de Spawn para P1/P2, Zonas de Extração / Transição e
+ * Coordenadas Fixas (Hardcoded) para os itens de Lixo/Sucata (Sprint 3).
  */
 
 window.GameMaps = {
@@ -13,7 +14,7 @@ window.GameMaps = {
   map1: {
     id: 'map1',
     name: 'MAPA 1: ARREDORES FLORESTAIS [SETOR ALPHA]',
-    subtitle: 'Dimensões: 2500x2500px • Colete Lixo/Sucata e siga até a Zona de Extração',
+    subtitle: 'Dimensões: 2500x2500px • Colete Lixo/Sucata (Posições Fixas) e siga até a Extração',
     width: 2500,
     height: 2500,
     isSafeRoom: false,
@@ -29,6 +30,25 @@ window.GameMaps = {
     },
     spawnP1: { x: 240, y: 260 },
     spawnP2: { x: 310, y: 260 },
+    // Coordenadas fixas (hardcoded) para o Lixo do Mapa 1 (Sprint 3 - Sem geração procedural)
+    trashSpawns: [
+      { id: 'map1_trash_01', x: 420, y: 360, typeIndex: 0, rotation: 0.15 },
+      { id: 'map1_trash_02', x: 580, y: 360, typeIndex: 1, rotation: -0.22 },
+      { id: 'map1_trash_03', x: 760, y: 360, typeIndex: 2, rotation: 0.08 },
+      { id: 'map1_trash_04', x: 900, y: 380, typeIndex: 3, rotation: -0.18 },
+      { id: 'map1_trash_05', x: 900, y: 560, typeIndex: 4, rotation: 0.25 },
+      { id: 'map1_trash_06', x: 900, y: 760, typeIndex: 0, rotation: -0.12 },
+      { id: 'map1_trash_07', x: 900, y: 960, typeIndex: 1, rotation: 0.20 },
+      { id: 'map1_trash_08', x: 300, y: 700, typeIndex: 2, rotation: -0.25 },
+      { id: 'map1_trash_09', x: 1120, y: 1080, typeIndex: 3, rotation: 0.14 },
+      { id: 'map1_trash_10', x: 1360, y: 1080, typeIndex: 4, rotation: -0.10 },
+      { id: 'map1_trash_11', x: 1640, y: 1080, typeIndex: 0, rotation: 0.18 },
+      { id: 'map1_trash_12', x: 1640, y: 820, typeIndex: 1, rotation: -0.20 },
+      { id: 'map1_trash_13', x: 1640, y: 1320, typeIndex: 2, rotation: 0.12 },
+      { id: 'map1_trash_14', x: 1640, y: 1580, typeIndex: 3, rotation: -0.16 },
+      { id: 'map1_trash_15', x: 1640, y: 1800, typeIndex: 4, rotation: 0.22 },
+      { id: 'map1_trash_16', x: 880, y: 1620, typeIndex: 0, rotation: -0.14 }
+    ],
     // Trilhas decorativas de referência no piso (sem colisão)
     floorZones: [
       { x: 180, y: 200, w: 240, h: 180, label: 'ZONA DE SPAWN [ALPHA]' },
@@ -99,6 +119,7 @@ window.GameMaps = {
     },
     spawnP1: { x: 260, y: 460 },
     spawnP2: { x: 340, y: 460 },
+    trashSpawns: [],
     floorZones: [
       { x: 160, y: 140, w: 1120, h: 640, label: 'INTERIOR & PÁTIO TÁTICO DA VAN' },
       { x: 200, y: 370, w: 210, h: 180, label: 'ÁREA DE DESCANSO DA EQUIPE' }
@@ -109,7 +130,6 @@ window.GameMaps = {
         id: 'shop',
         name: 'Lojinha (Shop)',
         icon: '🛒',
-        // Zona demarcada de interação (ao redor/frente da caixa de colisão da Lojinha)
         x: 450,
         y: 155,
         w: 280,
@@ -123,7 +143,6 @@ window.GameMaps = {
         id: 'crafting',
         name: 'Mesa de Craft (Crafting)',
         icon: '🔨',
-        // Zona demarcada de interação (ao redor/frente da caixa de colisão da Mesa de Craft)
         x: 450,
         y: 570,
         w: 280,
@@ -188,7 +207,7 @@ window.GameMaps = {
   map2: {
     id: 'map2',
     name: 'MAPA 2: DISTRITO INDUSTRIAL [SETOR BETA]',
-    subtitle: 'Dimensões: 2500x2500px • Colete Lixo/Sucata e atravesse o pátio até a Extração',
+    subtitle: 'Dimensões: 2500x2500px • Colete Lixo/Sucata (Posições Fixas) e atravesse o pátio até a Extração',
     width: 2500,
     height: 2500,
     isSafeRoom: false,
@@ -204,6 +223,25 @@ window.GameMaps = {
     },
     spawnP1: { x: 260, y: 2200 },
     spawnP2: { x: 340, y: 2200 },
+    // Coordenadas fixas (hardcoded) para o Lixo do Mapa 2 (Sprint 3 - Sem geração procedural)
+    trashSpawns: [
+      { id: 'map2_trash_01', x: 520, y: 2190, typeIndex: 1, rotation: 0.12 },
+      { id: 'map2_trash_02', x: 700, y: 2190, typeIndex: 2, rotation: -0.18 },
+      { id: 'map2_trash_03', x: 920, y: 2190, typeIndex: 0, rotation: 0.24 },
+      { id: 'map2_trash_04', x: 1120, y: 2140, typeIndex: 3, rotation: -0.15 },
+      { id: 'map2_trash_05', x: 1120, y: 1920, typeIndex: 4, rotation: 0.10 },
+      { id: 'map2_trash_06', x: 1120, y: 1700, typeIndex: 0, rotation: -0.22 },
+      { id: 'map2_trash_07', x: 1120, y: 1480, typeIndex: 1, rotation: 0.16 },
+      { id: 'map2_trash_08', x: 1120, y: 1240, typeIndex: 2, rotation: -0.12 },
+      { id: 'map2_trash_09', x: 1340, y: 1240, typeIndex: 3, rotation: 0.19 },
+      { id: 'map2_trash_10', x: 1580, y: 1240, typeIndex: 4, rotation: -0.25 },
+      { id: 'map2_trash_11', x: 1800, y: 1240, typeIndex: 0, rotation: 0.14 },
+      { id: 'map2_trash_12', x: 1920, y: 1080, typeIndex: 1, rotation: -0.18 },
+      { id: 'map2_trash_13', x: 1920, y: 880, typeIndex: 2, rotation: 0.21 },
+      { id: 'map2_trash_14', x: 1920, y: 680, typeIndex: 3, rotation: -0.11 },
+      { id: 'map2_trash_15', x: 1920, y: 500, typeIndex: 4, rotation: 0.17 },
+      { id: 'map2_trash_16', x: 640, y: 1480, typeIndex: 0, rotation: -0.20 }
+    ],
     floorZones: [
       { x: 180, y: 2080, w: 280, h: 220, label: 'DOCA DE DESEMBARQUE [BETA]' },
       { x: 460, y: 2130, w: 720, h: 120, label: 'AVENIDA INDUSTRIAL SUL' },
@@ -246,7 +284,7 @@ window.GameMaps = {
   map3: {
     id: 'map3',
     name: 'MAPA 3: COMPLEXO SUBTERRÂNEO [SETOR GAMMA]',
-    subtitle: 'Dimensões: 2500x2500px • Fase Final do Protótipo • Alcance o Ponto de Extração Final',
+    subtitle: 'Dimensões: 2500x2500px • Fase Final • Lixo em Posições Fixas • Alcance a Extração Final',
     width: 2500,
     height: 2500,
     isSafeRoom: false,
@@ -262,6 +300,25 @@ window.GameMaps = {
     },
     spawnP1: { x: 1210, y: 280 },
     spawnP2: { x: 1290, y: 280 },
+    // Coordenadas fixas (hardcoded) para o Lixo do Mapa 3 (Sprint 3 - Sem geração procedural)
+    trashSpawns: [
+      { id: 'map3_trash_01', x: 1250, y: 460, typeIndex: 4, rotation: 0.15 },
+      { id: 'map3_trash_02', x: 1250, y: 640, typeIndex: 3, rotation: -0.20 },
+      { id: 'map3_trash_03', x: 1250, y: 820, typeIndex: 0, rotation: 0.10 },
+      { id: 'map3_trash_04', x: 1250, y: 980, typeIndex: 1, rotation: -0.14 },
+      { id: 'map3_trash_05', x: 1020, y: 1080, typeIndex: 2, rotation: 0.22 },
+      { id: 'map3_trash_06', x: 820, y: 1080, typeIndex: 3, rotation: -0.18 },
+      { id: 'map3_trash_07', x: 660, y: 1080, typeIndex: 4, rotation: 0.12 },
+      { id: 'map3_trash_08', x: 1480, y: 1080, typeIndex: 0, rotation: -0.24 },
+      { id: 'map3_trash_09', x: 1680, y: 1080, typeIndex: 1, rotation: 0.16 },
+      { id: 'map3_trash_10', x: 1840, y: 1080, typeIndex: 2, rotation: -0.11 },
+      { id: 'map3_trash_11', x: 1250, y: 1240, typeIndex: 3, rotation: 0.19 },
+      { id: 'map3_trash_12', x: 1250, y: 1440, typeIndex: 4, rotation: -0.15 },
+      { id: 'map3_trash_13', x: 1250, y: 1640, typeIndex: 0, rotation: 0.21 },
+      { id: 'map3_trash_14', x: 1250, y: 1820, typeIndex: 1, rotation: -0.17 },
+      { id: 'map3_trash_15', x: 1020, y: 1820, typeIndex: 2, rotation: 0.14 },
+      { id: 'map3_trash_16', x: 1480, y: 1820, typeIndex: 3, rotation: -0.22 }
+    ],
     floorZones: [
       { x: 1100, y: 180, w: 300, h: 220, label: 'ELEVADOR DE CARGA [GAMMA]' },
       { x: 1190, y: 400, w: 120, h: 740, label: 'TÚNEL CENTRAL NORTE' },

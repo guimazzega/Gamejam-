@@ -1,16 +1,35 @@
 /**
  * js/ui.js
- * Gerenciador de Interfaces (Sprint 2):
- * - HUD In-Game Dinâmica (Singleplayer vs Nova HUD Separada para Multiplayer Local)
- * - Hotbar Horizontal (Singleplayer) e Hotbars Verticais nas Bordas Laterais (Multiplayer)
- * - Contador Discreto de Sucata / Lixo Coletado
- * - Menu Principal, Menu de Pausa e Modal de Configurações Funcional (Fullscreen, isMuted, friendlyFireEnabled)
+ * Gerenciador de Interfaces (Sprints 2 & 3):
+ * - HUD In-Game Dinâmica (Singleplayer vs Multiplayer Local Separado)
+ * - Dicas de Teclas sincronizadas em tempo real com o Dicionário Global (Config.Controls)
+ * - Contador Global Persistente de Lixo Coletado + Lixos Restantes no Mapa
+ * - Modal de Configurações com Aba "Geral & Áudio" e Nova Aba "Controles" (Keybinding + Status Gamepad)
  */
 
 window.UIManager = class UIManager {
   constructor(game) {
     this.game = game;
     this.toastTimeout = null;
+    this.activeSettingsTab = 'general';
+
+    // Lista estruturada de ações exibidas na Aba "Controles" (Sprint 3)
+    this.rebindableActions = [
+      { key: 'P1_Up', label: 'Mover Cima (P1)', group: 'Jogador 1 / Principal', desc: 'Move o personagem para o Norte (Cima)' },
+      { key: 'P1_Down', label: 'Mover Baixo (P1)', group: 'Jogador 1 / Principal', desc: 'Move o personagem para o Sul (Baixo)' },
+      { key: 'P1_Left', label: 'Mover Esquerda (P1)', group: 'Jogador 1 / Principal', desc: 'Move o personagem para o Oeste (Esquerda)' },
+      { key: 'P1_Right', label: 'Mover Direita (P1)', group: 'Jogador 1 / Principal', desc: 'Move o personagem para o Leste (Direita)' },
+      { key: 'P1_Attack', label: 'Atacar (P1)', group: 'Jogador 1 / Principal', desc: 'Executa o ataque (No Singleplayer o Botão Direito do Mouse também ataca)' },
+      { key: 'P1_Inventory', label: 'Inventário (Girar Slot P1)', group: 'Jogador 1 / Principal', desc: 'Alterna o item equipado na Hotbar do Jogador 1 (além de 1-5)' },
+      { key: 'P2_Up', label: 'Mover Cima (P2)', group: 'Jogador 2 (Multiplayer Local)', desc: 'Move o Jogador 2 para Cima' },
+      { key: 'P2_Down', label: 'Mover Baixo (P2)', group: 'Jogador 2 (Multiplayer Local)', desc: 'Move o Jogador 2 para Baixo' },
+      { key: 'P2_Left', label: 'Mover Esquerda (P2)', group: 'Jogador 2 (Multiplayer Local)', desc: 'Move o Jogador 2 para a Esquerda' },
+      { key: 'P2_Right', label: 'Mover Direita (P2)', group: 'Jogador 2 (Multiplayer Local)', desc: 'Move o Jogador 2 para a Direita' },
+      { key: 'P2_Attack', label: 'Atacar (P2)', group: 'Jogador 2 (Multiplayer Local)', desc: 'Executa o ataque do Jogador 2 no Multiplayer Local' },
+      { key: 'P2_Inventory', label: 'Inventário (Girar Slot P2)', group: 'Jogador 2 (Multiplayer Local)', desc: 'Alterna o item equipado do Jogador 2 (além do Scroll do Mouse)' },
+      { key: 'Interact', label: 'Interagir (Saída / Estações)', group: 'Ações Gerais', desc: 'Interage com Zona de Extração, Porta da Van, Lojinha e Craft' },
+      { key: 'SwitchPlayer', label: 'Alternar Personagem (Single)', group: 'Ações Gerais', desc: 'Troca imediatamente entre P1 e P2 no modo Singleplayer' }
+    ];
 
     // Referências de Camadas / Overlays
     this.hudLayer = document.getElementById('hud-layer');
@@ -39,29 +58,37 @@ window.UIManager = class UIManager {
     this.timerValue = document.getElementById('hud-timer-value');
     this.saferoomBadge = document.getElementById('hud-saferoom-badge');
     this.scrapCountEl = document.getElementById('hud-scrap-count');
+    this.mapTrashRemainingEl = document.getElementById('hud-map-trash-remaining');
     this.interactionPrompt = document.getElementById('hud-interaction-prompt');
 
     // Referências HUD - Hotbar Singleplayer (Base Central)
     this.singleHotbarWrapper = document.getElementById('hud-single-hotbar-wrapper');
     this.hotbarContainer = document.getElementById('hud-hotbar');
     this.selectedItemLabel = document.getElementById('hud-selected-item-label');
+    this.hudHintInvKey = document.getElementById('hud-hint-inv-key');
 
     // Referências HUD - Hotbars Verticais Multiplayer (Centro-Esquerdo e Centro-Direito)
     this.multiHotbarP1Panel = document.getElementById('hud-multi-hotbar-p1');
     this.multiHotbarP1Slots = document.getElementById('hud-hotbar-p1-slots');
     this.multiP1SelectedLabel = document.getElementById('hud-p1-selected-label');
+    this.multiP1HotbarTag = document.getElementById('hud-multi-p1-hotbar-tag');
 
     this.multiHotbarP2Panel = document.getElementById('hud-multi-hotbar-p2');
     this.multiHotbarP2Slots = document.getElementById('hud-hotbar-p2-slots');
     this.multiP2SelectedLabel = document.getElementById('hud-p2-selected-label');
+    this.multiP2HotbarTag = document.getElementById('hud-multi-p2-hotbar-tag');
 
     // Referências HUD - Telemetria Debug
     this.dbgMode = document.getElementById('dbg-mode');
     this.dbgState = document.getElementById('dbg-state');
     this.dbgP1Pos = document.getElementById('dbg-p1-pos');
     this.dbgP2Pos = document.getElementById('dbg-p2-pos');
-    this.dbgCamPos = document.getElementById('dbg-cam-pos');
     this.dbgScrapCount = document.getElementById('dbg-scrap-count');
+    this.dbgGamepadState = document.getElementById('dbg-gamepad-state');
+    this.dbgKeyP1Atk = document.getElementById('dbg-key-p1-atk');
+    this.dbgKeyP2Atk = document.getElementById('dbg-key-p2-atk');
+    this.dbgKeySwitch = document.getElementById('dbg-key-switch');
+    this.dbgKeyInteract = document.getElementById('dbg-key-interact');
 
     // Referências Menu Principal
     this.btnModeSingle = document.getElementById('btn-mode-single');
@@ -69,8 +96,16 @@ window.UIManager = class UIManager {
     this.btnStartGame = document.getElementById('btn-start-game');
     this.btnOpenSettings = document.getElementById('btn-open-settings');
 
-    // Referências Modal de Configurações (Sprint 2)
+    // Referências Modal de Configurações & Abas (Sprint 3)
     this.btnCloseSettings = document.getElementById('btn-close-settings');
+    this.tabBtnGeneral = document.getElementById('tab-btn-general');
+    this.tabBtnControls = document.getElementById('tab-btn-controls');
+    this.tabPaneGeneral = document.getElementById('settings-tab-general');
+    this.tabPaneControls = document.getElementById('settings-tab-controls');
+    this.keybindingListEl = document.getElementById('keybinding-list');
+    this.btnResetControls = document.getElementById('btn-reset-controls');
+    this.settingsGamepadStatus = document.getElementById('settings-gamepad-status');
+
     this.toggleFullscreen = document.getElementById('toggle-fullscreen');
     this.badgeFullscreenState = document.getElementById('badge-fullscreen-state');
     this.toggleMute = document.getElementById('toggle-mute');
@@ -96,6 +131,7 @@ window.UIManager = class UIManager {
 
     this._bindEvents();
     this.syncSettingsUI();
+    this.renderKeybindingList();
   }
 
   _bindEvents() {
@@ -128,6 +164,29 @@ window.UIManager = class UIManager {
     this.btnCloseSettings.addEventListener('click', () => {
       this.closeSettingsModal();
     });
+
+    // Alternância de Abas no Menu de Configurações (Geral vs Controles)
+    if (this.tabBtnGeneral) {
+      this.tabBtnGeneral.addEventListener('click', () => {
+        this.switchSettingsTab('general');
+      });
+    }
+    if (this.tabBtnControls) {
+      this.tabBtnControls.addEventListener('click', () => {
+        this.switchSettingsTab('controls');
+      });
+    }
+
+    // Botão Restaurar Teclas Padrão
+    if (this.btnResetControls) {
+      this.btnResetControls.addEventListener('click', () => {
+        this.game.input.cancelKeyRebind();
+        window.Config.resetDefaultControls();
+        this.renderKeybindingList();
+        this.updateHUD();
+        this.showToast('Controles restaurados para os valores padrão (Config.Controls)!', 1800);
+      });
+    }
 
     // 1. Toggle Tela Cheia (Fullscreen API)
     if (this.toggleFullscreen) {
@@ -179,17 +238,129 @@ window.UIManager = class UIManager {
   }
 
   /**
-   * Abre o Modal de Configurações sincronizando o estado atual dos toggles
+   * Alterna entre as abas "Geral & Áudio" e "Controles" no Menu de Configurações
+   */
+  switchSettingsTab(tabName) {
+    this.activeSettingsTab = tabName;
+    this.game.input.cancelKeyRebind();
+
+    const isControls = tabName === 'controls';
+    if (this.tabBtnGeneral) this.tabBtnGeneral.classList.toggle('active', !isControls);
+    if (this.tabBtnControls) this.tabBtnControls.classList.toggle('active', isControls);
+
+    if (this.tabPaneGeneral) this.tabPaneGeneral.classList.toggle('hidden', isControls);
+    if (this.tabPaneControls) this.tabPaneControls.classList.toggle('hidden', !isControls);
+
+    if (isControls) {
+      this.renderKeybindingList();
+      this.updateGamepadStatusBanner();
+    }
+  }
+
+  /**
+   * Renderiza a lista interativa de ações na aba "Controles" para remapeamento (Keybinding)
+   */
+  renderKeybindingList() {
+    if (!this.keybindingListEl) return;
+    this.keybindingListEl.innerHTML = '';
+
+    const C = window.Config.Controls;
+    const listeningKey = this.game.input.rebindingAction;
+
+    this.rebindableActions.forEach((item) => {
+      const currentCode = C[item.key];
+      const formattedKey = window.Config.formatKeyCode(currentCode);
+      const isListening = listeningKey === item.key;
+
+      const row = document.createElement('button');
+      row.type = 'button';
+      row.className = `keybind-row ${isListening ? 'listening' : ''}`;
+      row.setAttribute('data-action-key', item.key);
+
+      row.innerHTML = `
+        <div class="keybind-info">
+          <div class="keybind-action-header">
+            <span class="keybind-action-name">${item.label}</span>
+            <span class="keybind-group-tag">${item.group}</span>
+          </div>
+          <div class="keybind-action-desc">${item.desc} <code>Config.Controls.${item.key}</code></div>
+        </div>
+        <div class="keybind-badge-wrapper">
+          <span class="keybind-key-badge ${isListening ? 'badge-listening' : ''}">
+            ${isListening ? '⌨ Pressione uma tecla...' : formattedKey}
+          </span>
+          <small class="keybind-raw-code">${isListening ? 'Aguardando keydown' : currentCode}</small>
+        </div>
+      `;
+
+      row.addEventListener('click', () => {
+        if (this.game.input.rebindingAction === item.key) {
+          // Clicar novamente na mesma ação cancela a escuta
+          this.game.input.cancelKeyRebind();
+          this.renderKeybindingList();
+          return;
+        }
+
+        // Inicia a escuta da próxima tecla pressionada (evento keydown)
+        this.game.input.startKeyRebind(item.key, (actionKey, newCode) => {
+          this.renderKeybindingList();
+          this.updateHUD();
+          this.showToast(
+            `✓ [${item.label}] remapeado para "${window.Config.formatKeyCode(newCode)}" (${newCode})!`,
+            2000
+          );
+        });
+
+        this.renderKeybindingList();
+      });
+
+      this.keybindingListEl.appendChild(row);
+    });
+  }
+
+  /**
+   * Atualiza o status dos Gamepads conectados na aba Controles e na HUD
+   */
+  updateGamepadStatusBanner() {
+    const pads = this.game.input.connectedGamepadsInfo || [];
+    if (this.settingsGamepadStatus) {
+      if (pads.length === 0) {
+        this.settingsGamepadStatus.textContent = 'Nenhum controle ativo (Pressione um botão no Joystick)';
+        this.settingsGamepadStatus.className = 'gamepad-status-pill status-idle';
+      } else {
+        const summary = pads
+          .map((p) => `#${p.index + 1}: ${p.profileLabel}`)
+          .join(' | ');
+        this.settingsGamepadStatus.textContent = `${pads.length} Conectado(s) — ${summary}`;
+        this.settingsGamepadStatus.className = 'gamepad-status-pill status-connected';
+      }
+    }
+
+    if (this.dbgGamepadState) {
+      if (pads.length === 0) {
+        this.dbgGamepadState.textContent = '0 Conectado(s)';
+      } else {
+        const types = pads.map((p) => p.profileType.toUpperCase()).join(', ');
+        this.dbgGamepadState.textContent = `${pads.length} (${types})`;
+      }
+    }
+  }
+
+  /**
+   * Abre o Modal de Configurações sincronizando o estado atual dos toggles e controles
    */
   openSettingsModal() {
     this.syncSettingsUI();
+    this.renderKeybindingList();
+    this.updateGamepadStatusBanner();
     this.settingsModalOverlay.classList.remove('hidden');
   }
 
   /**
-   * Fecha o Modal de Configurações retornando ao menu anterior (Principal ou Pausa)
+   * Fecha o Modal de Configurações cancelando qualquer remapeamento pendente
    */
   closeSettingsModal() {
+    this.game.input.cancelKeyRebind();
     this.settingsModalOverlay.classList.add('hidden');
   }
 
@@ -271,6 +442,7 @@ window.UIManager = class UIManager {
   }
 
   showMainMenu() {
+    this.game.input.cancelKeyRebind();
     this.mainMenuOverlay.classList.remove('hidden');
     this.settingsModalOverlay.classList.add('hidden');
     this.pauseMenuOverlay.classList.add('hidden');
@@ -283,7 +455,6 @@ window.UIManager = class UIManager {
     this.pauseMenuOverlay.classList.add('hidden');
     this.hudLayer.classList.remove('hidden');
 
-    // Aplica layout específico da HUD (Singleplayer vs Multiplayer Local separado)
     const isMulti = this.game.gameMode === 'multiplayer';
     this.hudLayer.classList.toggle('multiplayer-hud', isMulti);
 
@@ -296,6 +467,7 @@ window.UIManager = class UIManager {
       this.updatePauseInventoryPanel();
       this.pauseMenuOverlay.classList.remove('hidden');
     } else {
+      this.game.input.cancelKeyRebind();
       this.pauseMenuOverlay.classList.add('hidden');
       this.settingsModalOverlay.classList.add('hidden');
     }
@@ -304,7 +476,7 @@ window.UIManager = class UIManager {
   /**
    * Renderiza a Hotbar:
    * - Singleplayer: Hotbar horizontal inferior centralizada (5 slots)
-   * - Multiplayer Local: Duas Hotbars verticais nas bordas esquerda (P1: 1-5) e direita (P2: Scroll)
+   * - Multiplayer Local: Duas Hotbars verticais nas bordas esquerda (P1) e direita (P2)
    */
   renderHotbar() {
     const isMulti = this.game.gameMode === 'multiplayer';
@@ -327,12 +499,10 @@ window.UIManager = class UIManager {
         this.selectedItemLabel.textContent = `[P${activePlayer.id}] Slot ${activePlayer.selectedSlot + 1}: ${currentItem.name}`;
       }
     } else {
-      // Modo Multiplayer Local: Hotbars Verticais Separadas
       this.singleHotbarWrapper.classList.add('hidden');
       this.multiHotbarP1Panel.classList.remove('hidden');
       this.multiHotbarP2Panel.classList.remove('hidden');
 
-      // Jogador 1 (Centro-Esquerdo, Teclas 1 a 5)
       this._populateHotbarSlots(
         this.multiHotbarP1Slots,
         this.game.p1,
@@ -344,7 +514,6 @@ window.UIManager = class UIManager {
         this.multiP1SelectedLabel.textContent = `Slot ${this.game.p1.selectedSlot + 1}: ${itemP1.shortName}`;
       }
 
-      // Jogador 2 (Centro-Direito, Mouse Scroll)
       this._populateHotbarSlots(
         this.multiHotbarP2Slots,
         this.game.p2,
@@ -384,21 +553,25 @@ window.UIManager = class UIManager {
   }
 
   /**
-   * Atualiza todos os elementos dinâmicos da HUD durante o gameplay
+   * Atualiza todos os elementos dinâmicos da HUD durante o gameplay, consumindo Config.Controls
    */
   updateHUD() {
     const { p1, p2, gameMode, activePlayerIndex, stageTimeRemaining } = this.game;
     const currentStageMeta = this.game.getCurrentStageMeta();
     const currentMap = this.game.currentMap;
+    const C = window.Config.Controls;
+    const fmt = (k) => window.Config.formatKeyCode(k);
 
-    // Garante classe de layout correta
     this.hudLayer.classList.toggle('multiplayer-hud', gameMode === 'multiplayer');
 
     // 1. Atualiza Barras de Vida (HP)
     this._updatePlayerCard(this.p1HpText, this.p1HpBar, p1);
     this._updatePlayerCard(this.p2HpText, this.p2HpBar, p2);
 
-    // 2. Destaque de Controle Singleplayer vs Multiplayer Local Separado
+    const p1MoveStr = `${fmt(C.P1_Up)},${fmt(C.P1_Left)},${fmt(C.P1_Down)},${fmt(C.P1_Right)}`;
+    const p2MoveStr = `${fmt(C.P2_Up)},${fmt(C.P2_Left)},${fmt(C.P2_Down)},${fmt(C.P2_Right)}`;
+
+    // 2. Destaque de Controle Singleplayer vs Multiplayer Local
     if (gameMode === 'singleplayer') {
       const p1Active = activePlayerIndex === 0;
       this.p1Card.classList.toggle('active-player-card', p1Active);
@@ -407,8 +580,11 @@ window.UIManager = class UIManager {
       this.p1Badge.textContent = p1Active ? 'ATIVO' : 'ESPERA';
       this.p2Badge.textContent = !p1Active ? 'ATIVO' : 'ESPERA';
 
-      this.p1KeysHint.textContent = p1Active ? 'Controle: W, A, S, D • Slots: 1-5' : 'Pressione [Tab] p/ assumir';
-      this.p2KeysHint.textContent = !p1Active ? 'Controle: W, A, S, D • Slots: 1-5' : 'Pressione [Tab] p/ assumir';
+      const activeHint = `Mover: ${p1MoveStr} • Atacar: Botão Dir. Mouse / ${fmt(C.P1_Attack)}`;
+      const waitHint = `Pressione [${fmt(C.SwitchPlayer)}] para assumir`;
+
+      this.p1KeysHint.textContent = p1Active ? activeHint : waitHint;
+      this.p2KeysHint.textContent = !p1Active ? activeHint : waitHint;
     } else {
       this.p1Card.classList.add('active-player-card');
       this.p2Card.classList.add('active-player-card');
@@ -416,9 +592,22 @@ window.UIManager = class UIManager {
       this.p1Badge.textContent = 'JOGADOR 1';
       this.p2Badge.textContent = 'JOGADOR 2';
 
-      this.p1KeysHint.textContent = 'Movimento: W, A, S, D • Slots: 1-5';
-      this.p2KeysHint.textContent = 'Movimento: Setas • Slots: Scroll';
+      this.p1KeysHint.textContent = `Mover: ${p1MoveStr} • Atacar: [${fmt(C.P1_Attack)}] • Inv: [${fmt(C.P1_Inventory)}]`;
+      this.p2KeysHint.textContent = `Mover: ${p2MoveStr} • Atacar: [${fmt(C.P2_Attack)}] • Inv: Scroll/[${fmt(C.P2_Inventory)}]`;
     }
+
+    // Atualiza tags de atalho nas Hotbars e Painel Debug
+    if (this.hudHintInvKey) this.hudHintInvKey.textContent = fmt(C.P1_Inventory);
+    if (this.multiP1HotbarTag) {
+      this.multiP1HotbarTag.innerHTML = `Slots <kbd>1</kbd>-<kbd>5</kbd> / <kbd>${fmt(C.P1_Inventory)}</kbd>`;
+    }
+    if (this.multiP2HotbarTag) {
+      this.multiP2HotbarTag.innerHTML = `<kbd>Scroll</kbd> / <kbd>${fmt(C.P2_Inventory)}</kbd>`;
+    }
+    if (this.dbgKeyP1Atk) this.dbgKeyP1Atk.textContent = fmt(C.P1_Attack);
+    if (this.dbgKeyP2Atk) this.dbgKeyP2Atk.textContent = fmt(C.P2_Attack);
+    if (this.dbgKeySwitch) this.dbgKeySwitch.textContent = fmt(C.SwitchPlayer);
+    if (this.dbgKeyInteract) this.dbgKeyInteract.textContent = fmt(C.Interact);
 
     // 3. Stepper da Máquina de Estados (M1 -> VAN -> M2 -> VAN -> M3)
     const dots = this.stageStepper.querySelectorAll('.step-dot');
@@ -444,13 +633,22 @@ window.UIManager = class UIManager {
       this.timerValue.classList.toggle('timer-warning', stageTimeRemaining <= 30);
     }
 
-    // 5. Contador Global de Sucata / Lixo Coletado
+    // 5. Contador Global Persistente de Sucata / Lixo Coletado
     const scrapTotal = window.scrapCollected || 0;
     if (this.scrapCountEl) {
       this.scrapCountEl.textContent = String(scrapTotal);
     }
     if (this.dbgScrapCount) {
       this.dbgScrapCount.textContent = String(scrapTotal);
+    }
+    if (this.mapTrashRemainingEl) {
+      if (currentStageMeta.isSafeRoom) {
+        this.mapTrashRemainingEl.textContent = '(Safe Room)';
+      } else {
+        const remainingInMap = this.game.trashItems ? this.game.trashItems.length : 0;
+        const totalInMap = currentMap.trashSpawns ? currentMap.trashSpawns.length : 0;
+        this.mapTrashRemainingEl.textContent = `(Mapa: ${remainingInMap}/${totalInMap} restantes)`;
+      }
     }
 
     // 6. Prompt de Interação na Zona de Extração, Porta da Van ou Estações da Safe Room (Loja / Craft)
@@ -463,19 +661,19 @@ window.UIManager = class UIManager {
       this.interactionPrompt.classList.remove('hidden');
       this.interactionPrompt.classList.remove('station-prompt');
       this.interactionPrompt.innerHTML = currentStageMeta.isSafeRoom
-        ? 'Na Porta da Van! Pressione <kbd>E</kbd> ou <kbd>Espaço</kbd> para Seguir Viagem →'
-        : 'Na Zona de Extração! Pressione <kbd>E</kbd> ou <kbd>Espaço</kbd> para entrar na Van →';
+        ? `Na Porta da Van! Pressione <kbd>${fmt(C.Interact)}</kbd> ou <kbd>${fmt(C.InteractAlt)}</kbd> para Seguir Viagem →`
+        : `Na Zona de Extração! Pressione <kbd>${fmt(C.Interact)}</kbd> ou <kbd>${fmt(C.InteractAlt)}</kbd> para entrar na Van →`;
     } else {
       this.interactionPrompt.classList.add('hidden');
       this.interactionPrompt.classList.remove('station-prompt');
     }
 
-    // 7. Telemetria do Painel de Debug
-    this.dbgMode.textContent = gameMode === 'singleplayer' ? 'Singleplayer (Tab)' : 'Multiplayer Local';
+    // 7. Telemetria do Painel de Debug e Status do Gamepad
+    this.dbgMode.textContent = gameMode === 'singleplayer' ? `Singleplayer (${fmt(C.SwitchPlayer)})` : 'Multiplayer Local';
     this.dbgState.textContent = `${currentStageMeta.stateId} (${currentStageMeta.stepIndex + 1}/5)`;
     this.dbgP1Pos.textContent = `${Math.round(p1.x)}, ${Math.round(p1.y)}`;
     this.dbgP2Pos.textContent = `${Math.round(p2.x)}, ${Math.round(p2.y)}`;
-    this.dbgCamPos.textContent = `${Math.round(this.game.camera.x)}, ${Math.round(this.game.camera.y)}`;
+    this.updateGamepadStatusBanner();
   }
 
   _updatePlayerCard(textEl, barEl, player) {
@@ -504,14 +702,12 @@ window.UIManager = class UIManager {
       : `Tempo Restante na Fase: ${this.formatTime(stageTimeRemaining)}`;
 
     if (this.pauseScrapStatus) {
-      this.pauseScrapStatus.textContent = `♻ Sucata/Lixo Coletado: ${window.scrapCollected || 0}`;
+      this.pauseScrapStatus.textContent = `♻ Lixo Coletado (Persistência Global): ${window.scrapCollected || 0}`;
     }
 
-    // Personagem 1
     this._updatePlayerCard(this.pauseP1HpLabel, this.pauseP1HpFill, p1);
     this._renderPauseCharacterGrid(this.pauseP1ItemsGrid, p1);
 
-    // Personagem 2
     this._updatePlayerCard(this.pauseP2HpLabel, this.pauseP2HpFill, p2);
     this._renderPauseCharacterGrid(this.pauseP2ItemsGrid, p2);
   }

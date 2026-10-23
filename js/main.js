@@ -1,15 +1,21 @@
 /**
  * js/main.js
- * Motor Principal do Protótipo 2D Top-Down (Sprint 2 • Debug / Developer Mode).
- * Coordena o Game Loop, Máquina de Estados de Fases, Trava de Câmera/Viewport no Multiplayer,
- * Geração e Coleta de Lixo/Sucata nos 3 Mapas Grandes, Estações da Safe Room (Loja e Craft),
- * Renderização de Debug no Canvas e Atalhos de Desenvolvedor.
+ * Motor Principal do Protótipo 2D Top-Down (Sprint 3):
+ * - Persistência Global de Lixos em Coordenadas Fixas (Hardcoded) nos 3 Mapas (sem geração procedural)
+ * - Sistema de Ataque/Bater Placeholder (Arco/Cone de colisão colorido + Log no Console)
+ *   • Singleplayer: Botão Direito do Mouse (com bloqueio de contextmenu) ou Tecla de Ataque remapeada
+ *   • Multiplayer Local: Jogador 1 na tecla R e Jogador 2 na tecla 0 (ou teclas remapeadas em Config.Controls)
+ * - Suporte Nativo a Gamepad API (navigator.getGamepads()) dentro do requestAnimationFrame
+ * - Consumo integral do Dicionário Global de Inputs (window.Config.Controls)
  */
 
 class Game {
   constructor() {
     this.canvas = document.getElementById('game-canvas');
     this.ctx = this.canvas.getContext('2d');
+
+    // Garante bloqueio do menu de contexto padrão do navegador também diretamente no Canvas
+    this.canvas.addEventListener('contextmenu', (e) => e.preventDefault());
 
     // Estado de Alto Nível: 'MAIN_MENU' | 'PLAYING' | 'PAUSED'
     this.appState = 'MAIN_MENU';
@@ -26,7 +32,7 @@ class Game {
 
     // Tempo de permanência na Zona de Transição (para auto-avançar ao encostar, além de E/Espaço)
     this.zoneHoldTimer = 0;
-    this.zoneHoldDuration = 1.15; // Segundos encostando para ativar automaticamente
+    this.zoneHoldDuration = 1.15;
 
     // Instancia os 2 Personagens em cena (5 slots de inventário cada)
     this.p1 = new window.Player({
@@ -50,20 +56,27 @@ class Game {
     this.players = [this.p1, this.p2];
     this.activePlayerIndex = 0; // Usado no Singleplayer (0 = P1, 1 = P2)
 
-    // Entidades de Lixo / Sucata espalhadas pelo mapa atual (Sprint 2)
+    // Entidades de Lixo / Sucata fixas restantes no mapa atual (Sprint 3)
     this.trashItems = [];
 
-    // Lista de textos flutuantes de debug (ex: "-10 HP", "+1 Lixo", avisos de estação)
+    // Lista de textos flutuantes de debug (ex: "-10 HP", "+1 Lixo", "⚔️ ATAQUE", avisos de estação)
     this.floatingTexts = [];
 
     // Câmera 2D
     this.camera = new window.Camera2D(window.innerWidth, window.innerHeight);
 
-    // Input Manager
+    // Input Manager (Teclado via Config.Controls + Mouse Right Click + Gamepad API)
     this.input = new window.InputManager({
       onSwitchPlayer: () => this.handleSwitchPlayer(),
       onTogglePause: () => this.handlePauseShortcut(),
       onInteract: () => this.handleInteractShortcut(),
+      onMouseRightAttack: (source) => this.handleMouseRightAttack(source),
+      onPlayerAttack: (playerId, source) => this.handleKeyboardAttack(playerId, source),
+      onGamepadAttack: (targetSlot, source) => this.handleGamepadAttack(targetSlot, source),
+      onGamepadInteractOrAttack: (targetSlot, source) => this.handleGamepadInteractOrAttack(targetSlot, source),
+      onGamepadCycleSlot: (targetSlot, dir, source) => this.handleGamepadCycleSlot(targetSlot, dir, source),
+      onGamepadStatusChange: (gp, connected, profile) => this.handleGamepadStatusChange(gp, connected, profile),
+      onCyclePlayerSlot: (playerId, dir) => this.cyclePlayerHotbarSlot(playerId, dir),
       onDebugDamage: () => this.handleDebugDamage(),
       onDebugHeal: () => this.handleDebugHeal(),
       onDebugNextStage: () => this.handleDebugNextStage(),
@@ -79,8 +92,8 @@ class Game {
     window.addEventListener('resize', this._onResize);
     this._onResize();
 
-    // Inicializa entidades de lixo no mapa inicial para preview de fundo
-    this._spawnRandomTrashForMap(this.currentMap);
+    // Inicializa os itens de lixo nas posições fixas (hardcoded) do Mapa 1 para preview
+    this._spawnFixedTrashForMap(this.currentMap);
 
     // Controle de Tempo do Loop
     this.lastTimestamp = performance.now();
@@ -107,7 +120,9 @@ class Game {
   }
 
   /**
-   * Inicia uma nova partida a partir do Menu Principal carregando o Mapa 1
+   * Inicia / Retorna à partida a partir do Menu Principal carregando o Mapa 1.
+   * Mantém o registro global de lixos coletados (window.collectedTrashIds) para garantir
+   * persistência caso o jogador saia e volte para a fase.
    */
   startNewGame() {
     this.p1.hp = this.p1.maxHp;
@@ -116,14 +131,19 @@ class Game {
     this.p2.selectedSlot = 0;
     this.activePlayerIndex = 0;
     this.floatingTexts = [];
-    window.scrapCollected = 0;
 
     this.loadStageByFlowIndex(0);
     this.appState = 'PLAYING';
     this.ui.showGameplayHUD();
-    this.ui.showToast(
-      `Partida iniciada em modo ${this.gameMode === 'singleplayer' ? 'Singleplayer (Tab alterna)' : 'Multiplayer Local (HUD Separada + Clamp de Câmera)'}!`
-    );
+
+    const C = window.Config.Controls;
+    const fmt = (k) => window.Config.formatKeyCode(k);
+    const modeDesc =
+      this.gameMode === 'singleplayer'
+        ? `Singleplayer (Ataque: Botão Direito do Mouse / [${fmt(C.P1_Attack)}])`
+        : `Multiplayer Local (Ataque P1: [${fmt(C.P1_Attack)}] • Ataque P2: [${fmt(C.P2_Attack)}])`;
+
+    this.ui.showToast(`Partida em andamento: ${modeDesc}`);
   }
 
   /**
@@ -141,10 +161,10 @@ class Game {
     this.p1.setPosition(this.currentMap.spawnP1.x, this.currentMap.spawnP1.y);
     this.p2.setPosition(this.currentMap.spawnP2.x, this.currentMap.spawnP2.y);
 
-    // Reseta o Timer da Fase (180s = 03:00) e gera Lixo/Sucata ao entrar em um dos 3 mapas grandes
+    // Reseta o Timer da Fase (180s = 03:00) e carrega os Lixos Fixos ainda NÃO coletados
     if (!stageMeta.isSafeRoom) {
       this.stageTimeRemaining = window.GameConfig.STAGE_DURATION_SECONDS;
-      this._spawnRandomTrashForMap(this.currentMap);
+      this._spawnFixedTrashForMap(this.currentMap);
     } else {
       this.trashItems = [];
     }
@@ -160,111 +180,48 @@ class Game {
   }
 
   /**
-   * Gera entidades de "Lixo / Sucata" espalhadas aleatoriamente pelo chão dos 3 mapas grandes,
-   * evitando obstáculos, zonas de extração e posição exata de spawn.
+   * Instancia os itens de Lixo/Sucata exclusivamente nas coordenadas fixas (hardcoded) do mapa,
+   * consultando o Estado Global (window.collectedTrashIds) para nunca respawnar itens já coletados.
    */
-  _spawnRandomTrashForMap(map) {
+  _spawnFixedTrashForMap(map) {
     this.trashItems = [];
-    if (!map || map.isSafeRoom) return;
+    if (!map || map.isSafeRoom || !Array.isArray(map.trashSpawns)) return;
 
-    const count = window.GameConfig.TRASH_COUNT_PER_MAP || 28;
-    const trashSize = window.GameConfig.TRASH_SIZE || 26;
     const types = window.GameConfig.TRASH_TYPES;
-    const margin = 90;
 
-    let attempts = 0;
-    const maxAttempts = count * 30;
-
-    while (this.trashItems.length < count && attempts < maxAttempts) {
-      attempts++;
-
-      // Garante que os primeiros 5 itens apareçam relativamente próximos ao início da fase
-      // para facilitar o teste imediato, e o restante espalhado por todo o mapa 2500x2500
-      let rx;
-      let ry;
-      if (this.trashItems.length < 5) {
-        const angle = Math.random() * Math.PI * 2;
-        const dist = 130 + Math.random() * 380;
-        rx = Math.round(map.spawnP1.x + Math.cos(angle) * dist);
-        ry = Math.round(map.spawnP1.y + Math.sin(angle) * dist);
-        rx = Math.max(margin, Math.min(map.width - margin, rx));
-        ry = Math.max(margin, Math.min(map.height - margin, ry));
-      } else {
-        rx = Math.round(margin + Math.random() * (map.width - margin * 2));
-        ry = Math.round(margin + Math.random() * (map.height - margin * 2));
+    map.trashSpawns.forEach((spawnDef, idx) => {
+      // Verifica no estado global se este lixo já foi coletado anteriormente
+      if (window.GlobalState.isTrashCollected(spawnDef.id)) {
+        return;
       }
 
-      if (!this._isValidTrashPosition(rx, ry, trashSize, map)) {
-        continue;
-      }
-
-      const typeInfo = types[this.trashItems.length % types.length];
+      const typeInfo = types[(spawnDef.typeIndex ?? idx) % types.length];
       this.trashItems.push(
         new window.TrashItem({
-          id: `trash_${map.id}_${this.trashItems.length}`,
-          x: rx,
-          y: ry,
+          id: spawnDef.id,
+          x: spawnDef.x,
+          y: spawnDef.y,
           typeInfo,
-          rotation: (Math.random() - 0.5) * 0.6,
-          bobPhase: Math.random() * Math.PI * 2
+          rotation: spawnDef.rotation ?? 0,
+          bobPhase: idx * 0.9
         })
       );
-    }
-  }
-
-  _isValidTrashPosition(x, y, size, map) {
-    const pad = 16;
-    const box = {
-      x: x - size / 2 - pad,
-      y: y - size / 2 - pad,
-      w: size + pad * 2,
-      h: size + pad * 2
-    };
-
-    // Não gerar exatamente em cima do Spawn P1 ou P2
-    if (Math.hypot(x - map.spawnP1.x, y - map.spawnP1.y) < 95) return false;
-    if (Math.hypot(x - map.spawnP2.x, y - map.spawnP2.y) < 95) return false;
-
-    // Não gerar dentro da Zona de Extração
-    if (map.transitionZone && this._boxesOverlap(box, map.transitionZone)) {
-      return false;
-    }
-
-    // Não gerar dentro de obstáculos/paredes
-    for (const obs of map.obstacles) {
-      if (this._boxesOverlap(box, obs)) return false;
-    }
-
-    // Manter distância mínima entre itens de lixo
-    for (const item of this.trashItems) {
-      if (Math.hypot(x - item.x, y - item.y) < 75) return false;
-    }
-
-    return true;
-  }
-
-  _boxesOverlap(a, b) {
-    return (
-      a.x < b.x + b.w &&
-      a.x + a.w > b.x &&
-      a.y < b.y + b.h &&
-      a.y + a.h > b.y
-    );
+    });
   }
 
   /**
-   * Reinicia a fase atual (via Menu de Pausa ou quando o timer zera)
+   * Reinicia a fase atual mantendo a persistência global dos lixos já coletados
    */
   restartCurrentStage() {
     this.p1.hp = this.p1.maxHp;
     this.p2.hp = this.p2.maxHp;
     this.loadStageByFlowIndex(this.stageFlowIndex);
     this.togglePause(false);
-    this.ui.showToast('Fase atual reiniciada! Posições, Lixo do Mapa e Timer restaurados.');
+    this.ui.showToast('Fase reiniciada! (Lixos já coletados permanecem salvos no Estado Global).');
   }
 
   /**
-   * Retorna ao Menu Principal encerrando a partida atual
+   * Retorna ao Menu Principal
    */
   returnToMainMenu() {
     this.appState = 'MAIN_MENU';
@@ -273,7 +230,131 @@ class Game {
   }
 
   /**
-   * Alterna entre Personagem 1 e Personagem 2 com a tecla Tab (no Singleplayer)
+   * Ataque via Botão Direito do Mouse (Exclusivo do Modo Singleplayer)
+   */
+  handleMouseRightAttack(sourceLabel) {
+    if (this.appState !== 'PLAYING') return;
+    if (this.gameMode !== 'singleplayer') return;
+
+    const activePlayer = this.players[this.activePlayerIndex];
+    this._executePlayerAttack(activePlayer, sourceLabel);
+  }
+
+  /**
+   * Ataque via Teclado (Config.Controls.P1_Attack = 'KeyR' e Config.Controls.P2_Attack = 'Digit0')
+   */
+  handleKeyboardAttack(playerId, sourceLabel) {
+    if (this.appState !== 'PLAYING') return;
+
+    if (this.gameMode === 'singleplayer') {
+      // No Singleplayer, se o jogador pressionar a tecla de ataque remapeada de P1, o personagem ativo também ataca
+      if (playerId === 1) {
+        const activePlayer = this.players[this.activePlayerIndex];
+        this._executePlayerAttack(activePlayer, sourceLabel);
+      }
+    } else {
+      // No Multiplayer Local: P1 ataca com P1_Attack (R) e P2 ataca com P2_Attack (0)
+      const attacker = playerId === 2 ? this.p2 : this.p1;
+      this._executePlayerAttack(attacker, sourceLabel);
+    }
+  }
+
+  /**
+   * Ataque via Botões de Face do Gamepad (X / Y)
+   */
+  handleGamepadAttack(targetSlot, sourceLabel) {
+    if (this.appState !== 'PLAYING') return;
+
+    const attacker =
+      this.gameMode === 'singleplayer'
+        ? this.players[this.activePlayerIndex]
+        : targetSlot === 2
+          ? this.p2
+          : this.p1;
+
+    this._executePlayerAttack(attacker, sourceLabel);
+  }
+
+  /**
+   * Botões de Face Secundários do Gamepad (A / B): Interage se estiver em uma zona/estação, caso contrário ataca
+   */
+  handleGamepadInteractOrAttack(targetSlot, sourceLabel) {
+    if (this.appState !== 'PLAYING') return;
+
+    if (this.getTouchedSafeRoomStation() || this.isAnyPlayerInTransitionZone()) {
+      this.handleInteractShortcut();
+    } else {
+      this.handleGamepadAttack(targetSlot, sourceLabel);
+    }
+  }
+
+  /**
+   * Executa o evento de Atacar/Bater: ativa o arco/cone de colisão, gera log no console e verifica Fogo Amigo
+   */
+  _executePlayerAttack(attacker, sourceLabel) {
+    if (!attacker) return;
+    const triggered = attacker.triggerAttack(sourceLabel, this.gameMode);
+    if (!triggered) return;
+
+    const tipX = attacker.x + attacker.facingX * 36;
+    const tipY = attacker.y + attacker.facingY * 36 - 18;
+    const color = attacker.id === 1 ? '#38bdf8' : '#fb923c';
+
+    this.floatingTexts.push(
+      new window.FloatingText(tipX, tipY, `⚔️ ATAQUE P${attacker.id}`, color, 0.55)
+    );
+
+    // Se Fogo Amigo (friendlyFireEnabled) estiver ativo nas configurações, verifica colisão do cone com o parceiro
+    if (window.friendlyFireEnabled) {
+      const partner = attacker.id === 1 ? this.p2 : this.p1;
+      if (attacker.isPointInAttackCone(partner.x, partner.y, partner.size / 2)) {
+        partner.takeDamage(10);
+        this.camera.triggerShake(0.14, 4);
+        this.floatingTexts.push(
+          new window.FloatingText(partner.x, partner.y - 36, '-10 HP [FOGO AMIGO]', '#ef4444', 0.9)
+        );
+        console.log(
+          `🔥 [FOGO AMIGO] ${attacker.name} atingiu ${partner.name} no cone de ataque! (-10 HP)`
+        );
+        this.ui.updateHUD();
+      }
+    }
+  }
+
+  /**
+   * Bumpers L1 / R1 do Gamepad giram os itens do inventário
+   */
+  handleGamepadCycleSlot(targetSlot, direction, sourceLabel) {
+    if (this.appState !== 'PLAYING') return;
+
+    const player =
+      this.gameMode === 'singleplayer'
+        ? this.players[this.activePlayerIndex]
+        : targetSlot === 2
+          ? this.p2
+          : this.p1;
+
+    const len = player.inventory.length;
+    player.selectedSlot = (player.selectedSlot + direction + len) % len;
+    this.ui.renderHotbar();
+
+    const equipped = player.getEquippedItem();
+    console.log(
+      `🎒 [INVENTÁRIO GAMEPAD] ${player.name} girou para Slot ${player.selectedSlot + 1} (${equipped ? equipped.shortName : 'Vazio'}) via ${sourceLabel}`
+    );
+  }
+
+  handleGamepadStatusChange(gp, connected, profile) {
+    if (connected) {
+      this.ui.showToast(`🕹️ Controle conectado: ${profile.label}`, 2400);
+    } else {
+      this.ui.showToast(`🕹️ Controle #${gp.index + 1} desconectado.`, 1800);
+    }
+    this.ui.updateGamepadStatusBanner();
+  }
+
+  /**
+   * Alterna entre Personagem 1 e Personagem 2 (no Singleplayer)
    */
   handleSwitchPlayer() {
     if (this.appState !== 'PLAYING') return;
@@ -292,14 +373,13 @@ class Game {
 
     this.ui.renderHotbar();
     this.ui.updateHUD();
-    this.ui.showToast(`Controle alternado para ${active.name} [Tab]`, 1400);
+    this.ui.showToast(`Controle alternado para ${active.name}`, 1400);
   }
 
   /**
-   * Pausa / Despausa a partida (Atalho: Esc ou P)
+   * Pausa / Despausa a partida
    */
   handlePauseShortcut() {
-    // Se o modal de Configurações estiver aberto, fecha-o primeiro
     if (this.ui.isSettingsModalOpen()) {
       this.ui.closeSettingsModal();
       return;
@@ -329,12 +409,11 @@ class Game {
   }
 
   /**
-   * Interação com Estações da Safe Room (Lojinha / Crafting) ou Zona de Extração / Porta da Van (Teclas E ou Espaço)
+   * Interação com Estações da Safe Room (Lojinha / Crafting) ou Zona de Extração / Porta da Van
    */
   handleInteractShortcut() {
     if (this.appState !== 'PLAYING') return;
 
-    // 1. Verifica se algum jogador está encostando na Lojinha ou na Mesa de Craft da Safe Room
     const touchedStation = this.getTouchedSafeRoomStation();
     if (touchedStation) {
       const centerX = touchedStation.x + touchedStation.w / 2;
@@ -346,7 +425,6 @@ class Game {
       return;
     }
 
-    // 2. Verifica se está na Zona de Extração / Porta da Van
     if (this.isAnyPlayerInTransitionZone()) {
       this.advanceToNextStage('Interação na Zona de Saída');
     } else {
@@ -375,7 +453,7 @@ class Game {
     if (this.appState === 'PAUSED') {
       this.ui.updatePauseInventoryPanel();
     }
-    this.ui.showToast(`[DEBUG Tecla H] -10 HP em ${target.name} (${target.hp}/${target.maxHp} HP)`, 1600);
+    this.ui.showToast(`[DEBUG] -10 HP em ${target.name} (${target.hp}/${target.maxHp} HP)`, 1600);
   }
 
   /**
@@ -395,7 +473,7 @@ class Game {
     if (this.appState === 'PAUSED') {
       this.ui.updatePauseInventoryPanel();
     }
-    this.ui.showToast(`[DEBUG Tecla J] +20 HP em ${target.name} (${target.hp}/${target.maxHp} HP)`, 1600);
+    this.ui.showToast(`[DEBUG] +20 HP em ${target.name} (${target.hp}/${target.maxHp} HP)`, 1600);
   }
 
   /**
@@ -419,16 +497,14 @@ class Game {
     const meta = this.getCurrentStageMeta();
 
     if (wrappedCycle) {
-      this.ui.showToast(`Ciclo de 3 Mapas concluído! Reiniciando no ${meta.label}`);
+      this.ui.showToast(`Ciclo concluído! Retornando ao ${meta.label} (Lixos coletados permanecem salvos)`);
     } else {
       this.ui.showToast(`Avançou (${reason}) → ${meta.label}`);
     }
   }
 
   /**
-   * Seleção de Slot da Hotbar:
-   * - No Multiplayer Local, as teclas numéricas (1 a 5) controlam exclusivamente o Jogador 1 (P1).
-   * - Cliques de mouse em cada hotbar selecionam o slot do respectivo jogador.
+   * Seleção direta de Slot da Hotbar (1 a 5 ou clique)
    */
   selectHotbarSlot(slotIndex, targetPlayerId = null) {
     if (this.appState !== 'PLAYING') return;
@@ -447,9 +523,25 @@ class Game {
   }
 
   /**
-   * Alternância de Slot da Hotbar via Scroll do Mouse (Rodinha do Mouse):
-   * - No Multiplayer Local, o Scroll do Mouse controla exclusivamente o Jogador 2 (P2).
-   * - No Singleplayer, controla o personagem ativo.
+   * Gira o slot de inventário de um jogador específico via tecla remapeável de Inventário (Config.Controls.P1_Inventory / P2_Inventory)
+   */
+  cyclePlayerHotbarSlot(playerId, direction = 1) {
+    if (this.appState !== 'PLAYING') return;
+
+    const player =
+      this.gameMode === 'singleplayer'
+        ? this.getHudFocusPlayer()
+        : playerId === 2
+          ? this.p2
+          : this.p1;
+
+    const len = player.inventory.length;
+    player.selectedSlot = (player.selectedSlot + direction + len) % len;
+    this.ui.renderHotbar();
+  }
+
+  /**
+   * Alternância de Slot da Hotbar via Scroll do Mouse
    */
   cycleHotbarSlot(direction) {
     if (this.appState !== 'PLAYING') return;
@@ -463,18 +555,12 @@ class Game {
     this.ui.renderHotbar();
   }
 
-  /**
-   * Verifica se pelo menos um personagem está dentro da Zona de Extração / Porta da Van
-   */
   isAnyPlayerInTransitionZone() {
     const zone = this.currentMap.transitionZone;
     if (!zone) return false;
     return this.p1.isTouchingZone(zone) || this.p2.isTouchingZone(zone);
   }
 
-  /**
-   * Retorna a Estação Interativa da Safe Room (Lojinha ou Mesa de Craft) caso algum jogador esteja encostando nela
-   */
   getTouchedSafeRoomStation() {
     const stations = this.currentMap.interactiveStations;
     if (!stations || !stations.length) return null;
@@ -487,11 +573,6 @@ class Game {
     return null;
   }
 
-  /**
-   * Calcula o ponto-alvo da câmera conforme o modo de jogo:
-   * - Singleplayer: segue o personagem ativo
-   * - Multiplayer Local: ponto médio entre P1 e P2
-   */
   _getCameraTargetPoint() {
     if (this.gameMode === 'singleplayer') {
       const active = this.players[this.activePlayerIndex];
@@ -504,15 +585,20 @@ class Game {
   }
 
   /**
-   * Loop Principal do Jogo
+   * Loop Principal do Jogo (requestAnimationFrame)
    */
   _gameLoop(timestamp) {
     const dt = Math.min(0.05, (timestamp - this.lastTimestamp) / 1000);
     this.lastTimestamp = timestamp;
     this.elapsedTime += dt;
 
+    // 1. Leitura nativa de Joysticks via navigator.getGamepads() dentro do requestAnimationFrame (Sprint 3)
+    this.input.pollGamepads(this.gameMode);
+
     if (this.appState === 'PLAYING') {
       this._updateGameplay(dt);
+    } else if (this.ui.isSettingsModalOpen() && this.ui.activeSettingsTab === 'controls') {
+      this.ui.updateGamepadStatusBanner();
     }
 
     this._renderScene();
@@ -521,26 +607,25 @@ class Game {
   }
 
   _updateGameplay(dt) {
-    // 1. Movimentação dos Personagens conforme o Modo Selecionado
+    // 1. Movimentação dos Personagens consumindo o Dicionário Global (Config.Controls) + Gamepad API
     if (this.gameMode === 'singleplayer') {
-      const wasd = this.input.getWASDVector();
+      const moveVec = this.input.getP1Vector();
       const activePlayer = this.players[this.activePlayerIndex];
       const inactivePlayer = this.players[this.activePlayerIndex === 0 ? 1 : 0];
 
-      activePlayer.update(dt, wasd, this.currentMap, null);
+      activePlayer.update(dt, moveVec, this.currentMap, null);
       inactivePlayer.update(dt, { dx: 0, dy: 0 }, this.currentMap, null);
 
       const camTarget = this._getCameraTargetPoint();
       this.camera.update(dt, camTarget.x, camTarget.y, this.currentMap, null);
     } else {
-      // Multiplayer Local: P1 em WASD, P2 nas Setas Direcionais + Trava de Câmera/Viewport (Clamp)
-      const wasd = this.input.getWASDVector();
-      const arrows = this.input.getArrowsVector();
+      const p1Vec = this.input.getP1Vector();
+      const p2Vec = this.input.getP2Vector();
 
-      this._updateMultiplayerWithViewportClamp(dt, wasd, arrows);
+      this._updateMultiplayerWithViewportClamp(dt, p1Vec, p2Vec);
     }
 
-    // 2. Coleta de Lixo / Sucata pelo chão dos 3 Mapas Grandes (Sprint 2)
+    // 2. Coleta e Persistência Global de Lixo / Sucata nas Coordenadas Fixas (Sprint 3)
     this._checkTrashCollection();
 
     // 3. Cronômetro da Fase (Apenas nos 3 Mapas Grandes; pausado na Safe Room Van)
@@ -549,7 +634,7 @@ class Game {
       this.stageTimeRemaining = Math.max(0, this.stageTimeRemaining - dt);
       if (this.stageTimeRemaining <= 0) {
         this.restartCurrentStage();
-        this.ui.showToast('Tempo esgotado! Fase reiniciada automaticamente.');
+        this.ui.showToast('Tempo esgotado! Fase reiniciada (Lixos coletados permanecem salvos).');
         return;
       }
     }
@@ -577,27 +662,18 @@ class Game {
     this.ui.updateHUD();
   }
 
-  /**
-   * Atualiza a movimentação de P1 e P2 no Multiplayer Local aplicando o Clamp de Viewport:
-   * Se um personagem tentar se afastar além dos limites visíveis da câmera (Viewport),
-   * sua movimentação naquela direção é bloqueada para que nenhum jogador saia da tela.
-   */
-  _updateMultiplayerWithViewportClamp(dt, wasd, arrows) {
+  _updateMultiplayerWithViewportClamp(dt, p1Vec, p2Vec) {
     const map = this.currentMap;
-    const pad = this.p1.size / 2 + 4; // Margem interna p/ manter todo o corpo 40x40px dentro da tela
+    const pad = this.p1.size / 2 + 4;
 
-    // Distância máxima que P1 e P2 podem ter entre si para caberem simultaneamente no Viewport
     const maxSpanX = Math.max(80, Math.min(map.width, this.camera.viewportWidth) - pad * 2);
     const maxSpanY = Math.max(80, Math.min(map.height, this.camera.viewportHeight) - pad * 2);
 
-    // Se ambos estiverem caminhando na mesma direção nos extremos da tela,
-    // atualiza primeiro o jogador que está diminuindo a distância relativa
-    const p1InwardX = (this.p1.x < this.p2.x && wasd.dx > 0) || (this.p1.x > this.p2.x && wasd.dx < 0);
-    const p2InwardX = (this.p2.x < this.p1.x && arrows.dx > 0) || (this.p2.x > this.p1.x && arrows.dx < 0);
+    const p1InwardX = (this.p1.x < this.p2.x && p1Vec.dx > 0) || (this.p1.x > this.p2.x && p1Vec.dx < 0);
+    const p2InwardX = (this.p2.x < this.p1.x && p2Vec.dx > 0) || (this.p2.x > this.p1.x && p2Vec.dx < 0);
 
     const buildClampFor = (otherPlayer) => {
       const viewBounds = this.camera.getViewportBounds(map);
-      // Se os dois jogadores não estão caminhando juntos naquela direção, trava também na borda atual da câmera
       return {
         minX: Math.max(
           otherPlayer.x - maxSpanX,
@@ -619,18 +695,16 @@ class Game {
     };
 
     if (p2InwardX && !p1InwardX) {
-      this.p2.update(dt, arrows, map, buildClampFor(this.p1));
-      this.p1.update(dt, wasd, map, buildClampFor(this.p2));
+      this.p2.update(dt, p2Vec, map, buildClampFor(this.p1));
+      this.p1.update(dt, p1Vec, map, buildClampFor(this.p2));
     } else {
-      this.p1.update(dt, wasd, map, buildClampFor(this.p2));
-      this.p2.update(dt, arrows, map, buildClampFor(this.p1));
+      this.p1.update(dt, p1Vec, map, buildClampFor(this.p2));
+      this.p2.update(dt, p2Vec, map, buildClampFor(this.p1));
     }
 
-    // Atualiza a câmera no ponto médio garantindo que enquadre ambos
     const camTarget = this._getCameraTargetPoint();
     this.camera.update(dt, camTarget.x, camTarget.y, map, this.players);
 
-    // Garantia estrita pós-câmera: nenhum personagem pode ultrapassar os limites visíveis do Viewport
     const finalBounds = this.camera.getViewportBounds(map);
     for (const player of this.players) {
       if (player.x < finalBounds.minX + pad) {
@@ -652,8 +726,8 @@ class Game {
   }
 
   /**
-   * Verifica se algum jogador passou por cima ou encostou em um objeto "Lixo",
-   * removendo-o do mapa e incrementando o contador global de Sucata/Lixo Coletado.
+   * Verifica se algum jogador encostou em um objeto "Lixo",
+   * registrando seu ID único no Estado Global (window.collectedTrashIds) para que nunca reapareça.
    */
   _checkTrashCollection() {
     if (!this.trashItems || this.trashItems.length === 0) return;
@@ -667,13 +741,17 @@ class Game {
 
       if (collectedByP1 || collectedByP2) {
         this.trashItems.splice(i, 1);
-        window.scrapCollected = (window.scrapCollected || 0) + 1;
+        window.GlobalState.markTrashCollected(trash.id);
+
+        console.log(
+          `♻️ [PERSISTÊNCIA DE LIXO] Item "${trash.id}" (${trash.typeInfo.name}) coletado em (${trash.x}, ${trash.y}). Total Global Salvo: ${window.scrapCollected}`
+        );
 
         this.floatingTexts.push(
           new window.FloatingText(
             trash.x,
             trash.y - 18,
-            `+1 ${trash.typeInfo.name} [Sucata: ${window.scrapCollected}]`,
+            `+1 ${trash.typeInfo.name} [Salvo: ${window.scrapCollected}]`,
             '#bef264',
             1.15
           )
@@ -682,15 +760,11 @@ class Game {
     }
   }
 
-  /**
-   * Renderiza todo o Mundo 2D Top-Down (Grid, Zonas, Lixo, Estações da Van, Obstáculos, Personagens, Bússola e Minimapa)
-   */
   _renderScene() {
     const ctx = this.ctx;
     const map = this.currentMap;
     const { width: viewW, height: viewH } = this.canvas;
 
-    // Limpa o fundo da tela (caso o mapa seja menor que o viewport, como na Van)
     ctx.fillStyle = '#090d14';
     ctx.fillRect(0, 0, viewW, viewH);
 
@@ -702,13 +776,13 @@ class Game {
     ctx.fillStyle = map.palette.bg;
     ctx.fillRect(0, 0, map.width, map.height);
 
-    // 2. Grid de Referência no Chão (Percepção de Velocidade e Escala)
+    // 2. Grid de Referência no Chão
     this._drawDebugGrid(ctx, map);
 
     // 3. Zonas de Referência / Trilhas no Chão
     this._drawFloorZones(ctx, map);
 
-    // 4. Áreas Demarcadas das Estações da Safe Room (Lojinha e Mesa de Craft - Sprint 2)
+    // 4. Áreas Demarcadas das Estações da Safe Room (Lojinha e Mesa de Craft)
     this._drawSafeRoomStationsZones(ctx, map);
 
     // 5. Marcadores de Spawn P1 e P2
@@ -717,18 +791,18 @@ class Game {
     // 6. Zona de Extração / Porta da Van
     this._drawTransitionZone(ctx, map);
 
-    // 7. Entidades Coletáveis de "Lixo / Sucata" no Chão (Sprint 2)
+    // 7. Entidades Coletáveis de "Lixo / Sucata" nas Posições Fixas
     this._drawTrashItems(ctx);
 
     // 8. Caixas de Colisão Visíveis para Paredes, Estruturas e Estações da Van
     this._drawObstacles(ctx, map);
 
-    // 9. Linha de Ponto Médio e Moldura de Limite da Câmera (no modo Multiplayer Local)
+    // 9. Linha de Ponto Médio no Multiplayer Local
     if (this.gameMode === 'multiplayer') {
       this._drawMultiplayerMidpointDebug(ctx);
     }
 
-    // 10. Personagens 1 e 2 (Ordenados por Y para profundidade Top-Down estilo Stardew Valley)
+    // 10. Personagens 1 e 2 (Ordenados por Y + Cone de Colisão de Ataque)
     const sortedPlayers = [...this.players].sort((a, b) => a.y - b.y);
     for (const player of sortedPlayers) {
       const isControlled =
@@ -737,10 +811,10 @@ class Game {
       player.draw(ctx, isControlled, this.gameMode, this.elapsedTime);
     }
 
-    // 11. Balão/Texto Flutuante de Interação nas Estações da Safe Room (Loja / Craft)
+    // 11. Balão/Texto Flutuante de Interação nas Estações da Safe Room
     this._drawSafeRoomStationFloatingNotice(ctx, map);
 
-    // 12. Textos Flutuantes de Debug (-10 HP, +1 Lixo, etc.)
+    // 12. Textos Flutuantes de Debug
     for (const ft of this.floatingTexts) {
       ft.draw(ctx);
     }
@@ -758,13 +832,11 @@ class Game {
     const tile = window.GameConfig.TILE_SIZE;
     const major = window.GameConfig.MAJOR_GRID_STEP;
 
-    // Otimização de Culling: desenha apenas as linhas visíveis na câmera
     const startX = Math.max(0, Math.floor(this.camera.x / tile) * tile);
     const endX = Math.min(map.width, Math.ceil((this.camera.x + this.canvas.width) / tile) * tile);
     const startY = Math.max(0, Math.floor(this.camera.y / tile) * tile);
     const endY = Math.min(map.height, Math.ceil((this.camera.y + this.canvas.height) / tile) * tile);
 
-    // Grid secundário (64x64px)
     ctx.beginPath();
     ctx.strokeStyle = map.palette.gridMinor;
     ctx.lineWidth = 1;
@@ -778,7 +850,6 @@ class Game {
     }
     ctx.stroke();
 
-    // Grid principal (320x320px) + Coordenadas de Escala
     const majorStartX = Math.max(0, Math.floor(this.camera.x / major) * major);
     const majorStartY = Math.max(0, Math.floor(this.camera.y / major) * major);
 
@@ -795,7 +866,6 @@ class Game {
     }
     ctx.stroke();
 
-    // Labels de Coordenadas nas interseções principais
     ctx.fillStyle = map.palette.coordText;
     ctx.font = '10px Consolas, monospace';
     ctx.textAlign = 'left';
@@ -831,9 +901,6 @@ class Game {
     ctx.restore();
   }
 
-  /**
-   * Desenha as áreas de piso demarcadas para a Lojinha (Shop) e Mesa de Craft (Crafting) na Safe Room
-   */
   _drawSafeRoomStationsZones(ctx, map) {
     if (!map.interactiveStations) return;
 
@@ -850,7 +917,6 @@ class Game {
       ctx.strokeRect(st.x, st.y, st.w, st.h);
       ctx.setLineDash([]);
 
-      // Rótulo de Piso da Estação
       const labelY = st.id === 'shop' ? st.y + st.h - 14 : st.y + 20;
       ctx.fillStyle = st.strokeColor;
       ctx.font = 'bold 11px Consolas, monospace';
@@ -860,9 +926,6 @@ class Game {
     ctx.restore();
   }
 
-  /**
-   * Exibe o texto flutuante no Canvas quando um jogador encosta na Lojinha ou na Mesa de Craft
-   */
   _drawSafeRoomStationFloatingNotice(ctx, map) {
     if (!map.interactiveStations) return;
 
@@ -935,11 +998,9 @@ class Game {
     const pulse = 0.5 + 0.5 * Math.sin(this.elapsedTime * 5);
 
     ctx.save();
-    // Preenchimento da Zona de Transição
     ctx.fillStyle = z.fillColor;
     ctx.fillRect(z.x, z.y, z.w, z.h);
 
-    // Borda Externa + Borda Interna Pulsante
     ctx.strokeStyle = z.strokeColor;
     ctx.lineWidth = 3;
     ctx.strokeRect(z.x, z.y, z.w, z.h);
@@ -952,7 +1013,6 @@ class Game {
     ctx.setLineDash([]);
     ctx.globalAlpha = 1;
 
-    // Textos da Zona de Extração / Porta da Van
     const centerX = z.x + z.w / 2;
     const centerY = z.y + z.h / 2;
 
@@ -965,7 +1025,6 @@ class Game {
     ctx.font = '11px Consolas, monospace';
     ctx.fillText(z.subLabel, centerX, centerY + 8);
 
-    // Barra de progresso se o jogador estiver pisando na zona
     if (this.zoneHoldTimer > 0) {
       const pct = Math.min(1, this.zoneHoldTimer / this.zoneHoldDuration);
       const barW = z.w - 40;
@@ -988,16 +1047,13 @@ class Game {
   _drawObstacles(ctx, map) {
     ctx.save();
     for (const obs of map.obstacles) {
-      // Preenchimento do obstáculo (suporta cor customizada para Lojinha e Mesa de Craft)
       ctx.fillStyle = obs.customFill || map.palette.wallFill;
       ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
 
-      // Caixa de Colisão Visível (Debug Wireframe)
       ctx.strokeStyle = obs.customStroke || map.palette.wallStroke;
       ctx.lineWidth = obs.customStroke ? 2.5 : 2;
       ctx.strokeRect(obs.x, obs.y, obs.w, obs.h);
 
-      // Linhas diagonais internas para evidenciar área bloqueada de colisão
       ctx.beginPath();
       ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
       ctx.lineWidth = 1;
@@ -1007,7 +1063,6 @@ class Game {
       ctx.lineTo(obs.x, obs.y + obs.h);
       ctx.stroke();
 
-      // Nome e dimensões do obstáculo (apenas para obstáculos internos maiores)
       if (obs.w >= 120 && obs.h >= 70) {
         ctx.fillStyle = '#f8fafc';
         ctx.font = 'bold 11px Consolas, monospace';
@@ -1031,7 +1086,6 @@ class Game {
     const midY = (this.p1.y + this.p2.y) / 2;
 
     ctx.save();
-    // Linha tracejada ligando P1 e P2
     ctx.beginPath();
     ctx.setLineDash([6, 6]);
     ctx.strokeStyle = 'rgba(255, 202, 58, 0.45)';
@@ -1041,7 +1095,6 @@ class Game {
     ctx.stroke();
     ctx.setLineDash([]);
 
-    // Mira do Ponto Médio da Câmera
     ctx.strokeStyle = '#ffca3a';
     ctx.lineWidth = 1.5;
     ctx.beginPath();
@@ -1059,10 +1112,6 @@ class Game {
     ctx.restore();
   }
 
-  /**
-   * Desenha uma bússola direcional discreta apontando para a Zona de Extração
-   * quando ela estiver fora ou distante do centro da câmera
-   */
   _drawExtractionCompass(ctx) {
     const zone = this.currentMap.transitionZone;
     if (!zone) return;
@@ -1084,7 +1133,6 @@ class Game {
     ctx.save();
     ctx.translate(compassCenterX, compassCenterY);
 
-    // Caixa da Bússola de Objetivo
     ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
     ctx.strokeStyle = zone.strokeColor || '#4ade80';
     ctx.lineWidth = 1.5;
@@ -1093,7 +1141,6 @@ class Game {
     ctx.fill();
     ctx.stroke();
 
-    // Seta rotacionada apontando para a saída
     ctx.save();
     ctx.translate(-108, 0);
     ctx.rotate(angle);
@@ -1107,7 +1154,6 @@ class Game {
     ctx.fill();
     ctx.restore();
 
-    // Texto de Distância até a Saída / Porta da Van
     ctx.fillStyle = '#f8fafc';
     ctx.font = 'bold 11px Consolas, monospace';
     ctx.textAlign = 'center';
@@ -1118,9 +1164,6 @@ class Game {
     ctx.restore();
   }
 
-  /**
-   * Renderiza um Minimapa de Debug no canto inferior direito para visão global do mapa
-   */
   _drawDebugMinimap(ctx) {
     const map = this.currentMap;
     const maxMiniSize = 150;
@@ -1133,7 +1176,6 @@ class Game {
     const originY = this.canvas.height - miniH - margin;
 
     ctx.save();
-    // Moldura do Minimapa
     ctx.fillStyle = 'rgba(15, 23, 42, 0.88)';
     ctx.strokeStyle = '#38bdf8';
     ctx.lineWidth = 2;
@@ -1147,11 +1189,9 @@ class Game {
 
     ctx.translate(originX, originY);
 
-    // Fundo do mapa reduzido
     ctx.fillStyle = map.palette.bg;
     ctx.fillRect(0, 0, miniW, miniH);
 
-    // Obstáculos no minimapa
     ctx.fillStyle = map.palette.wallStroke;
     ctx.globalAlpha = 0.45;
     for (const obs of map.obstacles) {
@@ -1159,7 +1199,6 @@ class Game {
     }
     ctx.globalAlpha = 1;
 
-    // Pontos de Lixo/Sucata restantes no minimapa
     if (this.trashItems && this.trashItems.length > 0) {
       ctx.fillStyle = '#bef264';
       for (const trash of this.trashItems) {
@@ -1167,14 +1206,12 @@ class Game {
       }
     }
 
-    // Zona de Extração no minimapa
     if (map.transitionZone) {
       const tz = map.transitionZone;
       ctx.fillStyle = '#4ade80';
       ctx.fillRect(tz.x * scale, tz.y * scale, Math.max(6, tz.w * scale), Math.max(6, tz.h * scale));
     }
 
-    // Posição de P1 e P2 no minimapa
     ctx.fillStyle = '#38bdf8';
     ctx.beginPath();
     ctx.arc(this.p1.x * scale, this.p1.y * scale, 4, 0, Math.PI * 2);
@@ -1185,7 +1222,6 @@ class Game {
     ctx.arc(this.p2.x * scale, this.p2.y * scale, 4, 0, Math.PI * 2);
     ctx.fill();
 
-    // Retângulo do Viewport da Câmera
     const camX = Math.max(0, this.camera.x * scale);
     const camY = Math.max(0, this.camera.y * scale);
     const camW = Math.min(miniW - camX, this.canvas.width * scale);
@@ -1198,7 +1234,6 @@ class Game {
   }
 }
 
-// Inicializa o Jogo quando o DOM estiver pronto
 window.addEventListener('DOMContentLoaded', () => {
   window.gameInstance = new Game();
 });

@@ -1,9 +1,10 @@
 /**
  * js/entities.js
- * Entidades do Jogo:
+ * Entidades do Jogo (Sprints 2 & 3):
  * - FloatingText: Textos flutuantes de feedback visual e debug
- * - TrashItem: Entidades coletáveis de "Lixo / Sucata" espalhadas pelos 3 mapas grandes (Sprint 2)
- * - Player: Personagem 1 e Personagem 2 com colisão AABB e Trava de Câmera/Viewport no Multiplayer (Sprint 2)
+ * - TrashItem: Entidades coletáveis de "Lixo / Sucata" em posições fixas (hardcoded) nos 3 mapas (Sprint 3)
+ * - Player: Personagem 1 e Personagem 2 com colisão AABB, Trava de Câmera no Multiplayer e
+ *   Arco/Cone de Colisão Temporário de Ataque/Bater (Sprint 3)
  */
 
 window.FloatingText = class FloatingText {
@@ -38,7 +39,7 @@ window.FloatingText = class FloatingText {
 };
 
 /**
- * Entidade de Coleta: Lixo / Sucata espalhado pelo chão dos Mapas Grandes (Sprint 2)
+ * Entidade de Coleta: Lixo / Sucata em Coordenadas Fixas (Sprint 3)
  */
 window.TrashItem = class TrashItem {
   constructor(config) {
@@ -91,7 +92,6 @@ window.TrashItem = class TrashItem {
 
     const shape = this.typeInfo.shape;
     if (shape === 'gear') {
-      // Sucata Metálica (Octógono/Engrenagem simples)
       ctx.beginPath();
       ctx.arc(0, 0, 9, 0, Math.PI * 2);
       ctx.fill();
@@ -101,7 +101,6 @@ window.TrashItem = class TrashItem {
       ctx.arc(0, 0, 3.5, 0, Math.PI * 2);
       ctx.fill();
     } else if (shape === 'can') {
-      // Lata Amassada
       ctx.beginPath();
       ctx.roundRect(-8, -6, 16, 12, 3);
       ctx.fill();
@@ -115,7 +114,6 @@ window.TrashItem = class TrashItem {
       ctx.lineTo(4, 5);
       ctx.stroke();
     } else if (shape === 'bottle') {
-      // Garrafa / Plástico
       ctx.beginPath();
       ctx.roundRect(-7, -5, 11, 10, 3);
       ctx.fill();
@@ -123,7 +121,6 @@ window.TrashItem = class TrashItem {
       ctx.fillStyle = '#e2e8f0';
       ctx.fillRect(4, -3, 4, 6);
     } else if (shape === 'battery') {
-      // Bateria Descartada
       ctx.beginPath();
       ctx.roundRect(-7, -8, 14, 16, 2);
       ctx.fill();
@@ -131,7 +128,6 @@ window.TrashItem = class TrashItem {
       ctx.fillStyle = '#f8fafc';
       ctx.fillRect(-3, -10, 6, 2);
     } else {
-      // Placa / Eletrônico Quebrado
       ctx.beginPath();
       ctx.moveTo(0, -9);
       ctx.lineTo(9, 0);
@@ -143,7 +139,7 @@ window.TrashItem = class TrashItem {
     }
     ctx.restore();
 
-    // 4. Tag visual discreta identificando como "LIXO"
+    // 4. Tag visual discreta identificando como "LIXO" + coordenada fixa
     ctx.font = 'bold 9px Consolas, monospace';
     ctx.textAlign = 'center';
     ctx.fillStyle = 'rgba(15, 23, 42, 0.82)';
@@ -158,7 +154,7 @@ window.TrashItem = class TrashItem {
 window.Player = class Player {
   constructor(config) {
     this.id = config.id; // 1 ou 2
-    this.name = config.name; // 'Personagem 1' ou 'Personagem 2'
+    this.name = config.name; // 'Jogador 1' ou 'Jogador 2'
     this.role = config.role || 'Operador';
     this.primaryColor = config.primaryColor || '#38bdf8';
     this.secondaryColor = config.secondaryColor || '#0284c7';
@@ -174,7 +170,7 @@ window.Player = class Player {
     this.inventory = config.inventory || [];
     this.selectedSlot = 0;
 
-    // Direção do olhar e velocidade atual (para debug e animação)
+    // Direção do olhar e velocidade atual (para debug, ataque e animação)
     this.facingX = 1;
     this.facingY = 0;
     this.vx = 0;
@@ -182,6 +178,15 @@ window.Player = class Player {
     this.walkCycle = 0;
     this.hitFlashTimer = 0;
     this.clampedByViewport = false;
+
+    // Estado de Ataque / Bater (Placeholder Sprint 3)
+    this.attackTimer = 0;
+    this.attackDuration = window.GameConfig.ATTACK_DURATION || 0.28;
+    this.attackCooldown = 0;
+    this.attackRange = window.GameConfig.ATTACK_RANGE || 76;
+    this.attackArcAngle = window.GameConfig.ATTACK_ARC_ANGLE || Math.PI * 0.52;
+    this.attackAngle = 0;
+    this.attackSourceLabel = '';
   }
 
   setPosition(x, y) {
@@ -190,6 +195,7 @@ window.Player = class Player {
     this.vx = 0;
     this.vy = 0;
     this.clampedByViewport = false;
+    this.attackTimer = 0;
   }
 
   takeDamage(amount) {
@@ -205,6 +211,50 @@ window.Player = class Player {
 
   getEquippedItem() {
     return this.inventory[this.selectedSlot] || null;
+  }
+
+  /**
+   * Aciona o ataque temporário (Arco/Cone de colisão na frente do personagem + log no console)
+   */
+  triggerAttack(sourceLabel = 'Input', gameMode = 'singleplayer') {
+    if (this.attackCooldown > 0) return false;
+
+    this.attackDuration = window.GameConfig.ATTACK_DURATION || 0.28;
+    this.attackRange = window.GameConfig.ATTACK_RANGE || 76;
+    this.attackArcAngle = window.GameConfig.ATTACK_ARC_ANGLE || Math.PI * 0.52;
+
+    this.attackTimer = this.attackDuration;
+    this.attackCooldown = window.GameConfig.ATTACK_COOLDOWN || 0.16;
+    this.attackAngle = Math.atan2(this.facingY, this.facingX);
+    this.attackSourceLabel = sourceLabel;
+
+    const item = this.getEquippedItem();
+    const itemName = item ? item.shortName : 'Desarmado';
+    const deg = Math.round((this.attackAngle * 180) / Math.PI);
+
+    console.log(
+      `⚔️ [ATAQUE / COMBATE] ${this.name} (P${this.id}) executou ATACAR/BATER! | Modo: ${gameMode} | Input: ${sourceLabel} | Item: ${itemName} | Pos: (${Math.round(this.x)}, ${Math.round(this.y)}) | Direção: ${deg}°`
+    );
+
+    return true;
+  }
+
+  /**
+   * Verifica se um ponto (px, py) com raio opcional está dentro do cone de ataque atual
+   */
+  isPointInAttackCone(px, py, targetRadius = 18) {
+    if (this.attackTimer <= 0) return false;
+    const dx = px - this.x;
+    const dy = py - this.y;
+    const dist = Math.hypot(dx, dy);
+    if (dist > this.attackRange + targetRadius) return false;
+
+    const angleToTarget = Math.atan2(dy, dx);
+    let diff = angleToTarget - this.attackAngle;
+    while (diff > Math.PI) diff -= Math.PI * 2;
+    while (diff < -Math.PI) diff += Math.PI * 2;
+
+    return Math.abs(diff) <= this.attackArcAngle / 2 + 0.12;
   }
 
   getBoundingBox(cx = this.x, cy = this.y) {
@@ -225,6 +275,12 @@ window.Player = class Player {
     if (this.hitFlashTimer > 0) {
       this.hitFlashTimer = Math.max(0, this.hitFlashTimer - dt);
     }
+    if (this.attackTimer > 0) {
+      this.attackTimer = Math.max(0, this.attackTimer - dt);
+    }
+    if (this.attackCooldown > 0) {
+      this.attackCooldown = Math.max(0, this.attackCooldown - dt);
+    }
 
     this.clampedByViewport = false;
 
@@ -233,9 +289,14 @@ window.Player = class Player {
     this.vy = dy * this.speed;
 
     if (dx !== 0 || dy !== 0) {
-      this.facingX = dx;
-      this.facingY = dy;
+      const len = Math.hypot(dx, dy) || 1;
+      this.facingX = dx / len;
+      this.facingY = dy / len;
       this.walkCycle += dt * 12;
+      // Atualiza o ângulo do cone se estiver atacando enquanto caminha
+      if (this.attackTimer > 0) {
+        this.attackAngle = Math.atan2(this.facingY, this.facingX);
+      }
     } else {
       this.walkCycle = 0;
     }
@@ -247,7 +308,6 @@ window.Player = class Player {
       let nextX = this.x + this.vx * dt;
       nextX = Math.max(half, Math.min(map.width - half, nextX));
 
-      // Trava de Câmera / Viewport no Multiplayer Local (Eixo X)
       if (viewportClamp) {
         if (dx < 0 && nextX < viewportClamp.minX) {
           nextX = Math.max(this.x, viewportClamp.minX);
@@ -276,7 +336,6 @@ window.Player = class Player {
       let nextY = this.y + this.vy * dt;
       nextY = Math.max(half, Math.min(map.height - half, nextY));
 
-      // Trava de Câmera / Viewport no Multiplayer Local (Eixo Y)
       if (viewportClamp) {
         if (dy < 0 && nextY < viewportClamp.minY) {
           nextY = Math.max(this.y, viewportClamp.minY);
@@ -319,7 +378,73 @@ window.Player = class Player {
   }
 
   /**
-   * Renderiza o personagem no Canvas com estética Top-Down limpa + indicadores de Debug
+   * Renderiza o Arco / Cone de Colisão Temporário de Ataque na frente do personagem (Sprint 3)
+   */
+  _drawAttackCone(ctx) {
+    if (this.attackTimer <= 0) return;
+
+    const progress = 1 - this.attackTimer / this.attackDuration;
+    const alpha = Math.max(0.15, 1 - progress * 0.75);
+    const radius = this.attackRange * (0.88 + 0.12 * Math.sin(progress * Math.PI));
+    const halfArc = this.attackArcAngle / 2;
+    const startAngle = this.attackAngle - halfArc;
+    const endAngle = this.attackAngle + halfArc;
+
+    const fillColor = this.id === 1
+      ? `rgba(56, 189, 248, ${(0.38 * alpha).toFixed(2)})`
+      : `rgba(251, 146, 60, ${(0.42 * alpha).toFixed(2)})`;
+    const strokeColor = this.id === 1 ? '#facc15' : '#f87171';
+
+    ctx.save();
+
+    // 1. Preenchimento do Cone de Colisão
+    ctx.beginPath();
+    ctx.moveTo(this.x, this.y);
+    ctx.arc(this.x, this.y, radius, startAngle, endAngle);
+    ctx.closePath();
+    ctx.fillStyle = fillColor;
+    ctx.fill();
+
+    // 2. Borda Externa Brilhante do Cone
+    ctx.lineWidth = 2.5;
+    ctx.strokeStyle = strokeColor;
+    ctx.stroke();
+
+    // 3. Arco interno tracejado de Debug Hitbox
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, radius * 0.62, startAngle, endAngle);
+    ctx.setLineDash([4, 4]);
+    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.75)';
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // 4. Linha de varredura animada (slash effect dentro do cone)
+    const sweepAngle = startAngle + (endAngle - startAngle) * progress;
+    ctx.beginPath();
+    ctx.moveTo(this.x, this.y);
+    ctx.lineTo(
+      this.x + Math.cos(sweepAngle) * radius,
+      this.y + Math.sin(sweepAngle) * radius
+    );
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = '#ffffff';
+    ctx.stroke();
+
+    // 5. Label de Debug na ponta do cone
+    const tipX = this.x + Math.cos(this.attackAngle) * (radius + 14);
+    const tipY = this.y + Math.sin(this.attackAngle) * (radius + 14);
+    ctx.font = 'bold 10px Consolas, monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#fef08a';
+    ctx.fillText(`⚔️ ATK P${this.id}`, tipX, tipY);
+
+    ctx.restore();
+  }
+
+  /**
+   * Renderiza o personagem no Canvas com estética Top-Down limpa + indicadores de Debug e Cone de Ataque
    */
   draw(ctx, isControlled, gameMode, timeSeconds) {
     const half = this.size / 2;
@@ -327,6 +452,11 @@ window.Player = class Player {
     const bobOffset = isMoving ? Math.sin(this.walkCycle) * 2.5 : 0;
 
     ctx.save();
+
+    // 0. Arco / Cone de Colisão de Ataque (Renderizado na frente do personagem quando ativo)
+    if (this.attackTimer > 0) {
+      this._drawAttackCone(ctx);
+    }
 
     // 1. Aura / Brilho no chão para o personagem atualmente controlado
     if (isControlled) {
@@ -425,6 +555,8 @@ window.Player = class Player {
 
     // 7. Tag do Personagem + Indicador Visual Sobre a Cabeça (Seta Animada no Ativo)
     const labelY = drawY - 30;
+    const C = window.Config.Controls;
+    const fmt = (k) => window.Config.formatKeyCode(k);
 
     if (gameMode === 'singleplayer' && isControlled) {
       const arrowBounce = Math.sin(timeSeconds * 8) * 4;
@@ -442,17 +574,15 @@ window.Player = class Player {
       ctx.fill();
       ctx.stroke();
 
-      // Badge "P1 ATIVO" ou "P2 ATIVO"
       this._drawOverheadTag(ctx, this.x, labelY - 2, `P${this.id} • ATIVO`, '#ffca3a', '#1e1306');
     } else if (gameMode === 'singleplayer' && !isControlled) {
-      this._drawOverheadTag(ctx, this.x, labelY, `P${this.id} [TAB]`, 'rgba(30, 41, 59, 0.85)', '#cbd5e1');
+      this._drawOverheadTag(ctx, this.x, labelY, `P${this.id} [${fmt(C.SwitchPlayer)}]`, 'rgba(30, 41, 59, 0.85)', '#cbd5e1');
     } else {
-      // Multiplayer Local: ambos ativos
       const tagText = this.clampedByViewport
         ? `P${this.id} [LIMITE CÂMERA]`
         : this.id === 1
-          ? 'P1 [WASD]'
-          : 'P2 [SETAS]';
+          ? `P1 [ATK: ${fmt(C.P1_Attack)}]`
+          : `P2 [ATK: ${fmt(C.P2_Attack)}]`;
       const tagBg = this.clampedByViewport ? '#ef4444' : this.primaryColor;
       const tagFg = this.clampedByViewport ? '#ffffff' : '#0f172a';
       this._drawOverheadTag(ctx, this.x, labelY, tagText, tagBg, tagFg);

@@ -1,15 +1,112 @@
 /**
  * js/config.js
  * Configurações globais, constantes de física/câmera, variáveis globais de configurações,
+ * Dicionário Global de Inputs (Config.Controls), estado global de persistência de lixos,
  * inventário de placeholder (5 slots) e definição da Máquina de Estados de Fases.
  */
 
-// Variáveis globais de Configuração e Progresso (Sprint 2)
+// Variáveis globais de Configuração e Progresso (Sprints 2 & 3)
 window.isMuted = false;
 window.friendlyFireEnabled = false;
 window.scrapCollected = 0;
 
+// Estado Global de Persistência de Lixos Coletados (Sprint 3)
+// Armazena os IDs únicos dos lixos já coletados para que nunca reapareçam caso o jogador saia e volte para a fase
+window.collectedTrashIds = new Set();
+
+window.GlobalState = {
+  collectedTrashIds: window.collectedTrashIds,
+  isTrashCollected(trashId) {
+    return window.collectedTrashIds.has(trashId);
+  },
+  markTrashCollected(trashId) {
+    if (!window.collectedTrashIds.has(trashId)) {
+      window.collectedTrashIds.add(trashId);
+      window.scrapCollected = window.collectedTrashIds.size;
+      return true;
+    }
+    return false;
+  },
+  resetAllTrash() {
+    window.collectedTrashIds.clear();
+    window.scrapCollected = 0;
+  }
+};
+
+// Dicionário Padrão de Controles (para restauração rápida se necessário)
+const DEFAULT_CONTROLS = {
+  // Jogador 1 (e Jogador Ativo no Singleplayer)
+  P1_Up: 'KeyW',
+  P1_Down: 'KeyS',
+  P1_Left: 'KeyA',
+  P1_Right: 'KeyD',
+  P1_Attack: 'KeyR',
+  P1_Attack_Mouse: 'MouseRight',
+  P1_Inventory: 'KeyQ',
+  P1_Slot1: 'Digit1',
+  P1_Slot2: 'Digit2',
+  P1_Slot3: 'Digit3',
+  P1_Slot4: 'Digit4',
+  P1_Slot5: 'Digit5',
+
+  // Jogador 2 (Multiplayer Local)
+  P2_Up: 'ArrowUp',
+  P2_Down: 'ArrowDown',
+  P2_Left: 'ArrowLeft',
+  P2_Right: 'ArrowRight',
+  P2_Attack: 'Digit0',
+  P2_Attack_Alt: 'Numpad0',
+  P2_Inventory: 'KeyO',
+
+  // Ações de Sistema / Interação / Debug
+  SwitchPlayer: 'Tab',
+  Interact: 'KeyE',
+  InteractAlt: 'Space',
+  Pause: 'Escape',
+  PauseAlt: 'KeyP',
+  DebugDamage: 'KeyH',
+  DebugHeal: 'KeyJ',
+  DebugNextStage: 'KeyN'
+};
+
 window.GameConfig = {
+  // Dicionário Global de Inputs (Sprint 3: ex. Config.Controls.P1_Up)
+  Controls: { ...DEFAULT_CONTROLS },
+
+  resetDefaultControls() {
+    Object.assign(this.Controls, DEFAULT_CONTROLS);
+  },
+
+  // Utilitário para exibir nomes amigáveis das teclas na UI e HUD
+  formatKeyCode(code) {
+    if (!code) return '---';
+    const map = {
+      ArrowUp: 'Seta ↑',
+      ArrowDown: 'Seta ↓',
+      ArrowLeft: 'Seta ←',
+      ArrowRight: 'Seta →',
+      Space: 'Espaço',
+      Tab: 'Tab',
+      Escape: 'Esc',
+      ShiftLeft: 'Shift Esq',
+      ShiftRight: 'Shift Dir',
+      ControlLeft: 'Ctrl Esq',
+      ControlRight: 'Ctrl Dir',
+      AltLeft: 'Alt Esq',
+      AltRight: 'Alt Dir',
+      Enter: 'Enter',
+      Backspace: 'Backspace',
+      MouseRight: 'Botão Dir. Mouse',
+      MouseLeft: 'Botão Esq. Mouse',
+      MouseMiddle: 'Botão Meio Mouse'
+    };
+    if (map[code]) return map[code];
+    if (code.startsWith('Key')) return code.replace('Key', '');
+    if (code.startsWith('Digit')) return code.replace('Digit', '');
+    if (code.startsWith('Numpad')) return 'Num ' + code.replace('Numpad', '');
+    return code;
+  },
+
   // Configurações de Grid e Escala
   TILE_SIZE: 64,
   MAJOR_GRID_STEP: 320, // A cada 5 tiles (320px), linha de referência forte com coordenadas
@@ -22,11 +119,19 @@ window.GameConfig = {
   PLAYER_SIZE: 40,   // hitbox quadrada 40x40px
   PLAYER_MAX_HP: 100,
 
+  // Configurações de Ataque Placeholder (Sprint 3)
+  ATTACK_DURATION: 0.28,            // segundos que o arco/cone fica visível
+  ATTACK_COOLDOWN: 0.16,            // tempo mínimo entre ataques
+  ATTACK_RANGE: 76,                 // raio do cone de colisão em pixels
+  ATTACK_ARC_ANGLE: Math.PI * 0.52, // abertura angular do cone (~93 graus)
+
+  // Configurações de Gamepad (Sprint 3)
+  GAMEPAD_DEADZONE: 0.22,
+
   // Suavização da câmera (Lerp factor)
   CAMERA_LERP: 7.5,
 
-  // Configurações de Coleta de Lixo / Sucata (Sprint 2)
-  TRASH_COUNT_PER_MAP: 28,
+  // Configurações de Coleta de Lixo / Sucata (Sprints 2 & 3)
   TRASH_SIZE: 26,
   TRASH_TYPES: [
     { id: 'scrap_metal', name: 'Sucata Metálica', shortLabel: 'LIXO: SUCATA', color: '#94a3b8', stroke: '#e2e8f0', shape: 'gear' },
@@ -179,3 +284,6 @@ window.GameConfig = {
     ];
   }
 };
+
+// Alias global Config -> GameConfig para acesso direto via Config.Controls.P1_Up
+window.Config = window.GameConfig;
