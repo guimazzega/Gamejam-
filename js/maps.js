@@ -1,7 +1,8 @@
 /**
  * js/maps.js
- * Definições dos 3 Mapas Grandes (2500x2500px) e da Safe Room (A Van).
+ * Definições dos 3 Mapas Grandes (2500x2500px) e da Safe Room Expandida (A Van).
  * Inclui paleta de cores de debug, obstáculos com caixas de colisão visíveis,
+ * estações interativas de placeholder (Lojinha e Mesa de Craft),
  * pontos de Spawn para P1/P2 e Zonas de Extração / Transição.
  */
 
@@ -12,7 +13,7 @@ window.GameMaps = {
   map1: {
     id: 'map1',
     name: 'MAPA 1: ARREDORES FLORESTAIS [SETOR ALPHA]',
-    subtitle: 'Dimensões: 2500x2500px • Siga a trilha até a Zona de Extração',
+    subtitle: 'Dimensões: 2500x2500px • Colete Lixo/Sucata e siga até a Zona de Extração',
     width: 2500,
     height: 2500,
     isSafeRoom: false,
@@ -77,14 +78,14 @@ window.GameMaps = {
   },
 
   // =========================================================================
-  // SAFE ROOM: A VAN (1100 x 720 px)
+  // SAFE ROOM EXPANDIDA: A VAN (1440 x 920 px) - Sprint 2
   // =========================================================================
   van: {
     id: 'van',
-    name: 'SAFE ROOM: A VAN DE OPERAÇÕES',
-    subtitle: 'Zona Segura • Cronômetro Pausado • Prepare-se para a próxima fase',
-    width: 1100,
-    height: 720,
+    name: 'SAFE ROOM: A VAN DE OPERAÇÕES (EXPANDIDA)',
+    subtitle: 'Zona Segura • Cronômetro Pausado • Visite a Lojinha ou a Mesa de Craft',
+    width: 1440,
+    height: 920,
     isSafeRoom: true,
     palette: {
       bg: '#1c1917',
@@ -93,20 +94,51 @@ window.GameMaps = {
       coordText: 'rgba(251, 191, 36, 0.55)',
       wallFill: 'rgba(68, 64, 60, 0.92)',
       wallStroke: '#f59e0b',
-      pathFill: 'rgba(56, 189, 248, 0.14)',
-      pathStroke: 'rgba(56, 189, 248, 0.45)'
+      pathFill: 'rgba(56, 189, 248, 0.12)',
+      pathStroke: 'rgba(56, 189, 248, 0.40)'
     },
-    spawnP1: { x: 280, y: 360 },
-    spawnP2: { x: 350, y: 360 },
+    spawnP1: { x: 260, y: 460 },
+    spawnP2: { x: 340, y: 460 },
     floorZones: [
-      { x: 160, y: 160, w: 780, h: 400, label: 'INTERIOR / COMPARTIMENTO DA VAN TÁTICA' },
-      { x: 220, y: 200, w: 220, h: 100, label: 'ÁREA DE DESCANSO DA EQUIPE' }
+      { x: 160, y: 140, w: 1120, h: 640, label: 'INTERIOR & PÁTIO TÁTICO DA VAN' },
+      { x: 200, y: 370, w: 210, h: 180, label: 'ÁREA DE DESCANSO DA EQUIPE' }
+    ],
+    // Estações de Interação de Placeholder (Sprint 2: Lojinha e Mesa de Craft)
+    interactiveStations: [
+      {
+        id: 'shop',
+        name: 'Lojinha (Shop)',
+        icon: '🛒',
+        // Zona demarcada de interação (ao redor/frente da caixa de colisão da Lojinha)
+        x: 450,
+        y: 155,
+        w: 280,
+        h: 195,
+        zoneLabel: 'ÁREA D/ INTERAÇÃO: LOJINHA (SHOP)',
+        promptText: 'Pressione [E] para Loja (Em desenvolvimento)',
+        strokeColor: '#facc15',
+        fillColor: 'rgba(250, 204, 21, 0.16)'
+      },
+      {
+        id: 'crafting',
+        name: 'Mesa de Craft (Crafting)',
+        icon: '🔨',
+        // Zona demarcada de interação (ao redor/frente da caixa de colisão da Mesa de Craft)
+        x: 450,
+        y: 570,
+        w: 280,
+        h: 195,
+        zoneLabel: 'ÁREA D/ INTERAÇÃO: MESA DE CRAFT (CRAFTING)',
+        promptText: 'Pressione [E] para Crafting (Em desenvolvimento)',
+        strokeColor: '#c084fc',
+        fillColor: 'rgba(192, 132, 252, 0.16)'
+      }
     ],
     // Porta da Van / Seguir Viagem
     transitionZone: {
-      x: 720,
-      y: 260,
-      w: 180,
+      x: 1020,
+      y: 360,
+      w: 200,
       h: 200,
       label: 'PORTA DA VAN / SEGUIR VIAGEM',
       subLabel: 'Encoste ou pressione [E] / [Espaço] para carregar o próximo mapa',
@@ -114,15 +146,39 @@ window.GameMaps = {
       fillColor: 'rgba(56, 189, 248, 0.25)'
     },
     obstacles: [
-      // Paredes do Compartimento da Van
-      { x: 120, y: 120, w: 860, h: 40, label: 'CHASSI NORTE DA VAN' },
-      { x: 120, y: 560, w: 860, h: 40, label: 'CHASSI SUL DA VAN' },
-      { x: 120, y: 160, w: 40, h: 400, label: 'CABINE DO MOTORISTA [COLISÃO]' },
-      { x: 940, y: 160, w: 40, h: 400, label: 'PARACHOQUE TRASEIRO / PORTA' },
+      // Paredes do Compartimento Expandido da Van
+      { x: 120, y: 100, w: 1200, h: 40, label: 'CHASSI NORTE DA VAN' },
+      { x: 120, y: 780, w: 1200, h: 40, label: 'CHASSI SUL DA VAN' },
+      { x: 120, y: 140, w: 40, h: 640, label: 'CABINE DO MOTORISTA [COLISÃO]' },
+      { x: 1280, y: 140, w: 40, h: 640, label: 'PARACHOQUE TRASEIRO / PORTA' },
 
-      // Equipamentos Internos da Van
-      { x: 480, y: 160, w: 200, h: 75, label: 'BANCADA DE ARMAS [PLACEHOLDER]' },
-      { x: 480, y: 485, w: 200, h: 75, label: 'ESTAÇÃO MÉDICA & RÁDIO [DEBUG]' }
+      // 1. Caixa de Colisão da Estação: Lojinha (Shop)
+      {
+        x: 480,
+        y: 170,
+        w: 220,
+        h: 95,
+        label: '🛒 LOJINHA (SHOP)',
+        subTag: '[CAIXA DE COLISÃO • PLACEHOLDER]',
+        customFill: 'rgba(161, 98, 7, 0.88)',
+        customStroke: '#facc15'
+      },
+
+      // 2. Caixa de Colisão da Estação: Mesa de Craft (Crafting)
+      {
+        x: 480,
+        y: 655,
+        w: 220,
+        h: 95,
+        label: '🔨 MESA DE CRAFT (CRAFTING)',
+        subTag: '[CAIXA DE COLISÃO • PLACEHOLDER]',
+        customFill: 'rgba(88, 28, 135, 0.88)',
+        customStroke: '#c084fc'
+      },
+
+      // Equipamentos Auxiliares da Van
+      { x: 800, y: 170, w: 180, h: 80, label: 'RÁDIO & TELEMETRIA [DEBUG]' },
+      { x: 800, y: 670, w: 180, h: 80, label: 'GERADOR AUXILIAR [DEBUG]' }
     ]
   },
 
@@ -132,7 +188,7 @@ window.GameMaps = {
   map2: {
     id: 'map2',
     name: 'MAPA 2: DISTRITO INDUSTRIAL [SETOR BETA]',
-    subtitle: 'Dimensões: 2500x2500px • Atravesse o pátio de containers até a Extração',
+    subtitle: 'Dimensões: 2500x2500px • Colete Lixo/Sucata e atravesse o pátio até a Extração',
     width: 2500,
     height: 2500,
     isSafeRoom: false,
@@ -241,4 +297,3 @@ window.GameMaps = {
     ]
   }
 };
-

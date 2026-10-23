@@ -1,8 +1,9 @@
 /**
  * js/main.js
- * Motor Principal do Protótipo 2D Top-Down (Debug / Developer Mode).
- * Coordena o Game Loop, Máquina de Estados de Fases, Renderização de Debug no Canvas,
- * Sistema de Câmera, Alternância de Personagens e Atalhos de Desenvolvedor.
+ * Motor Principal do Protótipo 2D Top-Down (Sprint 2 • Debug / Developer Mode).
+ * Coordena o Game Loop, Máquina de Estados de Fases, Trava de Câmera/Viewport no Multiplayer,
+ * Geração e Coleta de Lixo/Sucata nos 3 Mapas Grandes, Estações da Safe Room (Loja e Craft),
+ * Renderização de Debug no Canvas e Atalhos de Desenvolvedor.
  */
 
 class Game {
@@ -27,10 +28,10 @@ class Game {
     this.zoneHoldTimer = 0;
     this.zoneHoldDuration = 1.15; // Segundos encostando para ativar automaticamente
 
-    // Instancia os 2 Personagens em cena
+    // Instancia os 2 Personagens em cena (5 slots de inventário cada)
     this.p1 = new window.Player({
       id: 1,
-      name: 'Personagem 1',
+      name: 'Jogador 1',
       role: 'Batedor',
       primaryColor: '#38bdf8',
       secondaryColor: '#0284c7',
@@ -39,7 +40,7 @@ class Game {
 
     this.p2 = new window.Player({
       id: 2,
-      name: 'Personagem 2',
+      name: 'Jogador 2',
       role: 'Suporte',
       primaryColor: '#fb923c',
       secondaryColor: '#ea580c',
@@ -49,7 +50,10 @@ class Game {
     this.players = [this.p1, this.p2];
     this.activePlayerIndex = 0; // Usado no Singleplayer (0 = P1, 1 = P2)
 
-    // Lista de textos flutuantes de debug (ex: "-10 HP")
+    // Entidades de Lixo / Sucata espalhadas pelo mapa atual (Sprint 2)
+    this.trashItems = [];
+
+    // Lista de textos flutuantes de debug (ex: "-10 HP", "+1 Lixo", avisos de estação)
     this.floatingTexts = [];
 
     // Câmera 2D
@@ -63,7 +67,7 @@ class Game {
       onDebugDamage: () => this.handleDebugDamage(),
       onDebugHeal: () => this.handleDebugHeal(),
       onDebugNextStage: () => this.handleDebugNextStage(),
-      onSelectSlot: (slotIndex) => this.selectHotbarSlot(slotIndex),
+      onSelectSlot: (slotIndex) => this.selectHotbarSlot(slotIndex, null),
       onCycleSlot: (direction) => this.cycleHotbarSlot(direction)
     });
 
@@ -74,6 +78,9 @@ class Game {
     this._onResize = this._onResize.bind(this);
     window.addEventListener('resize', this._onResize);
     this._onResize();
+
+    // Inicializa entidades de lixo no mapa inicial para preview de fundo
+    this._spawnRandomTrashForMap(this.currentMap);
 
     // Controle de Tempo do Loop
     this.lastTimestamp = performance.now();
@@ -109,12 +116,13 @@ class Game {
     this.p2.selectedSlot = 0;
     this.activePlayerIndex = 0;
     this.floatingTexts = [];
+    window.scrapCollected = 0;
 
     this.loadStageByFlowIndex(0);
     this.appState = 'PLAYING';
     this.ui.showGameplayHUD();
     this.ui.showToast(
-      `Partida iniciada em modo ${this.gameMode === 'singleplayer' ? 'Singleplayer (Tab alterna)' : 'Multiplayer Local'}!`
+      `Partida iniciada em modo ${this.gameMode === 'singleplayer' ? 'Singleplayer (Tab alterna)' : 'Multiplayer Local (HUD Separada + Clamp de Câmera)'}!`
     );
   }
 
@@ -133,9 +141,12 @@ class Game {
     this.p1.setPosition(this.currentMap.spawnP1.x, this.currentMap.spawnP1.y);
     this.p2.setPosition(this.currentMap.spawnP2.x, this.currentMap.spawnP2.y);
 
-    // Reseta o Timer da Fase (180s = 03:00) ao entrar em um mapa grande
+    // Reseta o Timer da Fase (180s = 03:00) e gera Lixo/Sucata ao entrar em um dos 3 mapas grandes
     if (!stageMeta.isSafeRoom) {
       this.stageTimeRemaining = window.GameConfig.STAGE_DURATION_SECONDS;
+      this._spawnRandomTrashForMap(this.currentMap);
+    } else {
+      this.trashItems = [];
     }
 
     this.zoneHoldTimer = 0;
@@ -149,6 +160,99 @@ class Game {
   }
 
   /**
+   * Gera entidades de "Lixo / Sucata" espalhadas aleatoriamente pelo chão dos 3 mapas grandes,
+   * evitando obstáculos, zonas de extração e posição exata de spawn.
+   */
+  _spawnRandomTrashForMap(map) {
+    this.trashItems = [];
+    if (!map || map.isSafeRoom) return;
+
+    const count = window.GameConfig.TRASH_COUNT_PER_MAP || 28;
+    const trashSize = window.GameConfig.TRASH_SIZE || 26;
+    const types = window.GameConfig.TRASH_TYPES;
+    const margin = 90;
+
+    let attempts = 0;
+    const maxAttempts = count * 30;
+
+    while (this.trashItems.length < count && attempts < maxAttempts) {
+      attempts++;
+
+      // Garante que os primeiros 5 itens apareçam relativamente próximos ao início da fase
+      // para facilitar o teste imediato, e o restante espalhado por todo o mapa 2500x2500
+      let rx;
+      let ry;
+      if (this.trashItems.length < 5) {
+        const angle = Math.random() * Math.PI * 2;
+        const dist = 130 + Math.random() * 380;
+        rx = Math.round(map.spawnP1.x + Math.cos(angle) * dist);
+        ry = Math.round(map.spawnP1.y + Math.sin(angle) * dist);
+        rx = Math.max(margin, Math.min(map.width - margin, rx));
+        ry = Math.max(margin, Math.min(map.height - margin, ry));
+      } else {
+        rx = Math.round(margin + Math.random() * (map.width - margin * 2));
+        ry = Math.round(margin + Math.random() * (map.height - margin * 2));
+      }
+
+      if (!this._isValidTrashPosition(rx, ry, trashSize, map)) {
+        continue;
+      }
+
+      const typeInfo = types[this.trashItems.length % types.length];
+      this.trashItems.push(
+        new window.TrashItem({
+          id: `trash_${map.id}_${this.trashItems.length}`,
+          x: rx,
+          y: ry,
+          typeInfo,
+          rotation: (Math.random() - 0.5) * 0.6,
+          bobPhase: Math.random() * Math.PI * 2
+        })
+      );
+    }
+  }
+
+  _isValidTrashPosition(x, y, size, map) {
+    const pad = 16;
+    const box = {
+      x: x - size / 2 - pad,
+      y: y - size / 2 - pad,
+      w: size + pad * 2,
+      h: size + pad * 2
+    };
+
+    // Não gerar exatamente em cima do Spawn P1 ou P2
+    if (Math.hypot(x - map.spawnP1.x, y - map.spawnP1.y) < 95) return false;
+    if (Math.hypot(x - map.spawnP2.x, y - map.spawnP2.y) < 95) return false;
+
+    // Não gerar dentro da Zona de Extração
+    if (map.transitionZone && this._boxesOverlap(box, map.transitionZone)) {
+      return false;
+    }
+
+    // Não gerar dentro de obstáculos/paredes
+    for (const obs of map.obstacles) {
+      if (this._boxesOverlap(box, obs)) return false;
+    }
+
+    // Manter distância mínima entre itens de lixo
+    for (const item of this.trashItems) {
+      if (Math.hypot(x - item.x, y - item.y) < 75) return false;
+    }
+
+    return true;
+  }
+
+  _boxesOverlap(a, b) {
+    return (
+      a.x < b.x + b.w &&
+      a.x + a.w > b.x &&
+      a.y < b.y + b.h &&
+      a.y + a.h > b.y
+    );
+  }
+
+  /**
    * Reinicia a fase atual (via Menu de Pausa ou quando o timer zera)
    */
   restartCurrentStage() {
@@ -156,7 +260,7 @@ class Game {
     this.p2.hp = this.p2.maxHp;
     this.loadStageByFlowIndex(this.stageFlowIndex);
     this.togglePause(false);
-    this.ui.showToast('Fase atual reiniciada! Posições e Timer restaurados.');
+    this.ui.showToast('Fase atual reiniciada! Posições, Lixo do Mapa e Timer restaurados.');
   }
 
   /**
@@ -175,7 +279,7 @@ class Game {
     if (this.appState !== 'PLAYING') return;
 
     if (this.gameMode !== 'singleplayer') {
-      this.ui.showToast('Modo Multiplayer Local ativo: ambos os personagens já estão liberados!');
+      this.ui.showToast('Modo Multiplayer Local ativo: ambos os jogadores já estão em controle simultâneo!');
       return;
     }
 
@@ -195,9 +299,13 @@ class Game {
    * Pausa / Despausa a partida (Atalho: Esc ou P)
    */
   handlePauseShortcut() {
+    // Se o modal de Configurações estiver aberto, fecha-o primeiro
+    if (this.ui.isSettingsModalOpen()) {
+      this.ui.closeSettingsModal();
+      return;
+    }
+
     if (this.appState === 'MAIN_MENU') {
-      // Se o modal de configurações estiver aberto, fecha-o com Esc
-      this.ui.settingsModalOverlay.classList.add('hidden');
       return;
     }
 
@@ -221,18 +329,31 @@ class Game {
   }
 
   /**
-   * Interação com Zona de Extração ou Porta da Van (Teclas E ou Espaço)
+   * Interação com Estações da Safe Room (Lojinha / Crafting) ou Zona de Extração / Porta da Van (Teclas E ou Espaço)
    */
   handleInteractShortcut() {
     if (this.appState !== 'PLAYING') return;
 
+    // 1. Verifica se algum jogador está encostando na Lojinha ou na Mesa de Craft da Safe Room
+    const touchedStation = this.getTouchedSafeRoomStation();
+    if (touchedStation) {
+      const centerX = touchedStation.x + touchedStation.w / 2;
+      const centerY = touchedStation.y + 10;
+      this.floatingTexts.push(
+        new window.FloatingText(centerX, centerY, touchedStation.promptText, touchedStation.strokeColor, 1.4)
+      );
+      this.ui.showToast(`${touchedStation.icon} ${touchedStation.promptText}`, 2000);
+      return;
+    }
+
+    // 2. Verifica se está na Zona de Extração / Porta da Van
     if (this.isAnyPlayerInTransitionZone()) {
       this.advanceToNextStage('Interação na Zona de Saída');
     } else {
       const zoneName = this.getCurrentStageMeta().isSafeRoom
-        ? 'a Porta da Van'
+        ? 'a Porta da Van (ou das estações de Loja/Craft)'
         : 'a Zona de Extração';
-      this.ui.showToast(`Aproxime-se d${zoneName} para avançar de mapa!`, 1600);
+      this.ui.showToast(`Aproxime-se d${zoneName} para interagir!`, 1600);
     }
   }
 
@@ -305,11 +426,20 @@ class Game {
   }
 
   /**
-   * Seleção de Slot da Hotbar (Teclas 1-6 ou Clique)
+   * Seleção de Slot da Hotbar:
+   * - No Multiplayer Local, as teclas numéricas (1 a 5) controlam exclusivamente o Jogador 1 (P1).
+   * - Cliques de mouse em cada hotbar selecionam o slot do respectivo jogador.
    */
-  selectHotbarSlot(slotIndex) {
+  selectHotbarSlot(slotIndex, targetPlayerId = null) {
     if (this.appState !== 'PLAYING') return;
-    const player = this.getHudFocusPlayer();
+
+    let player;
+    if (this.gameMode === 'multiplayer') {
+      player = targetPlayerId === 2 ? this.p2 : this.p1;
+    } else {
+      player = this.getHudFocusPlayer();
+    }
+
     if (slotIndex < 0 || slotIndex >= player.inventory.length) return;
 
     player.selectedSlot = slotIndex;
@@ -317,11 +447,17 @@ class Game {
   }
 
   /**
-   * Alternância de Slot da Hotbar via Scroll do Mouse
+   * Alternância de Slot da Hotbar via Scroll do Mouse (Rodinha do Mouse):
+   * - No Multiplayer Local, o Scroll do Mouse controla exclusivamente o Jogador 2 (P2).
+   * - No Singleplayer, controla o personagem ativo.
    */
   cycleHotbarSlot(direction) {
     if (this.appState !== 'PLAYING') return;
-    const player = this.getHudFocusPlayer();
+
+    const player = this.gameMode === 'multiplayer'
+      ? this.p2
+      : this.getHudFocusPlayer();
+
     const len = player.inventory.length;
     player.selectedSlot = (player.selectedSlot + direction + len) % len;
     this.ui.renderHotbar();
@@ -334,6 +470,21 @@ class Game {
     const zone = this.currentMap.transitionZone;
     if (!zone) return false;
     return this.p1.isTouchingZone(zone) || this.p2.isTouchingZone(zone);
+  }
+
+  /**
+   * Retorna a Estação Interativa da Safe Room (Lojinha ou Mesa de Craft) caso algum jogador esteja encostando nela
+   */
+  getTouchedSafeRoomStation() {
+    const stations = this.currentMap.interactiveStations;
+    if (!stations || !stations.length) return null;
+
+    for (const st of stations) {
+      if (this.p1.isTouchingZone(st) || this.p2.isTouchingZone(st)) {
+        return st;
+      }
+    }
+    return null;
   }
 
   /**
@@ -376,20 +527,21 @@ class Game {
       const activePlayer = this.players[this.activePlayerIndex];
       const inactivePlayer = this.players[this.activePlayerIndex === 0 ? 1 : 0];
 
-      activePlayer.update(dt, wasd, this.currentMap);
-      inactivePlayer.update(dt, { dx: 0, dy: 0 }, this.currentMap);
+      activePlayer.update(dt, wasd, this.currentMap, null);
+      inactivePlayer.update(dt, { dx: 0, dy: 0 }, this.currentMap, null);
+
+      const camTarget = this._getCameraTargetPoint();
+      this.camera.update(dt, camTarget.x, camTarget.y, this.currentMap, null);
     } else {
-      // Multiplayer Local: Jogador 1 em WASD, Jogador 2 nas Setas Direcionais
+      // Multiplayer Local: P1 em WASD, P2 nas Setas Direcionais + Trava de Câmera/Viewport (Clamp)
       const wasd = this.input.getWASDVector();
       const arrows = this.input.getArrowsVector();
 
-      this.p1.update(dt, wasd, this.currentMap);
-      this.p2.update(dt, arrows, this.currentMap);
+      this._updateMultiplayerWithViewportClamp(dt, wasd, arrows);
     }
 
-    // 2. Atualização Suave da Câmera respeitando os Boundaries do Mapa
-    const camTarget = this._getCameraTargetPoint();
-    this.camera.update(dt, camTarget.x, camTarget.y, this.currentMap);
+    // 2. Coleta de Lixo / Sucata pelo chão dos 3 Mapas Grandes (Sprint 2)
+    this._checkTrashCollection();
 
     // 3. Cronômetro da Fase (Apenas nos 3 Mapas Grandes; pausado na Safe Room Van)
     const stageMeta = this.getCurrentStageMeta();
@@ -426,7 +578,112 @@ class Game {
   }
 
   /**
-   * Renderiza todo o Mundo 2D Top-Down (Grid, Zonas, Obstáculos, Personagens, Bússola e Minimapa Debug)
+   * Atualiza a movimentação de P1 e P2 no Multiplayer Local aplicando o Clamp de Viewport:
+   * Se um personagem tentar se afastar além dos limites visíveis da câmera (Viewport),
+   * sua movimentação naquela direção é bloqueada para que nenhum jogador saia da tela.
+   */
+  _updateMultiplayerWithViewportClamp(dt, wasd, arrows) {
+    const map = this.currentMap;
+    const pad = this.p1.size / 2 + 4; // Margem interna p/ manter todo o corpo 40x40px dentro da tela
+
+    // Distância máxima que P1 e P2 podem ter entre si para caberem simultaneamente no Viewport
+    const maxSpanX = Math.max(80, Math.min(map.width, this.camera.viewportWidth) - pad * 2);
+    const maxSpanY = Math.max(80, Math.min(map.height, this.camera.viewportHeight) - pad * 2);
+
+    // Se ambos estiverem caminhando na mesma direção nos extremos da tela,
+    // atualiza primeiro o jogador que está diminuindo a distância relativa
+    const p1InwardX = (this.p1.x < this.p2.x && wasd.dx > 0) || (this.p1.x > this.p2.x && wasd.dx < 0);
+    const p2InwardX = (this.p2.x < this.p1.x && arrows.dx > 0) || (this.p2.x > this.p1.x && arrows.dx < 0);
+
+    const buildClampFor = (otherPlayer) => {
+      const viewBounds = this.camera.getViewportBounds(map);
+      // Se os dois jogadores não estão caminhando juntos naquela direção, trava também na borda atual da câmera
+      return {
+        minX: Math.max(
+          otherPlayer.x - maxSpanX,
+          map.width > this.camera.viewportWidth ? viewBounds.minX + pad - 12 : pad
+        ),
+        maxX: Math.min(
+          otherPlayer.x + maxSpanX,
+          map.width > this.camera.viewportWidth ? viewBounds.maxX - pad + 12 : map.width - pad
+        ),
+        minY: Math.max(
+          otherPlayer.y - maxSpanY,
+          map.height > this.camera.viewportHeight ? viewBounds.minY + pad - 12 : pad
+        ),
+        maxY: Math.min(
+          otherPlayer.y + maxSpanY,
+          map.height > this.camera.viewportHeight ? viewBounds.maxY - pad + 12 : map.height - pad
+        )
+      };
+    };
+
+    if (p2InwardX && !p1InwardX) {
+      this.p2.update(dt, arrows, map, buildClampFor(this.p1));
+      this.p1.update(dt, wasd, map, buildClampFor(this.p2));
+    } else {
+      this.p1.update(dt, wasd, map, buildClampFor(this.p2));
+      this.p2.update(dt, arrows, map, buildClampFor(this.p1));
+    }
+
+    // Atualiza a câmera no ponto médio garantindo que enquadre ambos
+    const camTarget = this._getCameraTargetPoint();
+    this.camera.update(dt, camTarget.x, camTarget.y, map, this.players);
+
+    // Garantia estrita pós-câmera: nenhum personagem pode ultrapassar os limites visíveis do Viewport
+    const finalBounds = this.camera.getViewportBounds(map);
+    for (const player of this.players) {
+      if (player.x < finalBounds.minX + pad) {
+        player.x = finalBounds.minX + pad;
+        player.clampedByViewport = true;
+      } else if (player.x > finalBounds.maxX - pad) {
+        player.x = finalBounds.maxX - pad;
+        player.clampedByViewport = true;
+      }
+
+      if (player.y < finalBounds.minY + pad) {
+        player.y = finalBounds.minY + pad;
+        player.clampedByViewport = true;
+      } else if (player.y > finalBounds.maxY - pad) {
+        player.y = finalBounds.maxY - pad;
+        player.clampedByViewport = true;
+      }
+    }
+  }
+
+  /**
+   * Verifica se algum jogador passou por cima ou encostou em um objeto "Lixo",
+   * removendo-o do mapa e incrementando o contador global de Sucata/Lixo Coletado.
+   */
+  _checkTrashCollection() {
+    if (!this.trashItems || this.trashItems.length === 0) return;
+
+    for (let i = this.trashItems.length - 1; i >= 0; i--) {
+      const trash = this.trashItems[i];
+      const trashBox = trash.getBoundingBox();
+
+      const collectedByP1 = this.p1.isTouchingZone(trashBox);
+      const collectedByP2 = !collectedByP1 && this.p2.isTouchingZone(trashBox);
+
+      if (collectedByP1 || collectedByP2) {
+        this.trashItems.splice(i, 1);
+        window.scrapCollected = (window.scrapCollected || 0) + 1;
+
+        this.floatingTexts.push(
+          new window.FloatingText(
+            trash.x,
+            trash.y - 18,
+            `+1 ${trash.typeInfo.name} [Sucata: ${window.scrapCollected}]`,
+            '#bef264',
+            1.15
+          )
+        );
+      }
+    }
+  }
+
+  /**
+   * Renderiza todo o Mundo 2D Top-Down (Grid, Zonas, Lixo, Estações da Van, Obstáculos, Personagens, Bússola e Minimapa)
    */
   _renderScene() {
     const ctx = this.ctx;
@@ -451,21 +708,27 @@ class Game {
     // 3. Zonas de Referência / Trilhas no Chão
     this._drawFloorZones(ctx, map);
 
-    // 4. Marcadores de Spawn P1 e P2
+    // 4. Áreas Demarcadas das Estações da Safe Room (Lojinha e Mesa de Craft - Sprint 2)
+    this._drawSafeRoomStationsZones(ctx, map);
+
+    // 5. Marcadores de Spawn P1 e P2
     this._drawSpawnMarkers(ctx, map);
 
-    // 5. Zona de Extração / Porta da Van
+    // 6. Zona de Extração / Porta da Van
     this._drawTransitionZone(ctx, map);
 
-    // 6. Caixas de Colisão Visíveis para Paredes e Obstáculos
+    // 7. Entidades Coletáveis de "Lixo / Sucata" no Chão (Sprint 2)
+    this._drawTrashItems(ctx);
+
+    // 8. Caixas de Colisão Visíveis para Paredes, Estruturas e Estações da Van
     this._drawObstacles(ctx, map);
 
-    // 7. Linha de Ponto Médio da Câmera (no modo Multiplayer Local)
+    // 9. Linha de Ponto Médio e Moldura de Limite da Câmera (no modo Multiplayer Local)
     if (this.gameMode === 'multiplayer') {
       this._drawMultiplayerMidpointDebug(ctx);
     }
 
-    // 8. Personagens 1 e 2 (Ordenados por Y para profundidade Top-Down estilo Stardew Valley)
+    // 10. Personagens 1 e 2 (Ordenados por Y para profundidade Top-Down estilo Stardew Valley)
     const sortedPlayers = [...this.players].sort((a, b) => a.y - b.y);
     for (const player of sortedPlayers) {
       const isControlled =
@@ -474,14 +737,17 @@ class Game {
       player.draw(ctx, isControlled, this.gameMode, this.elapsedTime);
     }
 
-    // 9. Textos Flutuantes de Debug (-10 HP, etc.)
+    // 11. Balão/Texto Flutuante de Interação nas Estações da Safe Room (Loja / Craft)
+    this._drawSafeRoomStationFloatingNotice(ctx, map);
+
+    // 12. Textos Flutuantes de Debug (-10 HP, +1 Lixo, etc.)
     for (const ft of this.floatingTexts) {
       ft.draw(ctx);
     }
 
     ctx.restore();
 
-    // 10. Indicadores de Tela Fixa no Canvas (Bússola de Extração + Minimapa Debug)
+    // 13. Indicadores de Tela Fixa no Canvas (Bússola de Extração + Minimapa Debug)
     if (this.appState === 'PLAYING' || this.appState === 'PAUSED') {
       this._drawExtractionCompass(ctx);
       this._drawDebugMinimap(ctx);
@@ -563,6 +829,79 @@ class Game {
       }
     }
     ctx.restore();
+  }
+
+  /**
+   * Desenha as áreas de piso demarcadas para a Lojinha (Shop) e Mesa de Craft (Crafting) na Safe Room
+   */
+  _drawSafeRoomStationsZones(ctx, map) {
+    if (!map.interactiveStations) return;
+
+    ctx.save();
+    for (const st of map.interactiveStations) {
+      const isTouched = this.p1.isTouchingZone(st) || this.p2.isTouchingZone(st);
+
+      ctx.fillStyle = st.fillColor;
+      ctx.fillRect(st.x, st.y, st.w, st.h);
+
+      ctx.strokeStyle = st.strokeColor;
+      ctx.lineWidth = isTouched ? 3 : 2;
+      ctx.setLineDash([8, 5]);
+      ctx.strokeRect(st.x, st.y, st.w, st.h);
+      ctx.setLineDash([]);
+
+      // Rótulo de Piso da Estação
+      const labelY = st.id === 'shop' ? st.y + st.h - 14 : st.y + 20;
+      ctx.fillStyle = st.strokeColor;
+      ctx.font = 'bold 11px Consolas, monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(st.zoneLabel, st.x + st.w / 2, labelY);
+    }
+    ctx.restore();
+  }
+
+  /**
+   * Exibe o texto flutuante no Canvas quando um jogador encosta na Lojinha ou na Mesa de Craft
+   */
+  _drawSafeRoomStationFloatingNotice(ctx, map) {
+    if (!map.interactiveStations) return;
+
+    const floatOffset = Math.sin(this.elapsedTime * 6) * 4;
+
+    ctx.save();
+    for (const st of map.interactiveStations) {
+      const isTouched = this.p1.isTouchingZone(st) || this.p2.isTouchingZone(st);
+      if (!isTouched) continue;
+
+      const text = st.promptText;
+      ctx.font = 'bold 13px Consolas, monospace';
+      const padX = 14;
+      const boxW = ctx.measureText(text).width + padX * 2;
+      const boxH = 30;
+      const centerX = st.x + st.w / 2;
+      const centerY = (st.id === 'shop' ? st.y + st.h + 26 : st.y - 26) + floatOffset;
+
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.94)';
+      ctx.strokeStyle = st.strokeColor;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.roundRect(centerX - boxW / 2, centerY - boxH / 2, boxW, boxH, 8);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = '#fef08a';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(text, centerX, centerY);
+    }
+    ctx.restore();
+  }
+
+  _drawTrashItems(ctx) {
+    if (!this.trashItems || this.trashItems.length === 0) return;
+    for (const trash of this.trashItems) {
+      trash.draw(ctx, this.elapsedTime);
+    }
   }
 
   _drawSpawnMarkers(ctx, map) {
@@ -649,13 +988,13 @@ class Game {
   _drawObstacles(ctx, map) {
     ctx.save();
     for (const obs of map.obstacles) {
-      // Preenchimento do obstáculo
-      ctx.fillStyle = map.palette.wallFill;
+      // Preenchimento do obstáculo (suporta cor customizada para Lojinha e Mesa de Craft)
+      ctx.fillStyle = obs.customFill || map.palette.wallFill;
       ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
 
       // Caixa de Colisão Visível (Debug Wireframe)
-      ctx.strokeStyle = map.palette.wallStroke;
-      ctx.lineWidth = 2;
+      ctx.strokeStyle = obs.customStroke || map.palette.wallStroke;
+      ctx.lineWidth = obs.customStroke ? 2.5 : 2;
       ctx.strokeRect(obs.x, obs.y, obs.w, obs.h);
 
       // Linhas diagonais internas para evidenciar área bloqueada de colisão
@@ -675,9 +1014,13 @@ class Game {
         ctx.textAlign = 'center';
         ctx.fillText(obs.label || 'COLISÃO', obs.x + obs.w / 2, obs.y + obs.h / 2 - 4);
 
-        ctx.fillStyle = 'rgba(226, 232, 240, 0.65)';
+        ctx.fillStyle = obs.customStroke || 'rgba(226, 232, 240, 0.65)';
         ctx.font = '10px Consolas, monospace';
-        ctx.fillText(`[${obs.w}x${obs.h}px]`, obs.x + obs.w / 2, obs.y + obs.h / 2 + 12);
+        ctx.fillText(
+          obs.subTag || `[${obs.w}x${obs.h}px]`,
+          obs.x + obs.w / 2,
+          obs.y + obs.h / 2 + 12
+        );
       }
     }
     ctx.restore();
@@ -736,7 +1079,7 @@ class Game {
 
     const angle = Math.atan2(dy, dx);
     const compassCenterX = this.canvas.width / 2;
-    const compassCenterY = 148;
+    const compassCenterY = 152;
 
     ctx.save();
     ctx.translate(compassCenterX, compassCenterY);
@@ -776,11 +1119,11 @@ class Game {
   }
 
   /**
-   * Renderiza um Minimapa de Debug no canto inferior direito para visão global do mapa 2500x2500
+   * Renderiza um Minimapa de Debug no canto inferior direito para visão global do mapa
    */
   _drawDebugMinimap(ctx) {
     const map = this.currentMap;
-    const maxMiniSize = 156;
+    const maxMiniSize = 150;
     const scale = Math.min(maxMiniSize / map.width, maxMiniSize / map.height);
     const miniW = map.width * scale;
     const miniH = map.height * scale;
@@ -815,6 +1158,14 @@ class Game {
       ctx.fillRect(obs.x * scale, obs.y * scale, obs.w * scale, obs.h * scale);
     }
     ctx.globalAlpha = 1;
+
+    // Pontos de Lixo/Sucata restantes no minimapa
+    if (this.trashItems && this.trashItems.length > 0) {
+      ctx.fillStyle = '#bef264';
+      for (const trash of this.trashItems) {
+        ctx.fillRect(trash.x * scale - 1.5, trash.y * scale - 1.5, 3, 3);
+      }
+    }
 
     // Zona de Extração no minimapa
     if (map.transitionZone) {
@@ -851,4 +1202,3 @@ class Game {
 window.addEventListener('DOMContentLoaded', () => {
   window.gameInstance = new Game();
 });
-

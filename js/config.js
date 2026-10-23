@@ -1,8 +1,13 @@
 /**
  * js/config.js
- * Configurações globais, constantes de física/câmera, inventário de placeholder
- * e definição da Máquina de Estados de Fases.
+ * Configurações globais, constantes de física/câmera, variáveis globais de configurações,
+ * inventário de placeholder (5 slots) e definição da Máquina de Estados de Fases.
  */
+
+// Variáveis globais de Configuração e Progresso (Sprint 2)
+window.isMuted = false;
+window.friendlyFireEnabled = false;
+window.scrapCollected = 0;
 
 window.GameConfig = {
   // Configurações de Grid e Escala
@@ -19,6 +24,17 @@ window.GameConfig = {
 
   // Suavização da câmera (Lerp factor)
   CAMERA_LERP: 7.5,
+
+  // Configurações de Coleta de Lixo / Sucata (Sprint 2)
+  TRASH_COUNT_PER_MAP: 28,
+  TRASH_SIZE: 26,
+  TRASH_TYPES: [
+    { id: 'scrap_metal', name: 'Sucata Metálica', shortLabel: 'LIXO: SUCATA', color: '#94a3b8', stroke: '#e2e8f0', shape: 'gear' },
+    { id: 'tin_can', name: 'Lata Amassada', shortLabel: 'LIXO: LATA', color: '#fb923c', stroke: '#fed7aa', shape: 'can' },
+    { id: 'plastic_bottle', name: 'Plástico Descartado', shortLabel: 'LIXO: PLÁSTICO', color: '#38bdf8', stroke: '#bae6fd', shape: 'bottle' },
+    { id: 'old_battery', name: 'Bateria Velha', shortLabel: 'LIXO: BATERIA', color: '#a3e635', stroke: '#ecfccb', shape: 'battery' },
+    { id: 'broken_circuit', name: 'Placa Quebrada', shortLabel: 'LIXO: ELETRÔNICO', color: '#facc15', stroke: '#fef08a', shape: 'chip' }
+  ],
 
   // Sequência oficial da Máquina de Estados do Mundo:
   // Mapa 1 -> Safe Room (Van) -> Mapa 2 -> Safe Room (Van) -> Mapa 3
@@ -60,7 +76,7 @@ window.GameConfig = {
     }
   ],
 
-  // Inventário de Armas / Itens de Placeholder (6 Slots na Hotbar)
+  // Inventário de Armas / Itens de Placeholder (5 Slots na Hotbar: 1 a 5)
   createDefaultInventoryP1() {
     return [
       {
@@ -102,16 +118,6 @@ window.GameConfig = {
       {
         slot: 5,
         id: 'empty_5',
-        name: 'Vazio',
-        shortName: 'Vazio',
-        icon: '·',
-        type: 'Slot Livre',
-        isEmpty: true,
-        color: '#64748b'
-      },
-      {
-        slot: 6,
-        id: 'empty_6',
         name: 'Vazio',
         shortName: 'Vazio',
         icon: '·',
@@ -169,18 +175,7 @@ window.GameConfig = {
         type: 'Slot Livre',
         isEmpty: true,
         color: '#64748b'
-      },
-      {
-        slot: 6,
-        id: 'empty_p2_6',
-        name: 'Vazio',
-        shortName: 'Vazio',
-        icon: '·',
-        type: 'Slot Livre',
-        isEmpty: true,
-        color: '#64748b'
       }
     ];
   }
 };
-

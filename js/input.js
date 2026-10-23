@@ -2,6 +2,8 @@
  * js/input.js
  * Gerenciador de Input (Teclado + Scroll do Mouse)
  * Garante e.preventDefault() na tecla Tab, Espaço e Setas Direcionais.
+ * Teclas 1 a 5 selecionam slots da Hotbar (P1 no Multiplayer / Ativo no Singleplayer).
+ * Scroll do Mouse alterna slots da Hotbar (P2 no Multiplayer / Ativo no Singleplayer).
  */
 
 window.InputManager = class InputManager {
@@ -55,12 +57,12 @@ window.InputManager = class InputManager {
       if (this.callbacks.onDebugNextStage) this.callbacks.onDebugNextStage();
     } else if (code.startsWith('Digit')) {
       const num = parseInt(code.replace('Digit', ''), 10);
-      if (num >= 1 && num <= 8 && this.callbacks.onSelectSlot) {
+      if (num >= 1 && num <= 5 && this.callbacks.onSelectSlot) {
         this.callbacks.onSelectSlot(num - 1);
       }
     } else if (code.startsWith('Numpad')) {
       const num = parseInt(code.replace('Numpad', ''), 10);
-      if (num >= 1 && num <= 8 && this.callbacks.onSelectSlot) {
+      if (num >= 1 && num <= 5 && this.callbacks.onSelectSlot) {
         this.callbacks.onSelectSlot(num - 1);
       }
     }
@@ -123,4 +125,3 @@ window.InputManager = class InputManager {
     this.keysDown.clear();
   }
 };
-

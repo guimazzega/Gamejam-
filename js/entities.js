@@ -1,34 +1,156 @@
 /**
  * js/entities.js
- * Entidade de Jogador (Personagem 1 e Personagem 2) e Textos Flutuantes de Debug.
+ * Entidades do Jogo:
+ * - FloatingText: Textos flutuantes de feedback visual e debug
+ * - TrashItem: Entidades coletáveis de "Lixo / Sucata" espalhadas pelos 3 mapas grandes (Sprint 2)
+ * - Player: Personagem 1 e Personagem 2 com colisão AABB e Trava de Câmera/Viewport no Multiplayer (Sprint 2)
  */
 
 window.FloatingText = class FloatingText {
-  constructor(x, y, text, color = '#ff4d4d') {
+  constructor(x, y, text, color = '#ff4d4d', life = 1.0) {
     this.x = x;
     this.y = y;
     this.text = text;
     this.color = color;
     this.alpha = 1;
-    this.vy = -48; // Sobe suavemente
-    this.life = 1.0; // Segundos
+    this.vy = -44; // Sobe suavemente
+    this.life = life;
+    this.maxLife = life;
   }
 
   update(dt) {
     this.y += this.vy * dt;
     this.life -= dt;
-    this.alpha = Math.max(0, this.life);
+    this.alpha = Math.max(0, Math.min(1, this.life / this.maxLife));
   }
 
   draw(ctx) {
     ctx.save();
     ctx.globalAlpha = this.alpha;
-    ctx.font = 'bold 14px Consolas, monospace';
+    ctx.font = 'bold 13px Consolas, monospace';
     ctx.textAlign = 'center';
-    ctx.fillStyle = '#000';
-    ctx.fillText(this.text, this.x + 1, this.y + 1);
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
+    ctx.fillText(this.text, this.x + 1.5, this.y + 1.5);
     ctx.fillStyle = this.color;
     ctx.fillText(this.text, this.x, this.y);
+    ctx.restore();
+  }
+};
+
+/**
+ * Entidade de Coleta: Lixo / Sucata espalhado pelo chão dos Mapas Grandes (Sprint 2)
+ */
+window.TrashItem = class TrashItem {
+  constructor(config) {
+    this.id = config.id;
+    this.x = config.x;
+    this.y = config.y;
+    this.size = window.GameConfig.TRASH_SIZE || 26;
+    this.typeInfo = config.typeInfo || window.GameConfig.TRASH_TYPES[0];
+    this.rotation = config.rotation || 0;
+    this.bobPhase = config.bobPhase || 0;
+  }
+
+  getBoundingBox() {
+    const half = this.size / 2;
+    return {
+      x: this.x - half,
+      y: this.y - half,
+      w: this.size,
+      h: this.size
+    };
+  }
+
+  draw(ctx, timeSeconds) {
+    const half = this.size / 2;
+    const pulse = Math.sin(timeSeconds * 3.5 + this.bobPhase) * 2;
+
+    ctx.save();
+
+    // 1. Sombra no chão
+    ctx.beginPath();
+    ctx.ellipse(this.x, this.y + half - 2, half * 0.8, half * 0.45, 0, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.42)';
+    ctx.fill();
+
+    // 2. Hitbox Debug pontilhada do Lixo
+    ctx.strokeStyle = 'rgba(250, 204, 21, 0.45)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([3, 3]);
+    ctx.strokeRect(this.x - half, this.y - half, this.size, this.size);
+    ctx.setLineDash([]);
+
+    // 3. Forma Geométrica de Debug representando o Lixo / Sucata
+    ctx.save();
+    ctx.translate(this.x, this.y + pulse * 0.5);
+    ctx.rotate(this.rotation);
+
+    ctx.fillStyle = this.typeInfo.color;
+    ctx.strokeStyle = '#0f172a';
+    ctx.lineWidth = 2;
+
+    const shape = this.typeInfo.shape;
+    if (shape === 'gear') {
+      // Sucata Metálica (Octógono/Engrenagem simples)
+      ctx.beginPath();
+      ctx.arc(0, 0, 9, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = '#1e293b';
+      ctx.beginPath();
+      ctx.arc(0, 0, 3.5, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (shape === 'can') {
+      // Lata Amassada
+      ctx.beginPath();
+      ctx.roundRect(-8, -6, 16, 12, 3);
+      ctx.fill();
+      ctx.stroke();
+      ctx.strokeStyle = this.typeInfo.stroke;
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.moveTo(-4, -5);
+      ctx.lineTo(-4, 5);
+      ctx.moveTo(4, -5);
+      ctx.lineTo(4, 5);
+      ctx.stroke();
+    } else if (shape === 'bottle') {
+      // Garrafa / Plástico
+      ctx.beginPath();
+      ctx.roundRect(-7, -5, 11, 10, 3);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = '#e2e8f0';
+      ctx.fillRect(4, -3, 4, 6);
+    } else if (shape === 'battery') {
+      // Bateria Descartada
+      ctx.beginPath();
+      ctx.roundRect(-7, -8, 14, 16, 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = '#f8fafc';
+      ctx.fillRect(-3, -10, 6, 2);
+    } else {
+      // Placa / Eletrônico Quebrado
+      ctx.beginPath();
+      ctx.moveTo(0, -9);
+      ctx.lineTo(9, 0);
+      ctx.lineTo(0, 9);
+      ctx.lineTo(-9, 0);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+    }
+    ctx.restore();
+
+    // 4. Tag visual discreta identificando como "LIXO"
+    ctx.font = 'bold 9px Consolas, monospace';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.82)';
+    ctx.fillRect(this.x - 16, this.y - half - 12, 32, 11);
+    ctx.fillStyle = this.typeInfo.stroke || '#fef08a';
+    ctx.fillText('LIXO', this.x, this.y - half - 3.5);
+
     ctx.restore();
   }
 };
@@ -59,6 +181,7 @@ window.Player = class Player {
     this.vy = 0;
     this.walkCycle = 0;
     this.hitFlashTimer = 0;
+    this.clampedByViewport = false;
   }
 
   setPosition(x, y) {
@@ -66,6 +189,7 @@ window.Player = class Player {
     this.y = y;
     this.vx = 0;
     this.vy = 0;
+    this.clampedByViewport = false;
   }
 
   takeDamage(amount) {
@@ -95,11 +219,14 @@ window.Player = class Player {
 
   /**
    * Atualiza movimentação em 8 direções com resolução de colisão AABB separada por eixo (deslize suave)
+   * e aplica o Clamp de Viewport no Modo Multiplayer Local (bloqueando saída da tela).
    */
-  update(dt, inputVector, map) {
+  update(dt, inputVector, map, viewportClamp = null) {
     if (this.hitFlashTimer > 0) {
       this.hitFlashTimer = Math.max(0, this.hitFlashTimer - dt);
     }
+
+    this.clampedByViewport = false;
 
     const { dx, dy } = inputVector;
     this.vx = dx * this.speed;
@@ -119,8 +246,19 @@ window.Player = class Player {
     if (dx !== 0) {
       let nextX = this.x + this.vx * dt;
       nextX = Math.max(half, Math.min(map.width - half, nextX));
-      const boxX = this.getBoundingBox(nextX, this.y);
 
+      // Trava de Câmera / Viewport no Multiplayer Local (Eixo X)
+      if (viewportClamp) {
+        if (dx < 0 && nextX < viewportClamp.minX) {
+          nextX = Math.max(this.x, viewportClamp.minX);
+          this.clampedByViewport = true;
+        } else if (dx > 0 && nextX > viewportClamp.maxX) {
+          nextX = Math.min(this.x, viewportClamp.maxX);
+          this.clampedByViewport = true;
+        }
+      }
+
+      const boxX = this.getBoundingBox(nextX, this.y);
       for (const obs of map.obstacles) {
         if (this._aabbOverlap(boxX, obs)) {
           if (dx > 0) {
@@ -137,8 +275,19 @@ window.Player = class Player {
     if (dy !== 0) {
       let nextY = this.y + this.vy * dt;
       nextY = Math.max(half, Math.min(map.height - half, nextY));
-      const boxY = this.getBoundingBox(this.x, nextY);
 
+      // Trava de Câmera / Viewport no Multiplayer Local (Eixo Y)
+      if (viewportClamp) {
+        if (dy < 0 && nextY < viewportClamp.minY) {
+          nextY = Math.max(this.y, viewportClamp.minY);
+          this.clampedByViewport = true;
+        } else if (dy > 0 && nextY > viewportClamp.maxY) {
+          nextY = Math.min(this.y, viewportClamp.maxY);
+          this.clampedByViewport = true;
+        }
+      }
+
+      const boxY = this.getBoundingBox(this.x, nextY);
       for (const obs of map.obstacles) {
         if (this._aabbOverlap(boxY, obs)) {
           if (dy > 0) {
@@ -162,7 +311,7 @@ window.Player = class Player {
   }
 
   /**
-   * Verifica se o jogador está tocando uma zona (ex: Zona de Extração / Porta da Van)
+   * Verifica se o jogador está tocando uma zona (ex: Zona de Extração, Porta da Van, Lojinha, Crafting)
    */
   isTouchingZone(zone) {
     if (!zone) return false;
@@ -202,8 +351,12 @@ window.Player = class Player {
     ctx.fill();
 
     // 3. Caixa de Colisão (Hitbox Debug) no chão
-    ctx.strokeStyle = isControlled ? 'rgba(255, 202, 58, 0.85)' : 'rgba(148, 163, 184, 0.45)';
-    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = this.clampedByViewport
+      ? '#ef4444'
+      : isControlled
+        ? 'rgba(255, 202, 58, 0.85)'
+        : 'rgba(148, 163, 184, 0.45)';
+    ctx.lineWidth = this.clampedByViewport ? 2.2 : 1.5;
     ctx.setLineDash([4, 3]);
     ctx.strokeRect(this.x - half, this.y - half, this.size, this.size);
     ctx.setLineDash([]);
@@ -295,8 +448,14 @@ window.Player = class Player {
       this._drawOverheadTag(ctx, this.x, labelY, `P${this.id} [TAB]`, 'rgba(30, 41, 59, 0.85)', '#cbd5e1');
     } else {
       // Multiplayer Local: ambos ativos
-      const tagText = this.id === 1 ? 'P1 [WASD]' : 'P2 [SETAS]';
-      this._drawOverheadTag(ctx, this.x, labelY, tagText, this.primaryColor, '#0f172a');
+      const tagText = this.clampedByViewport
+        ? `P${this.id} [LIMITE CÂMERA]`
+        : this.id === 1
+          ? 'P1 [WASD]'
+          : 'P2 [SETAS]';
+      const tagBg = this.clampedByViewport ? '#ef4444' : this.primaryColor;
+      const tagFg = this.clampedByViewport ? '#ffffff' : '#0f172a';
+      this._drawOverheadTag(ctx, this.x, labelY, tagText, tagBg, tagFg);
     }
 
     // 8. Coordenadas de Debug sob os pés
@@ -331,4 +490,3 @@ window.Player = class Player {
     ctx.restore();
   }
 };
-

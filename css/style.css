@@ -1,5 +1,5 @@
 /* ==========================================================================
-   ESTILOS GERAIS & ESTÉTICA STARDEW VALLEY + MODO DEBUG (DEVELOPER MODE)
+   ESTILOS GERAIS & ESTÉTICA STARDEW VALLEY + MODO DEBUG (SPRINT 2)
    ========================================================================== */
 
 :root {
@@ -55,7 +55,7 @@ kbd {
   display: inline-block;
   padding: 2px 6px;
   font-family: var(--font-mono);
-  font-size: 0.78rem;
+  font-size: 0.76rem;
   font-weight: 700;
   color: #1f1610;
   background: #f5dfb8;
@@ -63,6 +63,15 @@ kbd {
   border-bottom-width: 3px;
   border-radius: 4px;
   line-height: 1.1;
+}
+
+code {
+  font-family: var(--font-mono);
+  font-size: 0.82em;
+  color: #fde68a;
+  background: rgba(0, 0, 0, 0.35);
+  padding: 1px 5px;
+  border-radius: 4px;
 }
 
 /* ==========================================================================
@@ -89,6 +98,29 @@ kbd {
   flex-direction: column;
   gap: 10px;
   pointer-events: auto;
+}
+
+/* No modo Multiplayer Local: Barra de Vida P2 vai para o Canto Superior Direito */
+.hud-layer.multiplayer-hud #hud-p2-card {
+  position: fixed;
+  top: 16px;
+  right: 20px;
+  z-index: 12;
+  border-color: var(--p2-color);
+  box-shadow:
+    inset 0 0 0 2px #fdba74,
+    0 0 16px rgba(251, 146, 60, 0.35),
+    0 4px 12px rgba(0, 0, 0, 0.65);
+  transform: none;
+}
+
+.hud-layer.multiplayer-hud #hud-p1-card {
+  border-color: var(--p1-color);
+  box-shadow:
+    inset 0 0 0 2px #7dd3fc,
+    0 0 16px rgba(56, 189, 248, 0.35),
+    0 4px 12px rgba(0, 0, 0, 0.65);
+  transform: none;
 }
 
 .player-hp-card {
@@ -215,7 +247,7 @@ kbd {
   font-family: var(--font-mono);
 }
 
-/* --- Topo Central: Timer da Fase e Estado --- */
+/* --- Topo Central: Timer da Fase, Estado e Contador de Sucata/Lixo --- */
 .hud-top-center {
   align-self: center;
   display: flex;
@@ -232,8 +264,8 @@ kbd {
     inset 0 0 0 2px var(--wood-border-inner),
     0 6px 16px rgba(0, 0, 0, 0.6);
   border-radius: 12px;
-  padding: 10px 24px;
-  min-width: 340px;
+  padding: 10px 22px;
+  min-width: 360px;
   text-align: center;
 }
 
@@ -276,23 +308,31 @@ kbd {
 }
 
 .map-title {
-  font-size: 0.85rem;
+  font-size: 0.84rem;
   font-weight: 800;
   letter-spacing: 0.06em;
   color: #f4e2c6;
   text-transform: uppercase;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
+}
+
+.hud-status-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 12px;
 }
 
 .timer-display {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: 8px;
 }
 
 .timer-label {
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   font-family: var(--font-mono);
   color: var(--text-muted);
   letter-spacing: 0.05em;
@@ -300,7 +340,7 @@ kbd {
 
 .timer-digits {
   font-family: var(--font-mono);
-  font-size: 1.65rem;
+  font-size: 1.5rem;
   font-weight: 900;
   color: var(--accent-gold);
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7);
@@ -313,16 +353,44 @@ kbd {
 }
 
 .saferoom-badge {
-  margin-top: 4px;
   display: inline-block;
-  padding: 4px 12px;
+  padding: 4px 10px;
   border-radius: 6px;
   background: rgba(34, 197, 94, 0.2);
   border: 1px solid #4ade80;
   color: #86efac;
   font-family: var(--font-mono);
-  font-size: 0.78rem;
+  font-size: 0.74rem;
   font-weight: 700;
+}
+
+/* Contador Global Discreto de Sucata/Lixo Coletado */
+.scrap-counter-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 11px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.78);
+  border: 1px solid #a3e635;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: #ecfccb;
+}
+
+.scrap-icon {
+  color: #a3e635;
+  font-size: 0.88rem;
+}
+
+.scrap-label {
+  color: #cbd5e1;
+}
+
+.scrap-value {
+  color: #bef264;
+  font-size: 0.88rem;
+  font-weight: 900;
 }
 
 .interaction-prompt {
@@ -337,7 +405,13 @@ kbd {
   animation: floatPrompt 1.2s ease-in-out infinite alternate;
 }
 
-/* --- Canto Superior Direito: Painel de Debug --- */
+.interaction-prompt.station-prompt {
+  background: rgba(88, 28, 135, 0.94);
+  border-color: #facc15;
+  color: #fef08a;
+}
+
+/* --- Painel de Debug --- */
 .hud-top-right {
   position: absolute;
   top: 16px;
@@ -345,14 +419,23 @@ kbd {
   pointer-events: auto;
 }
 
+/* No modo Multiplayer Local, o canto superior direito é da Barra de Vida do P2,
+   então o painel de debug fica posicionado discretamente no canto inferior esquerdo */
+.hud-layer.multiplayer-hud .hud-top-right {
+  top: auto;
+  right: auto;
+  bottom: 16px;
+  left: 20px;
+}
+
 .debug-panel {
-  width: 285px;
-  background: rgba(15, 23, 42, 0.9);
+  width: 280px;
+  background: rgba(15, 23, 42, 0.88);
   border: 2px solid #38bdf8;
   border-radius: 10px;
-  padding: 10px 14px;
+  padding: 9px 12px;
   font-family: var(--font-mono);
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   color: #e2e8f0;
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.55);
 }
@@ -363,9 +446,9 @@ kbd {
   gap: 8px;
   font-weight: 800;
   color: var(--debug-cyan);
-  font-size: 0.8rem;
-  padding-bottom: 6px;
-  margin-bottom: 8px;
+  font-size: 0.76rem;
+  padding-bottom: 5px;
+  margin-bottom: 6px;
   border-bottom: 1px dashed rgba(56, 189, 248, 0.4);
 }
 
@@ -381,8 +464,8 @@ kbd {
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: 5px;
-  margin-bottom: 8px;
+  gap: 4px;
+  margin-bottom: 6px;
 }
 
 .debug-shortcuts-list li {
@@ -395,16 +478,16 @@ kbd {
 
 .debug-shortcuts-list li span {
   text-align: right;
-  font-size: 0.71rem;
+  font-size: 0.69rem;
 }
 
 .debug-telemetry {
-  padding-top: 8px;
+  padding-top: 6px;
   border-top: 1px dashed rgba(56, 189, 248, 0.4);
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 4px 8px;
-  font-size: 0.71rem;
+  gap: 3px 8px;
+  font-size: 0.69rem;
   color: #94a3b8;
 }
 
@@ -413,7 +496,7 @@ kbd {
   color: #f8fafc;
 }
 
-/* --- Base Central: Hotbar estilo Stardew Valley --- */
+/* --- Base Central: Hotbar Singleplayer estilo Stardew Valley --- */
 .hud-bottom-center {
   align-self: center;
   display: flex;
@@ -447,9 +530,109 @@ kbd {
   border-radius: 12px;
 }
 
+/* --- Hotbars Verticais Laterais no Modo Multiplayer Local (Sprint 2) --- */
+.hud-side-hotbar {
+  position: fixed;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  pointer-events: auto;
+  z-index: 14;
+}
+
+.hud-side-left {
+  left: 0;
+  align-items: flex-start;
+}
+
+.hud-side-right {
+  right: 0;
+  align-items: flex-end;
+}
+
+.vertical-hotbar {
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+}
+
+.hud-side-left .vertical-hotbar {
+  border-left-width: 0;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  padding-left: 6px;
+}
+
+.hud-side-right .vertical-hotbar {
+  border-right-width: 0;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+  padding-right: 6px;
+}
+
+.side-hotbar-header {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  padding: 4px 10px;
+  background: rgba(34, 28, 24, 0.94);
+  border: 2px solid var(--wood-border-inner);
+  color: var(--text-light);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.5);
+}
+
+.hud-side-left .side-hotbar-header {
+  border-left: none;
+  border-radius: 0 8px 8px 0;
+  border-color: var(--p1-color);
+}
+
+.hud-side-right .side-hotbar-header {
+  border-right: none;
+  border-radius: 8px 0 0 8px;
+  border-color: var(--p2-color);
+}
+
+.p1-header-tag strong {
+  color: var(--p1-color);
+}
+
+.p2-header-tag strong {
+  color: var(--p2-color);
+}
+
+.side-selected-label {
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  background: rgba(20, 16, 13, 0.92);
+  border: 1px solid var(--wood-border-inner);
+  color: var(--accent-gold);
+  max-width: 135px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hud-side-left .side-selected-label {
+  border-left: none;
+  border-radius: 0 6px 6px 0;
+}
+
+.hud-side-right .side-selected-label {
+  border-right: none;
+  border-radius: 6px 0 0 6px;
+}
+
 .hotbar-slot {
-  width: 62px;
-  height: 62px;
+  width: 58px;
+  height: 58px;
   background: var(--parchment-bg);
   border: 3px solid #9c6334;
   border-radius: 8px;
@@ -463,7 +646,7 @@ kbd {
 }
 
 .hotbar-slot:hover {
-  transform: translateY(-2px);
+  transform: scale(1.04);
 }
 
 .hotbar-slot.active-slot {
@@ -472,32 +655,32 @@ kbd {
   box-shadow:
     0 0 0 3px var(--accent-gold),
     0 4px 10px rgba(0, 0, 0, 0.45);
-  transform: translateY(-4px) scale(1.04);
+  transform: scale(1.06);
   z-index: 2;
 }
 
 .slot-key-num {
   position: absolute;
-  top: 3px;
+  top: 2px;
   left: 5px;
   font-family: var(--font-mono);
-  font-size: 0.68rem;
+  font-size: 0.65rem;
   font-weight: 900;
   color: #6b4423;
 }
 
 .slot-icon {
-  font-size: 1.45rem;
+  font-size: 1.35rem;
   line-height: 1;
   margin-top: 4px;
 }
 
 .slot-short-name {
-  font-size: 0.62rem;
+  font-size: 0.6rem;
   font-weight: 800;
   color: var(--text-dark);
   text-align: center;
-  max-width: 54px;
+  max-width: 50px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -531,6 +714,10 @@ kbd {
   align-items: center;
   justify-content: center;
   padding: 20px;
+}
+
+.settings-overlay {
+  z-index: 45;
 }
 
 .stardew-panel {
@@ -700,9 +887,9 @@ kbd {
 }
 
 .stardew-btn {
-  padding: 12px 22px;
+  padding: 12px 20px;
   font-family: inherit;
-  font-size: 0.96rem;
+  font-size: 0.94rem;
   font-weight: 800;
   border-radius: 10px;
   cursor: pointer;
@@ -740,46 +927,109 @@ kbd {
   color: #fff;
 }
 
-/* --- Modal de Configurações (Placeholder) --- */
+/* --- Modal de Configurações Funcional (Sprint 2) --- */
 .modal-card {
-  max-width: 520px;
-  text-align: center;
+  max-width: 580px;
 }
 
 .modal-title {
-  font-size: 1.5rem;
+  font-size: 1.55rem;
   color: var(--accent-gold);
-  margin-bottom: 16px;
+  margin-bottom: 6px;
+  text-align: center;
 }
 
-.placeholder-notice-box {
-  background: var(--panel-bg-soft);
-  border: 2px dashed var(--wood-border-inner);
-  border-radius: 12px;
-  padding: 22px 20px;
+.settings-subtitle {
+  text-align: center;
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  margin-bottom: 18px;
+}
+
+.settings-options-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
   margin-bottom: 22px;
 }
 
-.placeholder-icon {
-  font-size: 2.4rem;
-  margin-bottom: 8px;
+.setting-option-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 16px;
+  background: var(--panel-bg-soft);
+  border: 2px solid #594131;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
 }
 
-.placeholder-notice-box h3 {
-  color: #fde68a;
-  margin-bottom: 8px;
-  font-size: 1.1rem;
+.setting-option-row:hover {
+  border-color: var(--wood-border-inner);
+  background: #362c24;
 }
 
-.placeholder-notice-box p {
-  font-size: 0.9rem;
+.setting-option-info {
+  flex: 1;
+  text-align: left;
+}
+
+.setting-option-title {
+  font-size: 0.98rem;
+  font-weight: 800;
+  color: var(--text-light);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.setting-option-desc {
+  font-size: 0.8rem;
   color: var(--text-muted);
-  line-height: 1.5;
+  line-height: 1.4;
+}
+
+.setting-state-badge {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 900;
+  padding: 2px 8px;
+  border-radius: 999px;
+  letter-spacing: 0.05em;
+}
+
+.setting-state-badge.state-on {
+  background: rgba(74, 222, 128, 0.2);
+  border: 1px solid #4ade80;
+  color: #86efac;
+}
+
+.setting-state-badge.state-off {
+  background: rgba(148, 163, 184, 0.18);
+  border: 1px solid #64748b;
+  color: #cbd5e1;
+}
+
+.setting-control {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.stardew-checkbox {
+  width: 22px;
+  height: 22px;
+  accent-color: var(--accent-gold);
+  cursor: pointer;
 }
 
 /* --- Menu de Pausa & Inventário --- */
 .pause-inventory-card {
-  max-width: 820px;
+  max-width: 860px;
 }
 
 .pause-header {
@@ -819,6 +1069,12 @@ kbd {
   font-weight: 800;
   color: var(--text-light);
   margin-bottom: 3px;
+}
+
+.pause-scrap-line {
+  color: #bef264;
+  font-weight: 700;
+  margin-top: 3px;
 }
 
 .pause-characters-grid {
@@ -942,13 +1198,13 @@ kbd {
 .pause-actions-row {
   display: flex;
   justify-content: space-between;
-  gap: 12px;
+  gap: 10px;
   flex-wrap: wrap;
 }
 
 .pause-actions-row .stardew-btn {
   flex: 1;
-  min-width: 190px;
+  min-width: 165px;
 }
 
 /* --- Toast de Notificação Debug --- */
@@ -957,7 +1213,7 @@ kbd {
   bottom: 115px;
   left: 50%;
   transform: translateX(-50%);
-  z-index: 40;
+  z-index: 50;
   background: rgba(15, 23, 42, 0.95);
   border: 2px solid var(--debug-cyan);
   color: #f8fafc;
@@ -989,4 +1245,3 @@ kbd {
     display: none;
   }
 }
-

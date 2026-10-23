@@ -1,8 +1,8 @@
 /**
  * js/camera.js
  * Câmera 2D Top-Down com interpolação suave (Lerp), suporte a Singleplayer
- * (foco no personagem ativo) e Multiplayer Local (ponto médio entre P1 e P2),
- * respeitando rigorosamente os limites (boundaries) do mapa.
+ * (foco no personagem ativo) e Multiplayer Local (ponto médio entre P1 e P2 +
+ * garantia de enquadramento dentro do Viewport), respeitando os limites do mapa.
  */
 
 window.Camera2D = class Camera2D {
@@ -40,9 +40,11 @@ window.Camera2D = class Camera2D {
   }
 
   /**
-   * Atualiza a posição da câmera suavemente a cada frame
+   * Atualiza a posição da câmera suavemente a cada frame.
+   * No Multiplayer Local, garante que o atraso do Lerp nunca deixe um jogador
+   * escapar da borda visível da câmera quando ambos caminham na mesma direção.
    */
-  update(dt, targetX, targetY, map) {
+  update(dt, targetX, targetY, map, multiplayerPlayers = null) {
     this.focusX = targetX;
     this.focusY = targetY;
 
@@ -53,9 +55,47 @@ window.Camera2D = class Camera2D {
     this.x += (desired.x - this.x) * t;
     this.y += (desired.y - this.y) * t;
 
+    // Se estiver em Multiplayer Local, garante que a janela visível [x, x + viewport]
+    // acompanhe imediatamente os jogadores caso estejam encostados nas bordas opostas
+    if (multiplayerPlayers && multiplayerPlayers.length === 2) {
+      const [p1, p2] = multiplayerPlayers;
+      const pad = window.GameConfig.PLAYER_SIZE / 2 + 4;
+
+      if (map.width > this.viewportWidth) {
+        const minPX = Math.min(p1.x, p2.x) - pad;
+        const maxPX = Math.max(p1.x, p2.x) + pad;
+        if (this.x > minPX) this.x = minPX;
+        if (this.x + this.viewportWidth < maxPX) this.x = maxPX - this.viewportWidth;
+        this.x = Math.max(0, Math.min(map.width - this.viewportWidth, this.x));
+      } else {
+        this.x = desired.x;
+      }
+
+      if (map.height > this.viewportHeight) {
+        const minPY = Math.min(p1.y, p2.y) - pad;
+        const maxPY = Math.max(p1.y, p2.y) + pad;
+        if (this.y > minPY) this.y = minPY;
+        if (this.y + this.viewportHeight < maxPY) this.y = maxPY - this.viewportHeight;
+        this.y = Math.max(0, Math.min(map.height - this.viewportHeight, this.y));
+      } else {
+        this.y = desired.y;
+      }
+    }
+
     if (this.shakeTimer > 0) {
       this.shakeTimer = Math.max(0, this.shakeTimer - dt);
     }
+  }
+
+  /**
+   * Retorna os limites visíveis atuais do mundo (Viewport Bounds)
+   */
+  getViewportBounds(map) {
+    const minX = map ? Math.max(0, this.x) : this.x;
+    const minY = map ? Math.max(0, this.y) : this.y;
+    const maxX = map ? Math.min(map.width, this.x + this.viewportWidth) : this.x + this.viewportWidth;
+    const maxY = map ? Math.min(map.height, this.y + this.viewportHeight) : this.y + this.viewportHeight;
+    return { minX, maxX, minY, maxY };
   }
 
   /**
@@ -95,4 +135,3 @@ window.Camera2D = class Camera2D {
     };
   }
 };
-
