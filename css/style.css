@@ -1,0 +1,992 @@
+/* ==========================================================================
+   ESTILOS GERAIS & ESTÉTICA STARDEW VALLEY + MODO DEBUG (DEVELOPER MODE)
+   ========================================================================== */
+
+:root {
+  --wood-border-outer: #5a3218;
+  --wood-border-mid: #8f5329;
+  --wood-border-inner: #c8864b;
+  --panel-bg: #221c18;
+  --panel-bg-soft: #2e2620;
+  --parchment-bg: #f4e2c6;
+  --parchment-dark: #dfb988;
+  --text-light: #fdf6ec;
+  --text-muted: #c2b29f;
+  --text-dark: #3b2313;
+  --accent-gold: #ffca3a;
+  --accent-green: #4cd964;
+  --accent-amber: #ff9f1c;
+  --accent-red: #ff4d4d;
+  --p1-color: #38bdf8;
+  --p2-color: #fb923c;
+  --debug-cyan: #22d3ee;
+  --font-ui: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-mono: 'Consolas', 'Courier New', monospace;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  user-select: none;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: #0e1116;
+  font-family: var(--font-ui);
+  color: var(--text-light);
+}
+
+#game-canvas {
+  display: block;
+  width: 100vw;
+  height: 100vh;
+  image-rendering: pixelated;
+}
+
+.hidden {
+  display: none !important;
+}
+
+kbd {
+  display: inline-block;
+  padding: 2px 6px;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #1f1610;
+  background: #f5dfb8;
+  border: 1px solid #8f5329;
+  border-bottom-width: 3px;
+  border-radius: 4px;
+  line-height: 1.1;
+}
+
+/* ==========================================================================
+   CAMADA DE HUD (IN-GAME)
+   ========================================================================== */
+
+.hud-layer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 16px 20px;
+}
+
+/* --- Canto Superior Esquerdo: Barras de Vida (HP) --- */
+.hud-top-left {
+  position: absolute;
+  top: 16px;
+  left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  pointer-events: auto;
+}
+
+.player-hp-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 295px;
+  padding: 10px 12px;
+  background: rgba(34, 28, 24, 0.92);
+  border: 3px solid var(--wood-border-mid);
+  box-shadow:
+    inset 0 0 0 2px var(--wood-border-inner),
+    0 4px 12px rgba(0, 0, 0, 0.55);
+  border-radius: 10px;
+  transition: transform 0.15s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.player-hp-card.active-player-card {
+  border-color: var(--accent-gold);
+  box-shadow:
+    inset 0 0 0 2px #ffe07d,
+    0 0 16px rgba(255, 202, 58, 0.35),
+    0 4px 12px rgba(0, 0, 0, 0.65);
+  transform: translateX(4px);
+}
+
+.player-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 1.05rem;
+  font-family: var(--font-mono);
+  color: #0f172a;
+  border: 2px solid rgba(255, 255, 255, 0.7);
+  flex-shrink: 0;
+}
+
+.p1-avatar {
+  background: linear-gradient(135deg, #7dd3fc, #0284c7);
+  color: #fff;
+}
+
+.p2-avatar {
+  background: linear-gradient(135deg, #fdba74, #ea580c);
+  color: #fff;
+}
+
+.player-hp-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.player-hp-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 5px;
+}
+
+.player-name {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--text-light);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.control-badge {
+  font-size: 0.65rem;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: #3d332c;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  letter-spacing: 0.04em;
+}
+
+.active-player-card .control-badge {
+  background: var(--accent-gold);
+  color: #2b180a;
+  font-weight: 800;
+}
+
+.hp-numbers {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #fde68a;
+}
+
+.hp-bar-outer {
+  width: 100%;
+  height: 12px;
+  background: #140f0c;
+  border: 2px solid #594131;
+  border-radius: 6px;
+  overflow: hidden;
+  position: relative;
+}
+
+.hp-bar-inner {
+  height: 100%;
+  background: linear-gradient(90deg, #22c55e, #4ade80);
+  transition: width 0.2s cubic-bezier(0.22, 1, 0.36, 1), background 0.2s ease;
+}
+
+.hp-bar-inner.hp-medium {
+  background: linear-gradient(90deg, #eab308, #facc15);
+}
+
+.hp-bar-inner.hp-low {
+  background: linear-gradient(90deg, #dc2626, #f87171);
+}
+
+.player-controls-hint {
+  margin-top: 4px;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+
+/* --- Topo Central: Timer da Fase e Estado --- */
+.hud-top-center {
+  align-self: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  pointer-events: auto;
+}
+
+.phase-header-box {
+  background: rgba(34, 28, 24, 0.94);
+  border: 3px solid var(--wood-border-mid);
+  box-shadow:
+    inset 0 0 0 2px var(--wood-border-inner),
+    0 6px 16px rgba(0, 0, 0, 0.6);
+  border-radius: 12px;
+  padding: 10px 24px;
+  min-width: 340px;
+  text-align: center;
+}
+
+.stage-flow-Steps {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+.step-dot {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: #362c25;
+  color: #9c8a78;
+  border: 1px solid #594638;
+}
+
+.step-dot.completed {
+  background: #1f5132;
+  color: #86efac;
+  border-color: #22c55e;
+}
+
+.step-dot.active {
+  background: var(--accent-gold);
+  color: #261405;
+  border-color: #fff;
+  box-shadow: 0 0 8px rgba(255, 202, 58, 0.6);
+}
+
+.step-line {
+  width: 14px;
+  height: 2px;
+  background: #594638;
+}
+
+.map-title {
+  font-size: 0.85rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: #f4e2c6;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.timer-display {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.timer-label {
+  font-size: 0.7rem;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+  letter-spacing: 0.05em;
+}
+
+.timer-digits {
+  font-family: var(--font-mono);
+  font-size: 1.65rem;
+  font-weight: 900;
+  color: var(--accent-gold);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7);
+  line-height: 1;
+}
+
+.timer-digits.timer-warning {
+  color: var(--accent-red);
+  animation: pulseWarning 0.8s infinite alternate;
+}
+
+.saferoom-badge {
+  margin-top: 4px;
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 6px;
+  background: rgba(34, 197, 94, 0.2);
+  border: 1px solid #4ade80;
+  color: #86efac;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.interaction-prompt {
+  background: rgba(20, 83, 45, 0.95);
+  border: 2px solid #4ade80;
+  color: #ecfdf5;
+  padding: 8px 18px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.92rem;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.6);
+  animation: floatPrompt 1.2s ease-in-out infinite alternate;
+}
+
+/* --- Canto Superior Direito: Painel de Debug --- */
+.hud-top-right {
+  position: absolute;
+  top: 16px;
+  right: 20px;
+  pointer-events: auto;
+}
+
+.debug-panel {
+  width: 285px;
+  background: rgba(15, 23, 42, 0.9);
+  border: 2px solid #38bdf8;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: #e2e8f0;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.55);
+}
+
+.debug-panel-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 800;
+  color: var(--debug-cyan);
+  font-size: 0.8rem;
+  padding-bottom: 6px;
+  margin-bottom: 8px;
+  border-bottom: 1px dashed rgba(56, 189, 248, 0.4);
+}
+
+.debug-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #22d3ee;
+  box-shadow: 0 0 8px #22d3ee;
+}
+
+.debug-shortcuts-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-bottom: 8px;
+}
+
+.debug-shortcuts-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  color: #cbd5e1;
+}
+
+.debug-shortcuts-list li span {
+  text-align: right;
+  font-size: 0.71rem;
+}
+
+.debug-telemetry {
+  padding-top: 8px;
+  border-top: 1px dashed rgba(56, 189, 248, 0.4);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 8px;
+  font-size: 0.71rem;
+  color: #94a3b8;
+}
+
+.debug-telemetry strong,
+.debug-telemetry span {
+  color: #f8fafc;
+}
+
+/* --- Base Central: Hotbar estilo Stardew Valley --- */
+.hud-bottom-center {
+  align-self: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  pointer-events: auto;
+}
+
+.selected-item-tooltip {
+  background: rgba(34, 28, 24, 0.92);
+  border: 2px solid var(--wood-border-inner);
+  color: var(--accent-gold);
+  padding: 4px 14px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+.stardew-hotbar {
+  display: flex;
+  gap: 6px;
+  padding: 8px 10px;
+  background: var(--parchment-dark);
+  border: 4px solid var(--wood-border-outer);
+  box-shadow:
+    inset 0 0 0 3px var(--wood-border-mid),
+    0 6px 20px rgba(0, 0, 0, 0.7);
+  border-radius: 12px;
+}
+
+.hotbar-slot {
+  width: 62px;
+  height: 62px;
+  background: var(--parchment-bg);
+  border: 3px solid #9c6334;
+  border-radius: 8px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.1s ease, border-color 0.12s ease, box-shadow 0.12s ease;
+}
+
+.hotbar-slot:hover {
+  transform: translateY(-2px);
+}
+
+.hotbar-slot.active-slot {
+  background: #fff8eb;
+  border-color: #d9381e;
+  box-shadow:
+    0 0 0 3px var(--accent-gold),
+    0 4px 10px rgba(0, 0, 0, 0.45);
+  transform: translateY(-4px) scale(1.04);
+  z-index: 2;
+}
+
+.slot-key-num {
+  position: absolute;
+  top: 3px;
+  left: 5px;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 900;
+  color: #6b4423;
+}
+
+.slot-icon {
+  font-size: 1.45rem;
+  line-height: 1;
+  margin-top: 4px;
+}
+
+.slot-short-name {
+  font-size: 0.62rem;
+  font-weight: 800;
+  color: var(--text-dark);
+  text-align: center;
+  max-width: 54px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 2px;
+}
+
+.hotbar-slot.empty-slot .slot-short-name {
+  color: #9c7a54;
+  font-weight: 600;
+}
+
+.hotbar-hint {
+  font-size: 0.75rem;
+  color: #d6c7b2;
+  background: rgba(15, 12, 10, 0.75);
+  padding: 3px 10px;
+  border-radius: 6px;
+}
+
+/* ==========================================================================
+   SISTEMA DE MENUS (MENU PRINCIPAL, CONFIGURAÇÕES E PAUSA)
+   ========================================================================== */
+
+.menu-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  background: radial-gradient(circle at center, rgba(17, 24, 39, 0.78), rgba(6, 10, 17, 0.94));
+  backdrop-filter: blur(5px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.stardew-panel {
+  background: var(--panel-bg);
+  border: 4px solid var(--wood-border-outer);
+  box-shadow:
+    inset 0 0 0 3px var(--wood-border-inner),
+    0 20px 50px rgba(0, 0, 0, 0.85);
+  border-radius: 16px;
+  padding: 28px 32px;
+  color: var(--text-light);
+  max-width: 720px;
+  width: 100%;
+}
+
+.dev-ribbon {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: rgba(34, 211, 238, 0.15);
+  border: 1px solid var(--debug-cyan);
+  color: var(--debug-cyan);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  margin-bottom: 10px;
+}
+
+.main-menu-card {
+  text-align: center;
+}
+
+.game-title {
+  font-size: 2.15rem;
+  font-weight: 900;
+  color: var(--accent-gold);
+  letter-spacing: 0.03em;
+  text-shadow: 0 3px 0 #5a3218;
+  margin-bottom: 6px;
+}
+
+.game-subtitle {
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  margin-bottom: 22px;
+}
+
+.section-label {
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: #f4e2c6;
+  margin-bottom: 12px;
+}
+
+.mode-cards-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.mode-option-card {
+  text-align: left;
+  background: var(--panel-bg-soft);
+  border: 2px solid #594131;
+  border-radius: 12px;
+  padding: 14px 16px;
+  color: var(--text-light);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+
+.mode-option-card:hover {
+  border-color: var(--wood-border-inner);
+  background: #382e26;
+}
+
+.mode-option-card.selected {
+  background: rgba(255, 202, 58, 0.12);
+  border-color: var(--accent-gold);
+  box-shadow: 0 0 0 2px rgba(255, 202, 58, 0.35);
+}
+
+.mode-card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1rem;
+  margin-bottom: 8px;
+  color: #fff;
+}
+
+.mode-radio {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid #9c8a78;
+  display: inline-block;
+  position: relative;
+}
+
+.mode-option-card.selected .mode-radio {
+  border-color: var(--accent-gold);
+  background: var(--accent-gold);
+  box-shadow: inset 0 0 0 3px var(--panel-bg);
+}
+
+.mode-card-desc {
+  font-size: 0.83rem;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+
+.flow-preview-box {
+  background: rgba(15, 23, 42, 0.65);
+  border: 1px dashed #64748b;
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin-bottom: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+}
+
+.flow-label {
+  color: #94a3b8;
+  font-weight: 700;
+}
+
+.flow-pills {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.pill {
+  padding: 3px 8px;
+  border-radius: 5px;
+  background: #1e293b;
+  color: #e2e8f0;
+  border: 1px solid #475569;
+}
+
+.pill.van {
+  background: rgba(34, 197, 94, 0.18);
+  color: #86efac;
+  border-color: #22c55e;
+}
+
+.arrow {
+  color: #64748b;
+}
+
+.menu-actions {
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.stardew-btn {
+  padding: 12px 22px;
+  font-family: inherit;
+  font-size: 0.96rem;
+  font-weight: 800;
+  border-radius: 10px;
+  cursor: pointer;
+  border: 3px solid var(--wood-border-outer);
+  transition: transform 0.1s ease, filter 0.15s ease;
+}
+
+.stardew-btn:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.08);
+}
+
+.stardew-btn:active {
+  transform: translateY(1px);
+}
+
+.btn-primary {
+  background: linear-gradient(180deg, #ffd152, #e09f1f);
+  color: #2b1606;
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.45);
+}
+
+.btn-secondary {
+  background: linear-gradient(180deg, #d8bfa0, #b38f68);
+  color: #2b1606;
+}
+
+.btn-warning {
+  background: linear-gradient(180deg, #fb923c, #d97706);
+  color: #231002;
+}
+
+.btn-danger {
+  background: linear-gradient(180deg, #f87171, #dc2626);
+  color: #fff;
+}
+
+/* --- Modal de Configurações (Placeholder) --- */
+.modal-card {
+  max-width: 520px;
+  text-align: center;
+}
+
+.modal-title {
+  font-size: 1.5rem;
+  color: var(--accent-gold);
+  margin-bottom: 16px;
+}
+
+.placeholder-notice-box {
+  background: var(--panel-bg-soft);
+  border: 2px dashed var(--wood-border-inner);
+  border-radius: 12px;
+  padding: 22px 20px;
+  margin-bottom: 22px;
+}
+
+.placeholder-icon {
+  font-size: 2.4rem;
+  margin-bottom: 8px;
+}
+
+.placeholder-notice-box h3 {
+  color: #fde68a;
+  margin-bottom: 8px;
+  font-size: 1.1rem;
+}
+
+.placeholder-notice-box p {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+/* --- Menu de Pausa & Inventário --- */
+.pause-inventory-card {
+  max-width: 820px;
+}
+
+.pause-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 14px;
+  margin-bottom: 18px;
+  border-bottom: 2px solid #4a372a;
+}
+
+.pause-badge {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: var(--accent-amber);
+  color: #241202;
+  margin-bottom: 4px;
+}
+
+.pause-title {
+  font-size: 1.45rem;
+  color: var(--accent-gold);
+}
+
+.pause-stage-info {
+  text-align: right;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+#pause-map-name {
+  font-weight: 800;
+  color: var(--text-light);
+  margin-bottom: 3px;
+}
+
+.pause-characters-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 22px;
+}
+
+.char-inventory-box {
+  background: var(--panel-bg-soft);
+  border: 2px solid #634835;
+  border-radius: 12px;
+  padding: 14px 16px;
+}
+
+.char-box-header {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.char-meta {
+  flex: 1;
+}
+
+.char-meta h3 {
+  font-size: 1rem;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.role-tag {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: #3d3128;
+  color: #d6c4b0;
+}
+
+.pause-hp-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-bottom: 5px;
+}
+
+.pause-hp-row strong {
+  font-family: var(--font-mono);
+  color: #fde68a;
+}
+
+.pause-hp-bar {
+  height: 14px;
+}
+
+.inventory-grid-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #d8c2a8;
+  margin-bottom: 8px;
+}
+
+.inventory-slots-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.pause-item-slot {
+  background: var(--parchment-bg);
+  border: 2px solid #8f5329;
+  border-radius: 8px;
+  padding: 8px 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  color: var(--text-dark);
+  min-height: 68px;
+  justify-content: center;
+}
+
+.pause-item-slot.equipped {
+  border-color: #d9381e;
+  background: #fff9ed;
+  box-shadow: 0 0 0 2px var(--accent-gold);
+}
+
+.pause-item-slot.empty {
+  background: rgba(244, 226, 198, 0.55);
+  border-style: dashed;
+  color: #7c5836;
+}
+
+.pause-slot-icon {
+  font-size: 1.3rem;
+  margin-bottom: 3px;
+}
+
+.pause-slot-name {
+  font-size: 0.72rem;
+  font-weight: 800;
+  line-height: 1.15;
+}
+
+.pause-slot-tag {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  color: #7c5836;
+  margin-top: 2px;
+}
+
+.pause-actions-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.pause-actions-row .stardew-btn {
+  flex: 1;
+  min-width: 190px;
+}
+
+/* --- Toast de Notificação Debug --- */
+.debug-toast {
+  position: fixed;
+  bottom: 115px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 40;
+  background: rgba(15, 23, 42, 0.95);
+  border: 2px solid var(--debug-cyan);
+  color: #f8fafc;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 8px 18px;
+  border-radius: 8px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.65);
+  pointer-events: none;
+}
+
+@keyframes pulseWarning {
+  from { opacity: 1; transform: scale(1); }
+  to { opacity: 0.65; transform: scale(1.05); }
+}
+
+@keyframes floatPrompt {
+  from { transform: translateY(0); }
+  to { transform: translateY(-4px); }
+}
+
+@media (max-width: 900px) {
+  .mode-cards-grid,
+  .pause-characters-grid {
+    grid-template-columns: 1fr;
+  }
+  .hud-top-right {
+    display: none;
+  }
+}
+

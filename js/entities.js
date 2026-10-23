@@ -1,0 +1,334 @@
+/**
+ * js/entities.js
+ * Entidade de Jogador (Personagem 1 e Personagem 2) e Textos Flutuantes de Debug.
+ */
+
+window.FloatingText = class FloatingText {
+  constructor(x, y, text, color = '#ff4d4d') {
+    this.x = x;
+    this.y = y;
+    this.text = text;
+    this.color = color;
+    this.alpha = 1;
+    this.vy = -48; // Sobe suavemente
+    this.life = 1.0; // Segundos
+  }
+
+  update(dt) {
+    this.y += this.vy * dt;
+    this.life -= dt;
+    this.alpha = Math.max(0, this.life);
+  }
+
+  draw(ctx) {
+    ctx.save();
+    ctx.globalAlpha = this.alpha;
+    ctx.font = 'bold 14px Consolas, monospace';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#000';
+    ctx.fillText(this.text, this.x + 1, this.y + 1);
+    ctx.fillStyle = this.color;
+    ctx.fillText(this.text, this.x, this.y);
+    ctx.restore();
+  }
+};
+
+window.Player = class Player {
+  constructor(config) {
+    this.id = config.id; // 1 ou 2
+    this.name = config.name; // 'Personagem 1' ou 'Personagem 2'
+    this.role = config.role || 'Operador';
+    this.primaryColor = config.primaryColor || '#38bdf8';
+    this.secondaryColor = config.secondaryColor || '#0284c7';
+
+    this.x = config.x || 200;
+    this.y = config.y || 200;
+    this.size = window.GameConfig.PLAYER_SIZE; // 40x40px
+    this.speed = window.GameConfig.PLAYER_SPEED;
+
+    this.maxHp = window.GameConfig.PLAYER_MAX_HP;
+    this.hp = this.maxHp;
+
+    this.inventory = config.inventory || [];
+    this.selectedSlot = 0;
+
+    // Direção do olhar e velocidade atual (para debug e animação)
+    this.facingX = 1;
+    this.facingY = 0;
+    this.vx = 0;
+    this.vy = 0;
+    this.walkCycle = 0;
+    this.hitFlashTimer = 0;
+  }
+
+  setPosition(x, y) {
+    this.x = x;
+    this.y = y;
+    this.vx = 0;
+    this.vy = 0;
+  }
+
+  takeDamage(amount) {
+    this.hp = Math.max(0, this.hp - amount);
+    this.hitFlashTimer = 0.25;
+    return this.hp;
+  }
+
+  heal(amount) {
+    this.hp = Math.min(this.maxHp, this.hp + amount);
+    return this.hp;
+  }
+
+  getEquippedItem() {
+    return this.inventory[this.selectedSlot] || null;
+  }
+
+  getBoundingBox(cx = this.x, cy = this.y) {
+    const half = this.size / 2;
+    return {
+      x: cx - half,
+      y: cy - half,
+      w: this.size,
+      h: this.size
+    };
+  }
+
+  /**
+   * Atualiza movimentação em 8 direções com resolução de colisão AABB separada por eixo (deslize suave)
+   */
+  update(dt, inputVector, map) {
+    if (this.hitFlashTimer > 0) {
+      this.hitFlashTimer = Math.max(0, this.hitFlashTimer - dt);
+    }
+
+    const { dx, dy } = inputVector;
+    this.vx = dx * this.speed;
+    this.vy = dy * this.speed;
+
+    if (dx !== 0 || dy !== 0) {
+      this.facingX = dx;
+      this.facingY = dy;
+      this.walkCycle += dt * 12;
+    } else {
+      this.walkCycle = 0;
+    }
+
+    const half = this.size / 2;
+
+    // 1. Movimento e Colisão no Eixo X
+    if (dx !== 0) {
+      let nextX = this.x + this.vx * dt;
+      nextX = Math.max(half, Math.min(map.width - half, nextX));
+      const boxX = this.getBoundingBox(nextX, this.y);
+
+      for (const obs of map.obstacles) {
+        if (this._aabbOverlap(boxX, obs)) {
+          if (dx > 0) {
+            nextX = obs.x - half;
+          } else {
+            nextX = obs.x + obs.w + half;
+          }
+        }
+      }
+      this.x = nextX;
+    }
+
+    // 2. Movimento e Colisão no Eixo Y
+    if (dy !== 0) {
+      let nextY = this.y + this.vy * dt;
+      nextY = Math.max(half, Math.min(map.height - half, nextY));
+      const boxY = this.getBoundingBox(this.x, nextY);
+
+      for (const obs of map.obstacles) {
+        if (this._aabbOverlap(boxY, obs)) {
+          if (dy > 0) {
+            nextY = obs.y - half;
+          } else {
+            nextY = obs.y + obs.h + half;
+          }
+        }
+      }
+      this.y = nextY;
+    }
+  }
+
+  _aabbOverlap(a, b) {
+    return (
+      a.x < b.x + b.w &&
+      a.x + a.w > b.x &&
+      a.y < b.y + b.h &&
+      a.y + a.h > b.y
+    );
+  }
+
+  /**
+   * Verifica se o jogador está tocando uma zona (ex: Zona de Extração / Porta da Van)
+   */
+  isTouchingZone(zone) {
+    if (!zone) return false;
+    return this._aabbOverlap(this.getBoundingBox(), zone);
+  }
+
+  /**
+   * Renderiza o personagem no Canvas com estética Top-Down limpa + indicadores de Debug
+   */
+  draw(ctx, isControlled, gameMode, timeSeconds) {
+    const half = this.size / 2;
+    const isMoving = this.vx !== 0 || this.vy !== 0;
+    const bobOffset = isMoving ? Math.sin(this.walkCycle) * 2.5 : 0;
+
+    ctx.save();
+
+    // 1. Aura / Brilho no chão para o personagem atualmente controlado
+    if (isControlled) {
+      const pulse = 1 + Math.sin(timeSeconds * 6) * 0.08;
+      ctx.save();
+      ctx.beginPath();
+      ctx.ellipse(this.x, this.y + half - 2, (half + 9) * pulse, (half * 0.55) * pulse, 0, 0, Math.PI * 2);
+      ctx.fillStyle = gameMode === 'singleplayer'
+        ? 'rgba(255, 202, 58, 0.25)'
+        : 'rgba(56, 189, 248, 0.20)';
+      ctx.fill();
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = gameMode === 'singleplayer' ? '#ffca3a' : this.primaryColor;
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // 2. Sombra de projeção top-down
+    ctx.beginPath();
+    ctx.ellipse(this.x, this.y + half - 3, half * 0.8, half * 0.4, 0, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+    ctx.fill();
+
+    // 3. Caixa de Colisão (Hitbox Debug) no chão
+    ctx.strokeStyle = isControlled ? 'rgba(255, 202, 58, 0.85)' : 'rgba(148, 163, 184, 0.45)';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([4, 3]);
+    ctx.strokeRect(this.x - half, this.y - half, this.size, this.size);
+    ctx.setLineDash([]);
+
+    // 4. Corpo Estilizado do Personagem (Top-Down)
+    const drawY = this.y + bobOffset;
+
+    // Mochila tática nas costas (oposta à direção do olhar)
+    const bagX = this.x - this.facingX * 10;
+    const bagY = drawY - this.facingY * 10;
+    ctx.fillStyle = '#334155';
+    ctx.strokeStyle = '#0f172a';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.roundRect(bagX - 11, bagY - 11, 22, 22, 5);
+    ctx.fill();
+    ctx.stroke();
+
+    // Tronco / Corpo Principal
+    ctx.fillStyle = this.hitFlashTimer > 0 ? '#ef4444' : this.secondaryColor;
+    ctx.strokeStyle = '#0f172a';
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.roundRect(this.x - 15, drawY - 15, 30, 30, 8);
+    ctx.fill();
+    ctx.stroke();
+
+    // Cabeça / Capacete Top-Down
+    ctx.fillStyle = this.hitFlashTimer > 0 ? '#fca5a5' : this.primaryColor;
+    ctx.beginPath();
+    ctx.arc(this.x, drawY - 2, 12, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    // Visor indicando a direção em que o personagem está olhando
+    const visorX = this.x + this.facingX * 6;
+    const visorY = (drawY - 2) + this.facingY * 6;
+    ctx.fillStyle = '#f8fafc';
+    ctx.beginPath();
+    ctx.arc(visorX, visorY, 4.2, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 5. Placeholder Visual do Item Equipado na Mão (se não estiver vazio)
+    const item = this.getEquippedItem();
+    if (item && !item.isEmpty) {
+      const handX = this.x + this.facingX * 18 - this.facingY * 8;
+      const handY = drawY + this.facingY * 18 + this.facingX * 8;
+      ctx.fillStyle = item.color || '#facc15';
+      ctx.strokeStyle = '#0f172a';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.roundRect(handX - 5, handY - 5, 10, 10, 2);
+      ctx.fill();
+      ctx.stroke();
+    }
+
+    // 6. Vetor de Velocidade (Linha de Debug ao caminhar)
+    if (isMoving) {
+      ctx.beginPath();
+      ctx.moveTo(this.x, this.y);
+      ctx.lineTo(this.x + this.facingX * 32, this.y + this.facingY * 32);
+      ctx.strokeStyle = '#22d3ee';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+
+    // 7. Tag do Personagem + Indicador Visual Sobre a Cabeça (Seta Animada no Ativo)
+    const labelY = drawY - 30;
+
+    if (gameMode === 'singleplayer' && isControlled) {
+      const arrowBounce = Math.sin(timeSeconds * 8) * 4;
+      const arrowY = labelY - 16 + arrowBounce;
+
+      // Seta Dourada de Controle Ativo
+      ctx.fillStyle = '#ffca3a';
+      ctx.strokeStyle = '#3b2313';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(this.x, arrowY + 9);
+      ctx.lineTo(this.x - 8, arrowY);
+      ctx.lineTo(this.x + 8, arrowY);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      // Badge "P1 ATIVO" ou "P2 ATIVO"
+      this._drawOverheadTag(ctx, this.x, labelY - 2, `P${this.id} • ATIVO`, '#ffca3a', '#1e1306');
+    } else if (gameMode === 'singleplayer' && !isControlled) {
+      this._drawOverheadTag(ctx, this.x, labelY, `P${this.id} [TAB]`, 'rgba(30, 41, 59, 0.85)', '#cbd5e1');
+    } else {
+      // Multiplayer Local: ambos ativos
+      const tagText = this.id === 1 ? 'P1 [WASD]' : 'P2 [SETAS]';
+      this._drawOverheadTag(ctx, this.x, labelY, tagText, this.primaryColor, '#0f172a');
+    }
+
+    // 8. Coordenadas de Debug sob os pés
+    ctx.font = '10px Consolas, monospace';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = 'rgba(226, 232, 240, 0.75)';
+    ctx.fillText(`(${Math.round(this.x)}, ${Math.round(this.y)})`, this.x, this.y + half + 13);
+
+    ctx.restore();
+  }
+
+  _drawOverheadTag(ctx, x, y, text, bgColor, textColor) {
+    ctx.save();
+    ctx.font = 'bold 11px Consolas, monospace';
+    const paddingX = 6;
+    const textWidth = ctx.measureText(text).width;
+    const boxW = textWidth + paddingX * 2;
+    const boxH = 18;
+
+    ctx.fillStyle = bgColor;
+    ctx.strokeStyle = '#0f172a';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.roundRect(x - boxW / 2, y - boxH, boxW, boxH, 4);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = textColor;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, x, y - boxH / 2 + 0.5);
+    ctx.restore();
+  }
+};
+

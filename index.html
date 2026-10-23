@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Protótipo 2D Top-Down [Debug / Developer Mode]</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <!-- Canvas Principal do Jogo -->
+  <canvas id="game-canvas"></canvas>
+
+  <!-- ==================== HUD IN-GAME ==================== -->
+  <div id="hud-layer" class="hud-layer hidden">
+    <!-- Topo Esquerdo: Barras de Vida (HP) dos 2 Personagens -->
+    <div class="hud-top-left">
+      <!-- Card Personagem 1 -->
+      <div id="hud-p1-card" class="player-hp-card active-player-card">
+        <div class="player-avatar p1-avatar">
+          <span>P1</span>
+        </div>
+        <div class="player-hp-info">
+          <div class="player-hp-header">
+            <span class="player-name">Personagem 1 <small id="hud-p1-badge" class="control-badge">ATIVO</small></span>
+            <span id="hud-p1-hp-text" class="hp-numbers">100 / 100 HP</span>
+          </div>
+          <div class="hp-bar-outer">
+            <div id="hud-p1-hp-bar" class="hp-bar-inner" style="width: 100%;"></div>
+          </div>
+          <div class="player-controls-hint" id="hud-p1-keys">Teclas: W, A, S, D</div>
+        </div>
+      </div>
+
+      <!-- Card Personagem 2 -->
+      <div id="hud-p2-card" class="player-hp-card">
+        <div class="player-avatar p2-avatar">
+          <span>P2</span>
+        </div>
+        <div class="player-hp-info">
+          <div class="player-hp-header">
+            <span class="player-name">Personagem 2 <small id="hud-p2-badge" class="control-badge">ESPERA</small></span>
+            <span id="hud-p2-hp-text" class="hp-numbers">100 / 100 HP</span>
+          </div>
+          <div class="hp-bar-outer">
+            <div id="hud-p2-hp-bar" class="hp-bar-inner" style="width: 100%;"></div>
+          </div>
+          <div class="player-controls-hint" id="hud-p2-keys">Alternar: [TAB]</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Topo Central: Timer da Fase e Estado do Mapa -->
+    <div class="hud-top-center">
+      <div class="phase-header-box">
+        <div class="stage-flow-Steps" id="hud-stage-stepper">
+          <span class="step-dot active" data-step="0">M1</span>
+          <span class="step-line"></span>
+          <span class="step-dot" data-step="1">VAN</span>
+          <span class="step-line"></span>
+          <span class="step-dot" data-step="2">M2</span>
+          <span class="step-line"></span>
+          <span class="step-dot" data-step="3">VAN</span>
+          <span class="step-line"></span>
+          <span class="step-dot" data-step="4">M3</span>
+        </div>
+        <div id="hud-map-title" class="map-title">MAPA 1: FLORESTA ARREDORES [DEBUG]</div>
+        <div id="hud-timer-box" class="timer-display">
+          <span class="timer-label">TEMPO RESTANTE</span>
+          <span id="hud-timer-value" class="timer-digits">03:00</span>
+        </div>
+        <div id="hud-saferoom-badge" class="saferoom-badge hidden">
+          ZONA SEGURA (VAN) — CRONÔMETRO PAUSADO
+        </div>
+      </div>
+
+      <!-- Aviso Contextual de Interação (Zona de Extração / Porta da Van) -->
+      <div id="hud-interaction-prompt" class="interaction-prompt hidden">
+        Pressione <kbd>E</kbd> ou <kbd>Espaço</kbd> para avançar!
+      </div>
+    </div>
+
+    <!-- Topo Direito: Painel de Atalhos de Desenvolvedor (Debug Keys) & Telemetria -->
+    <div class="hud-top-right">
+      <div class="debug-panel">
+        <div class="debug-panel-title">
+          <span class="debug-dot"></span> DEVELOPER / DEBUG MODE
+        </div>
+        <ul class="debug-shortcuts-list">
+          <li><kbd>H</kbd> <span>Causar <strong>-10 HP</strong> no personagem ativo</span></li>
+          <li><kbd>J</kbd> <span>Restaurar <strong>+20 HP</strong> (Teste de Cura)</span></li>
+          <li><kbd>N</kbd> <span>Avançar estado de mapa (Skip)</span></li>
+          <li id="debug-tab-hint"><kbd>Tab</kbd> <span>Alternar P1 / P2 (Singleplayer)</span></li>
+          <li><kbd>1</kbd>-<kbd>6</kbd> / <kbd>Scroll</kbd> <span>Selecionar Slot da Hotbar</span></li>
+          <li><kbd>E</kbd> / <kbd>Espaço</kbd> <span>Interagir com Saída / Porta</span></li>
+          <li><kbd>Esc</kbd> / <kbd>P</kbd> <span>Abrir Menu de Pausa / Inventário</span></li>
+        </ul>
+        <div class="debug-telemetry" id="debug-telemetry">
+          <div>Modo: <strong id="dbg-mode">Singleplayer</strong></div>
+          <div>Estado: <strong id="dbg-state">MAP_1</strong></div>
+          <div>P1 Pos: <span id="dbg-p1-pos">0, 0</span></div>
+          <div>P2 Pos: <span id="dbg-p2-pos">0, 0</span></div>
+          <div>Câmera: <span id="dbg-cam-pos">0, 0</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Base Central: Inventário de Armas (Hotbar estilo Stardew Valley) -->
+    <div class="hud-bottom-center">
+      <div id="hud-selected-item-label" class="selected-item-tooltip">
+        Slot 1: Pistola [Debug]
+      </div>
+      <div id="hud-hotbar" class="stardew-hotbar">
+        <!-- Slots gerados dinamicamente via ui.js -->
+      </div>
+      <div class="hotbar-hint">
+        Use as teclas <kbd>1</kbd> a <kbd>6</kbd> ou o <strong>Scroll do Mouse</strong> para alternar o slot ativo
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MENU PRINCIPAL ==================== -->
+  <div id="main-menu-overlay" class="menu-overlay">
+    <div class="stardew-panel main-menu-card">
+      <div class="dev-ribbon">BUILD DE PROTOTIPAGEM • MODO DEBUG</div>
+      <h1 class="game-title">PROJETO EXPEDIÇÃO 2D</h1>
+      <p class="game-subtitle">Protótipo Base Top-Down • Arquitetura de Estados, Câmera &amp; Safe Room</p>
+
+      <!-- Seletor de Modo de Jogo -->
+      <div class="mode-selector-section">
+        <h2 class="section-label">Selecione o Modo de Operação</h2>
+        <div class="mode-cards-grid">
+          <button type="button" id="btn-mode-single" class="mode-option-card selected" data-mode="singleplayer">
+            <div class="mode-card-header">
+              <span class="mode-radio"></span>
+              <strong>Modo Singleplayer</strong>
+            </div>
+            <p class="mode-card-desc">
+              Controle 1 personagem por vez com <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd>.
+              Pressione <kbd>Tab</kbd> para alternar instantaneamente entre Personagem 1 e Personagem 2.
+            </p>
+          </button>
+
+          <button type="button" id="btn-mode-multi" class="mode-option-card" data-mode="multiplayer">
+            <div class="mode-card-header">
+              <span class="mode-radio"></span>
+              <strong>Modo Multiplayer Local</strong>
+            </div>
+            <p class="mode-card-desc">
+              Ambos os jogadores atuam simultaneamente:
+              <strong>P1</strong> em <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> e
+              <strong>P2</strong> nas <kbd>Setas Direcionais</kbd>. Câmera no ponto médio.
+            </p>
+          </button>
+        </div>
+      </div>
+
+      <!-- Resumo da Máquina de Estados -->
+      <div class="flow-preview-box">
+        <span class="flow-label">Fluxo de Fases:</span>
+        <div class="flow-pills">
+          <span class="pill">Mapa 1</span>
+          <span class="arrow">→</span>
+          <span class="pill van">Safe Room (Van)</span>
+          <span class="arrow">→</span>
+          <span class="pill">Mapa 2</span>
+          <span class="arrow">→</span>
+          <span class="pill van">Safe Room (Van)</span>
+          <span class="arrow">→</span>
+          <span class="pill">Mapa 3</span>
+        </div>
+      </div>
+
+      <!-- Botões de Ação do Menu Principal -->
+      <div class="menu-actions">
+        <button type="button" id="btn-start-game" class="stardew-btn btn-primary">
+          ▶ Iniciar Partida (Carregar Mapa 1)
+        </button>
+        <button type="button" id="btn-open-settings" class="stardew-btn btn-secondary">
+          ⚙ Configurações
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL DE CONFIGURAÇÕES (PLACEHOLDER) ==================== -->
+  <div id="settings-modal-overlay" class="menu-overlay hidden">
+    <div class="stardew-panel modal-card">
+      <h2 class="modal-title">⚙ Configurações</h2>
+      <div class="placeholder-notice-box">
+        <div class="placeholder-icon">🛠️</div>
+        <h3>Em breve / Placeholder de Desenvolvimento</h3>
+        <p>
+          Este menu é um placeholder estrutural para validação de interface neste primeiro marco (Modo Debug).
+          Opções de volume de áudio, remapeamento de controles e resolução serão implementadas em marcos futuros.
+        </p>
+      </div>
+      <div class="menu-actions">
+        <button type="button" id="btn-close-settings" class="stardew-btn btn-primary">
+          Voltar ao Menu Principal
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MENU DE PAUSA / INVENTÁRIO (ESC ou P) ==================== -->
+  <div id="pause-menu-overlay" class="menu-overlay hidden">
+    <div class="stardew-panel pause-inventory-card">
+      <div class="pause-header">
+        <div>
+          <span class="pause-badge">JOGO PAUSADO</span>
+          <h2 class="pause-title">Inventário &amp; Status da Equipe</h2>
+        </div>
+        <div class="pause-stage-info">
+          <div id="pause-map-name">Mapa 1</div>
+          <div id="pause-timer-status">Tempo Restante: 03:00</div>
+        </div>
+      </div>
+
+      <!-- Painel Duplo de Status de Vida (HP) e Grade de Itens dos 2 Personagens -->
+      <div class="pause-characters-grid">
+        <!-- Coluna Personagem 1 -->
+        <div class="char-inventory-box" id="pause-p1-box">
+          <div class="char-box-header">
+            <div class="player-avatar p1-avatar">P1</div>
+            <div class="char-meta">
+              <h3>Personagem 1 <span id="pause-p1-role" class="role-tag">Batedor</span></h3>
+              <div class="pause-hp-row">
+                <span>Status de Vida (HP):</span>
+                <strong id="pause-p1-hp-label">100 / 100 HP</strong>
+              </div>
+              <div class="hp-bar-outer pause-hp-bar">
+                <div id="pause-p1-hp-fill" class="hp-bar-inner" style="width: 100%;"></div>
+              </div>
+            </div>
+          </div>
+          <div class="inventory-grid-title">Grade de Itens e Armas Carregados:</div>
+          <div id="pause-p1-items-grid" class="inventory-slots-grid">
+            <!-- Preenchido via ui.js -->
+          </div>
+        </div>
+
+        <!-- Coluna Personagem 2 -->
+        <div class="char-inventory-box" id="pause-p2-box">
+          <div class="char-box-header">
+            <div class="player-avatar p2-avatar">P2</div>
+            <div class="char-meta">
+              <h3>Personagem 2 <span id="pause-p2-role" class="role-tag">Suporte</span></h3>
+              <div class="pause-hp-row">
+                <span>Status de Vida (HP):</span>
+                <strong id="pause-p2-hp-label">100 / 100 HP</strong>
+              </div>
+              <div class="hp-bar-outer pause-hp-bar">
+                <div id="pause-p2-hp-fill" class="hp-bar-inner" style="width: 100%;"></div>
+              </div>
+            </div>
+          </div>
+          <div class="inventory-grid-title">Grade de Itens e Armas Carregados:</div>
+          <div id="pause-p2-items-grid" class="inventory-slots-grid">
+            <!-- Preenchido via ui.js -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Ações do Menu de Pausa -->
+      <div class="pause-actions-row">
+        <button type="button" id="btn-resume-game" class="stardew-btn btn-primary">
+          ▶ Continuar Jogo (Esc / P)
+        </button>
+        <button type="button" id="btn-restart-stage" class="stardew-btn btn-warning">
+          ↺ Reiniciar Fase Atual
+        </button>
+        <button type="button" id="btn-quit-to-menu" class="stardew-btn btn-danger">
+          ⌂ Voltar para o Menu Principal
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notificação Toast de Transição / Debug -->
+  <div id="debug-toast" class="debug-toast hidden"></div>
+
+  <!-- Scripts Modulares do Jogo -->
+  <script src="js/config.js"></script>
+  <script src="js/maps.js"></script>
+  <script src="js/input.js"></script>
+  <script src="js/entities.js"></script>
+  <script src="js/camera.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
+
