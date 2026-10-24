@@ -1,12 +1,11 @@
 /**
  * js/main.js
- * Motor Principal do Protótipo 2D Top-Down (Sprint 3):
- * - Persistência Global de Lixos em Coordenadas Fixas (Hardcoded) nos 3 Mapas (sem geração procedural)
- * - Sistema de Ataque/Bater Placeholder (Arco/Cone de colisão colorido + Log no Console)
- *   • Singleplayer: Botão Direito do Mouse (com bloqueio de contextmenu) ou Tecla de Ataque remapeada
- *   • Multiplayer Local: Jogador 1 na tecla R e Jogador 2 na tecla 0 (ou teclas remapeadas em Config.Controls)
- * - Suporte Nativo a Gamepad API (navigator.getGamepads()) dentro do requestAnimationFrame
- * - Consumo integral do Dicionário Global de Inputs (window.Config.Controls)
+ * Motor Principal do Protótipo 2D Top-Down (Sprints 2, 3 e 4).
+ * Coordena o Game Loop, Máquina de Estados de Fases, Trava de Câmera/Viewport no Multiplayer,
+ * Persistência de Posição Fixa dos Lixos (fixedTrashSpawns + window.collectedTrashIds),
+ * Sistema de Ataque (Mouse Direito no Singleplayer; R e 0 no Multiplayer; Gamepad API),
+ * Sistema de Dano (takeDamage + Fogo Amigo) e Condições de Derrota (Game Over por HP ou Time Out),
+ * e Interfaces Interativas da Safe Room na Van (Mesa de Crafting 8x4 e Lojinha Shop).
  */
 
 class Game {
@@ -17,8 +16,9 @@ class Game {
     // Garante bloqueio do menu de contexto padrão do navegador também diretamente no Canvas
     this.canvas.addEventListener('contextmenu', (e) => e.preventDefault());
 
-    // Estado de Alto Nível: 'MAIN_MENU' | 'PLAYING' | 'PAUSED'
+    // Estado de Alto Nível: 'MAIN_MENU' | 'PLAYING' | 'PAUSED' | 'GAME_OVER'
     this.appState = 'MAIN_MENU';
+    this.gameOverCause = null;
 
     // Modo de Operação: 'singleplayer' | 'multiplayer'
     this.gameMode = 'singleplayer';
@@ -34,14 +34,27 @@ class Game {
     this.zoneHoldTimer = 0;
     this.zoneHoldDuration = 1.15;
 
-    // Instancia os 2 Personagens em cena (5 slots de inventário cada)
+    // Hooks opcionais para o Map Editor
+    this.editorFreezeGameplay = false;
+    this.editorFreeCamera = false;
+    this.onRenderWorldOverlay = null;
+    this.onRenderScreenOverlay = null;
+
+    // Maleta Espacial 8x4 (32 slots) exclusiva da Mesa de Crafting na Van (Sprint 4)
+    const gridTotal = (window.GameConfig.CRAFTING_GRID_COLS || 8) * (window.GameConfig.CRAFTING_GRID_ROWS || 4);
+    this.vanCraftingGrid = new Array(gridTotal).fill(null);
+
+    // Instancia os 2 Personagens em cena
     this.p1 = new window.Player({
       id: 1,
       name: 'Jogador 1',
       role: 'Batedor',
       primaryColor: '#38bdf8',
       secondaryColor: '#0284c7',
-      inventory: window.GameConfig.createDefaultInventoryP1()
+      x: this.currentMap.spawnP1.x,
+      y: this.currentMap.spawnP1.y,
+      inventory: window.GameConfig.createDefaultInventoryP1(),
+      onZeroHp: (deadPlayer) => this._handlePlayerZeroHp(deadPlayer)
     });
 
     this.p2 = new window.Player({
@@ -50,38 +63,40 @@ class Game {
       role: 'Suporte',
       primaryColor: '#fb923c',
       secondaryColor: '#ea580c',
-      inventory: window.GameConfig.createDefaultInventoryP2()
+      x: this.currentMap.spawnP2.x,
+      y: this.currentMap.spawnP2.y,
+      inventory: window.GameConfig.createDefaultInventoryP2(),
+      onZeroHp: (deadPlayer) => this._handlePlayerZeroHp(deadPlayer)
     });
 
     this.players = [this.p1, this.p2];
     this.activePlayerIndex = 0; // Usado no Singleplayer (0 = P1, 1 = P2)
 
-    // Entidades de Lixo / Sucata fixas restantes no mapa atual (Sprint 3)
+    // Entidades de Lixo / Sucata posicionadas em coordenadas fixas no mapa atual
     this.trashItems = [];
 
-    // Lista de textos flutuantes de debug (ex: "-10 HP", "+1 Lixo", "⚔️ ATAQUE", avisos de estação)
+    // Lista de textos flutuantes de debug (ex: "-10 HP", "+1 Lixo", avisos de ataque)
     this.floatingTexts = [];
 
     // Câmera 2D
     this.camera = new window.Camera2D(window.innerWidth, window.innerHeight);
 
-    // Input Manager (Teclado via Config.Controls + Mouse Right Click + Gamepad API)
+    // Input Manager (Teclado Remapeável + Mouse Direito + Gamepad API)
     this.input = new window.InputManager({
       onSwitchPlayer: () => this.handleSwitchPlayer(),
       onTogglePause: () => this.handlePauseShortcut(),
       onInteract: () => this.handleInteractShortcut(),
-      onMouseRightAttack: (source) => this.handleMouseRightAttack(source),
-      onPlayerAttack: (playerId, source) => this.handleKeyboardAttack(playerId, source),
-      onGamepadAttack: (targetSlot, source) => this.handleGamepadAttack(targetSlot, source),
-      onGamepadInteractOrAttack: (targetSlot, source) => this.handleGamepadInteractOrAttack(targetSlot, source),
-      onGamepadCycleSlot: (targetSlot, dir, source) => this.handleGamepadCycleSlot(targetSlot, dir, source),
-      onGamepadStatusChange: (gp, connected, profile) => this.handleGamepadStatusChange(gp, connected, profile),
-      onCyclePlayerSlot: (playerId, dir) => this.cyclePlayerHotbarSlot(playerId, dir),
-      onDebugDamage: () => this.handleDebugDamage(),
-      onDebugHeal: () => this.handleDebugHeal(),
+      onDebugDamage: (e) => this.handleDebugDamage(e),
+      onDebugHeal: (e) => this.handleDebugHeal(e),
       onDebugNextStage: () => this.handleDebugNextStage(),
       onSelectSlot: (slotIndex) => this.selectHotbarSlot(slotIndex, null),
-      onCycleSlot: (direction) => this.cycleHotbarSlot(direction)
+      onCycleSlot: (direction) => this.cycleHotbarSlot(direction),
+      onCycleInventoryKey: (direction) => this.cycleHotbarSlot(direction),
+      onSingleplayerRightClickAttack: (mousePos) => this.handleSingleplayerRightClickAttack(mousePos),
+      onAttackP1Key: (keyCode) => this.handleMultiplayerKeyAttack(1, keyCode),
+      onAttackP2Key: (keyCode) => this.handleMultiplayerKeyAttack(2, keyCode),
+      onGamepadAttack: (padSlot, padName) => this.handleGamepadAttack(padSlot, padName),
+      onGamepadCycleSlot: (padSlot, direction) => this.handleGamepadCycleSlot(padSlot, direction)
     });
 
     // UI Manager
@@ -92,8 +107,10 @@ class Game {
     window.addEventListener('resize', this._onResize);
     this._onResize();
 
-    // Inicializa os itens de lixo nas posições fixas (hardcoded) do Mapa 1 para preview
+    // Inicializa entidades de lixo com posição fixa e câmera no mapa inicial
     this._spawnFixedTrashForMap(this.currentMap);
+    const initialTarget = this._getCameraTargetPoint();
+    this.camera.snapToTarget(initialTarget.x, initialTarget.y, this.currentMap);
 
     // Controle de Tempo do Loop
     this.lastTimestamp = performance.now();
@@ -119,14 +136,32 @@ class Game {
     return this.p1;
   }
 
+  getControlledPlayers() {
+    if (this.gameMode === 'singleplayer') {
+      return [this.players[this.activePlayerIndex]];
+    }
+    return this.players;
+  }
+
+  isStationModalOpen() {
+    if (!this.ui) return false;
+    return (
+      this.ui.isCraftingModalOpen() ||
+      this.ui.isShopModalOpen() ||
+      this.ui.isSettingsModalOpen()
+    );
+  }
+
   /**
-   * Inicia / Retorna à partida a partir do Menu Principal carregando o Mapa 1.
-   * Mantém o registro global de lixos coletados (window.collectedTrashIds) para garantir
-   * persistência caso o jogador saia e volte para a fase.
+   * Inicia uma nova partida a partir do Menu Principal carregando o Mapa 1
    */
   startNewGame() {
     this.p1.hp = this.p1.maxHp;
     this.p2.hp = this.p2.maxHp;
+    this.p1.bonusDamage = 0;
+    this.p2.bonusDamage = 0;
+    this.p1.inventory = window.GameConfig.createDefaultInventoryP1();
+    this.p2.inventory = window.GameConfig.createDefaultInventoryP2();
     this.p1.selectedSlot = 0;
     this.p2.selectedSlot = 0;
     this.activePlayerIndex = 0;
@@ -134,21 +169,17 @@ class Game {
 
     this.loadStageByFlowIndex(0);
     this.appState = 'PLAYING';
+    this.gameOverCause = null;
     this.ui.showGameplayHUD();
-
-    const C = window.Config.Controls;
-    const fmt = (k) => window.Config.formatKeyCode(k);
-    const modeDesc =
-      this.gameMode === 'singleplayer'
-        ? `Singleplayer (Ataque: Botão Direito do Mouse / [${fmt(C.P1_Attack)}])`
-        : `Multiplayer Local (Ataque P1: [${fmt(C.P1_Attack)}] • Ataque P2: [${fmt(C.P2_Attack)}])`;
-
-    this.ui.showToast(`Partida em andamento: ${modeDesc}`);
+    this.ui.showToast(
+      `Partida iniciada em modo ${this.gameMode === 'singleplayer' ? 'Singleplayer (Botão Direito Ataca)' : 'Multiplayer Local (P1: R | P2: 0)'}!`
+    );
   }
 
   /**
    * Carrega um estado específico da máquina de estados de fases:
    * 0: Mapa 1 -> 1: Van -> 2: Mapa 2 -> 3: Van -> 4: Mapa 3
+   * Respeita o estado global window.collectedTrashIds para nunca respawnar lixos já coletados.
    */
   loadStageByFlowIndex(flowIndex) {
     const flowList = window.GameConfig.STAGE_FLOW;
@@ -161,18 +192,25 @@ class Game {
     this.p1.setPosition(this.currentMap.spawnP1.x, this.currentMap.spawnP1.y);
     this.p2.setPosition(this.currentMap.spawnP2.x, this.currentMap.spawnP2.y);
 
-    // Reseta o Timer da Fase (180s = 03:00) e carrega os Lixos Fixos ainda NÃO coletados
+    // Reseta o Timer da Fase (180s = 03:00) e carrega Lixo de coordenadas fixas nos 3 mapas grandes
     if (!stageMeta.isSafeRoom) {
       this.stageTimeRemaining = window.GameConfig.STAGE_DURATION_SECONDS;
       this._spawnFixedTrashForMap(this.currentMap);
     } else {
       this.trashItems = [];
+      if (Array.isArray(this.currentMap.customTrash) && this.currentMap.customTrash.length > 0) {
+        this._spawnCustomTrashForMap(this.currentMap);
+      }
     }
 
     this.zoneHoldTimer = 0;
     this.input.clearAll();
 
-    // Posiciona a câmera imediatamente no foco inicial
+    if (this.ui) {
+      this.ui.closeCraftingModal();
+      this.ui.closeShopModal();
+    }
+
     const camTarget = this._getCameraTargetPoint();
     this.camera.snapToTarget(camTarget.x, camTarget.y, this.currentMap);
 
@@ -180,184 +218,275 @@ class Game {
   }
 
   /**
-   * Instancia os itens de Lixo/Sucata exclusivamente nas coordenadas fixas (hardcoded) do mapa,
-   * consultando o Estado Global (window.collectedTrashIds) para nunca respawnar itens já coletados.
+   * Spawna os itens de Lixo nas coordenadas fixas (hardcoded) definidas em `map.fixedTrashSpawns`,
+   * filtrando quaisquer IDs já registrados em `window.collectedTrashIds` para que nunca reapareçam.
    */
   _spawnFixedTrashForMap(map) {
     this.trashItems = [];
-    if (!map || map.isSafeRoom || !Array.isArray(map.trashSpawns)) return;
+    if (!map) return;
 
+    const collectedSet = window.collectedTrashIds || (window.collectedTrashIds = new Set());
     const types = window.GameConfig.TRASH_TYPES;
 
-    map.trashSpawns.forEach((spawnDef, idx) => {
-      // Verifica no estado global se este lixo já foi coletado anteriormente
-      if (window.GlobalState.isTrashCollected(spawnDef.id)) {
-        return;
-      }
+    // 1. Coordenadas fixas predefinidas em cada um dos 3 mapas grandes
+    if (Array.isArray(map.fixedTrashSpawns)) {
+      map.fixedTrashSpawns.forEach((spawnDef, idx) => {
+        const trashId = spawnDef.id || `fixed_${map.id}_${idx}`;
+        if (collectedSet.has(trashId)) {
+          return; // Já foi coletado anteriormente: não reaparece!
+        }
 
-      const typeInfo = types[(spawnDef.typeIndex ?? idx) % types.length];
+        const typeIdx = typeof spawnDef.typeIndex === 'number' ? spawnDef.typeIndex : idx;
+        const typeInfo = types[typeIdx % types.length];
+
+        this.trashItems.push(
+          new window.TrashItem({
+            id: trashId,
+            x: spawnDef.x,
+            y: spawnDef.y,
+            typeInfo,
+            rotation: ((idx % 5) - 2) * 0.14,
+            bobPhase: idx * 0.65
+          })
+        );
+      });
+    }
+
+    // 2. Suporte adicional caso o usuário tenha adicionado itens pelo Map Editor
+    this._spawnCustomTrashForMap(map);
+  }
+
+  _spawnCustomTrashForMap(map) {
+    if (!Array.isArray(map.customTrash)) return;
+    const collectedSet = window.collectedTrashIds || (window.collectedTrashIds = new Set());
+    const types = window.GameConfig.TRASH_TYPES;
+
+    map.customTrash.forEach((ct, idx) => {
+      const trashId = ct.id || `custom_trash_${map.id}_${idx}`;
+      if (collectedSet.has(trashId)) return;
+
+      const typeInfo = types.find((t) => t.id === ct.typeId) || types[idx % types.length];
       this.trashItems.push(
         new window.TrashItem({
-          id: spawnDef.id,
-          x: spawnDef.x,
-          y: spawnDef.y,
+          id: trashId,
+          x: ct.x,
+          y: ct.y,
+          size: ct.size || window.GameConfig.TRASH_SIZE || 26,
           typeInfo,
-          rotation: spawnDef.rotation ?? 0,
-          bobPhase: idx * 0.9
+          sprite: ct.sprite || null,
+          rotation: ct.rotation || 0,
+          bobPhase: ct.bobPhase || 0,
+          isCustomPlaced: true
         })
       );
     });
   }
 
+  _boxesOverlap(a, b) {
+    return (
+      a.x < b.x + b.w &&
+      a.x + a.w > b.x &&
+      a.y < b.y + b.h &&
+      a.y + a.h > b.y
+    );
+  }
+
+  // =========================================================================
+  // SISTEMA DE DANO, MORTE POR HP E MORTE POR TEMPO (GAME OVER - SPRINT 4)
+  // =========================================================================
+  _handlePlayerZeroHp(deadPlayer) {
+    if (this.appState === 'GAME_OVER') return;
+    const causeMsg = 'Você Morreu';
+    const detailMsg = `${deadPlayer.name} chegou a 0 HP! A partida foi encerrada imediatamente.`;
+    this.triggerGameOver(causeMsg, detailMsg);
+  }
+
+  triggerGameOver(titleText = 'Você Morreu', subtitleText = '') {
+    if (this.appState === 'GAME_OVER') return;
+    this.appState = 'GAME_OVER';
+    this.gameOverCause = titleText;
+    this.input.clearAll();
+    console.log(`💀 [GAME OVER] ${titleText} — ${subtitleText}`);
+    this.ui.updateHUD();
+    this.ui.showGameOver(titleText, subtitleText);
+  }
+
   /**
-   * Reinicia a fase atual mantendo a persistência global dos lixos já coletados
+   * Reinicia a fase atual (via botão "Reiniciar Fase" do Game Over ou do Menu de Pausa):
+   * Restaura o timer, enche o HP de ambos e os coloca de volta no spawn do mapa atual,
+   * mantendo os lixos já coletados registrados em window.collectedTrashIds.
    */
   restartCurrentStage() {
     this.p1.hp = this.p1.maxHp;
     this.p2.hp = this.p2.maxHp;
+    this.floatingTexts = [];
+    this.appState = 'PLAYING';
+    this.gameOverCause = null;
+
     this.loadStageByFlowIndex(this.stageFlowIndex);
-    this.togglePause(false);
-    this.ui.showToast('Fase reiniciada! (Lixos já coletados permanecem salvos no Estado Global).');
+    this.ui.hideGameOver();
+    this.ui.showPauseMenu(false);
+    this.ui.updateHUD();
+    this.ui.showToast('Fase reiniciada! HP restaurado (100/100), Timer resetado e lixos coletados preservados.');
   }
 
-  /**
-   * Retorna ao Menu Principal
-   */
   returnToMainMenu() {
     this.appState = 'MAIN_MENU';
+    this.gameOverCause = null;
     this.input.clearAll();
     this.ui.showMainMenu();
   }
 
+  // =========================================================================
+  // SISTEMA DE ATAQUE E FOGO AMIGO (SPRINTS 3 & 4)
+  // =========================================================================
   /**
-   * Ataque via Botão Direito do Mouse (Exclusivo do Modo Singleplayer)
+   * Modo Singleplayer: O ataque é acionado exclusivamente pelo Botão Direito do Mouse,
+   * direcionado para a posição atual do cursor na tela.
    */
-  handleMouseRightAttack(sourceLabel) {
-    if (this.appState !== 'PLAYING') return;
+  handleSingleplayerRightClickAttack(mousePos) {
+    if (this.appState !== 'PLAYING' || this.isStationModalOpen()) return;
     if (this.gameMode !== 'singleplayer') return;
 
-    const activePlayer = this.players[this.activePlayerIndex];
-    this._executePlayerAttack(activePlayer, sourceLabel);
+    const attacker = this.players[this.activePlayerIndex];
+    const targetPlayer = this.players[this.activePlayerIndex === 0 ? 1 : 0];
+
+    const rect = this.canvas.getBoundingClientRect();
+    const screenX = (mousePos ? mousePos.clientX : this.input.mouseX) - rect.left;
+    const screenY = (mousePos ? mousePos.clientY : this.input.mouseY) - rect.top;
+
+    // Converte coordenada da tela para coordenada do mundo
+    const worldX = screenX + this.camera.x;
+    const worldY = screenY + this.camera.y;
+
+    const aimVector = {
+      dx: worldX - attacker.x,
+      dy: worldY - attacker.y
+    };
+
+    this._executePlayerAttack(attacker, targetPlayer, aimVector, 'Botão Direito do Mouse (Singleplayer)');
   }
 
   /**
-   * Ataque via Teclado (Config.Controls.P1_Attack = 'KeyR' e Config.Controls.P2_Attack = 'Digit0')
+   * Modo Multiplayer Local:
+   * - Jogador 1 ataca usando a tecla configurada em `Config.Controls.attackP1` (padrão `KeyR`)
+   * - Jogador 2 ataca usando a tecla configurada em `Config.Controls.attackP2` (padrão `Digit0`)
    */
-  handleKeyboardAttack(playerId, sourceLabel) {
-    if (this.appState !== 'PLAYING') return;
+  handleMultiplayerKeyAttack(playerId, keyCode) {
+    if (this.appState !== 'PLAYING' || this.isStationModalOpen()) return;
 
+    if (this.gameMode !== 'multiplayer') {
+      this.ui.showToast('No modo Singleplayer, ataque com o Botão Direito do Mouse na direção do cursor!', 1600);
+      return;
+    }
+
+    const attacker = playerId === 1 ? this.p1 : this.p2;
+    const targetPlayer = playerId === 1 ? this.p2 : this.p1;
+    const label = `Tecla [${window.Config.formatKeyCode(keyCode)}] (Multiplayer P${playerId})`;
+
+    this._executePlayerAttack(attacker, targetPlayer, null, label);
+  }
+
+  /**
+   * Ataque acionado via Gamepad API (Botões de Face X / Quadrado)
+   */
+  handleGamepadAttack(padSlot, padName) {
+    if (this.appState !== 'PLAYING' || this.isStationModalOpen()) return;
+
+    let attacker;
+    let targetPlayer;
     if (this.gameMode === 'singleplayer') {
-      // No Singleplayer, se o jogador pressionar a tecla de ataque remapeada de P1, o personagem ativo também ataca
-      if (playerId === 1) {
-        const activePlayer = this.players[this.activePlayerIndex];
-        this._executePlayerAttack(activePlayer, sourceLabel);
-      }
+      attacker = this.players[this.activePlayerIndex];
+      targetPlayer = this.players[this.activePlayerIndex === 0 ? 1 : 0];
     } else {
-      // No Multiplayer Local: P1 ataca com P1_Attack (R) e P2 ataca com P2_Attack (0)
-      const attacker = playerId === 2 ? this.p2 : this.p1;
-      this._executePlayerAttack(attacker, sourceLabel);
+      attacker = padSlot === 2 ? this.p2 : this.p1;
+      targetPlayer = padSlot === 2 ? this.p1 : this.p2;
     }
+
+    this._executePlayerAttack(attacker, targetPlayer, null, `Gamepad (${padName})`);
   }
 
   /**
-   * Ataque via Botões de Face do Gamepad (X / Y)
+   * Navegação de inventário via Gatilhos Superiores do Gamepad (Bumpers L1 / R1)
    */
-  handleGamepadAttack(targetSlot, sourceLabel) {
-    if (this.appState !== 'PLAYING') return;
+  handleGamepadCycleSlot(padSlot, direction) {
+    if (this.appState !== 'PLAYING' || this.isStationModalOpen()) return;
 
-    const attacker =
-      this.gameMode === 'singleplayer'
-        ? this.players[this.activePlayerIndex]
-        : targetSlot === 2
-          ? this.p2
-          : this.p1;
-
-    this._executePlayerAttack(attacker, sourceLabel);
-  }
-
-  /**
-   * Botões de Face Secundários do Gamepad (A / B): Interage se estiver em uma zona/estação, caso contrário ataca
-   */
-  handleGamepadInteractOrAttack(targetSlot, sourceLabel) {
-    if (this.appState !== 'PLAYING') return;
-
-    if (this.getTouchedSafeRoomStation() || this.isAnyPlayerInTransitionZone()) {
-      this.handleInteractShortcut();
-    } else {
-      this.handleGamepadAttack(targetSlot, sourceLabel);
-    }
-  }
-
-  /**
-   * Executa o evento de Atacar/Bater: ativa o arco/cone de colisão, gera log no console e verifica Fogo Amigo
-   */
-  _executePlayerAttack(attacker, sourceLabel) {
-    if (!attacker) return;
-    const triggered = attacker.triggerAttack(sourceLabel, this.gameMode);
-    if (!triggered) return;
-
-    const tipX = attacker.x + attacker.facingX * 36;
-    const tipY = attacker.y + attacker.facingY * 36 - 18;
-    const color = attacker.id === 1 ? '#38bdf8' : '#fb923c';
-
-    this.floatingTexts.push(
-      new window.FloatingText(tipX, tipY, `⚔️ ATAQUE P${attacker.id}`, color, 0.55)
-    );
-
-    // Se Fogo Amigo (friendlyFireEnabled) estiver ativo nas configurações, verifica colisão do cone com o parceiro
-    if (window.friendlyFireEnabled) {
-      const partner = attacker.id === 1 ? this.p2 : this.p1;
-      if (attacker.isPointInAttackCone(partner.x, partner.y, partner.size / 2)) {
-        partner.takeDamage(10);
-        this.camera.triggerShake(0.14, 4);
-        this.floatingTexts.push(
-          new window.FloatingText(partner.x, partner.y - 36, '-10 HP [FOGO AMIGO]', '#ef4444', 0.9)
-        );
-        console.log(
-          `🔥 [FOGO AMIGO] ${attacker.name} atingiu ${partner.name} no cone de ataque! (-10 HP)`
-        );
-        this.ui.updateHUD();
-      }
-    }
-  }
-
-  /**
-   * Bumpers L1 / R1 do Gamepad giram os itens do inventário
-   */
-  handleGamepadCycleSlot(targetSlot, direction, sourceLabel) {
-    if (this.appState !== 'PLAYING') return;
-
-    const player =
-      this.gameMode === 'singleplayer'
-        ? this.players[this.activePlayerIndex]
-        : targetSlot === 2
-          ? this.p2
-          : this.p1;
+    const player = this.gameMode === 'multiplayer'
+      ? (padSlot === 2 ? this.p2 : this.p1)
+      : this.getHudFocusPlayer();
 
     const len = player.inventory.length;
     player.selectedSlot = (player.selectedSlot + direction + len) % len;
     this.ui.renderHotbar();
-
-    const equipped = player.getEquippedItem();
-    console.log(
-      `🎒 [INVENTÁRIO GAMEPAD] ${player.name} girou para Slot ${player.selectedSlot + 1} (${equipped ? equipped.shortName : 'Vazio'}) via ${sourceLabel}`
-    );
-  }
-
-  handleGamepadStatusChange(gp, connected, profile) {
-    if (connected) {
-      this.ui.showToast(`🕹️ Controle conectado: ${profile.label}`, 2400);
-    } else {
-      this.ui.showToast(`🕹️ Controle #${gp.index + 1} desconectado.`, 1800);
-    }
-    this.ui.updateGamepadStatusBanner();
   }
 
   /**
-   * Alterna entre Personagem 1 e Personagem 2 (no Singleplayer)
+   * Executa o ataque de `attacker`, gera o log no console, exibe feedback visual e
+   * aplica Fogo Amigo (`takeDamage`) caso `window.friendlyFireEnabled` esteja ativo e acerte a hitbox do outro jogador.
+   */
+  _executePlayerAttack(attacker, otherPlayer, aimVector, sourceLabel) {
+    const hitbox = attacker.triggerAttack(aimVector, sourceLabel);
+    if (!hitbox) return;
+
+    const item = attacker.getEquippedItem();
+    const itemName = item && !item.isEmpty ? item.name : 'Golpe Corpo-a-Corpo';
+    const dmg = attacker.getAttackDamage();
+
+    console.log(
+      `⚔️ [ATAQUE] ${attacker.name} (P${attacker.id}) atacou! | Fonte: ${sourceLabel} | Arma/Item: ${itemName} | Dano Base: ${dmg} | Direção: ${hitbox.angleDeg}° | Hitbox: (${Math.round(hitbox.x)}, ${Math.round(hitbox.y)}, ${hitbox.w}x${hitbox.h})`
+    );
+
+    this.floatingTexts.push(
+      new window.FloatingText(
+        hitbox.centerX,
+        hitbox.y - 6,
+        `⚔️ ATK P${attacker.id}`,
+        attacker.primaryColor,
+        0.55
+      )
+    );
+
+    // Verifica colisão da hitbox de ataque com a hitbox do outro personagem
+    if (otherPlayer && this._boxesOverlap(hitbox, otherPlayer.getBoundingBox())) {
+      if (window.friendlyFireEnabled) {
+        this.camera.triggerShake(0.18, 6);
+        this.floatingTexts.push(
+          new window.FloatingText(
+            otherPlayer.x,
+            otherPlayer.y - 36,
+            `-${dmg} HP [FOGO AMIGO]`,
+            '#ff4d4d',
+            1.1
+          )
+        );
+        console.log(
+          `🔥 [FOGO AMIGO] ${attacker.name} acertou ${otherPlayer.name} causando -${dmg} HP!`
+        );
+        otherPlayer.takeDamage(dmg);
+        this.ui.updateHUD();
+      } else {
+        this.floatingTexts.push(
+          new window.FloatingText(
+            otherPlayer.x,
+            otherPlayer.y - 34,
+            `Fogo Amigo: OFF`,
+            '#94a3b8',
+            0.75
+          )
+        );
+        console.log(
+          `🛡️ [ATAQUE] Hitbox atingiu ${otherPlayer.name}, mas friendlyFireEnabled está OFF.`
+        );
+      }
+    }
+  }
+
+  /**
+   * Alterna entre Personagem 1 e Personagem 2 com a tecla configurada (padrão Tab) no Singleplayer
    */
   handleSwitchPlayer() {
-    if (this.appState !== 'PLAYING') return;
+    if (this.appState !== 'PLAYING' || this.isStationModalOpen()) return;
 
     if (this.gameMode !== 'singleplayer') {
       this.ui.showToast('Modo Multiplayer Local ativo: ambos os jogadores já estão em controle simultâneo!');
@@ -377,11 +506,22 @@ class Game {
   }
 
   /**
-   * Pausa / Despausa a partida
+   * Pausa / Despausa a partida (Atalho: Esc ou P)
    */
   handlePauseShortcut() {
+    if (this.appState === 'GAME_OVER') return;
+
+    // Se algum modal de Configurações, Crafting ou Loja estiver aberto, fecha-o primeiro
     if (this.ui.isSettingsModalOpen()) {
       this.ui.closeSettingsModal();
+      return;
+    }
+    if (this.ui.isCraftingModalOpen()) {
+      this.ui.closeCraftingModal();
+      return;
+    }
+    if (this.ui.isShopModalOpen()) {
+      this.ui.closeShopModal();
       return;
     }
 
@@ -397,6 +537,7 @@ class Game {
   }
 
   togglePause(shouldPause) {
+    if (this.appState === 'GAME_OVER') return;
     if (shouldPause) {
       this.appState = 'PAUSED';
       this.input.clearAll();
@@ -409,60 +550,75 @@ class Game {
   }
 
   /**
-   * Interação com Estações da Safe Room (Lojinha / Crafting) ou Zona de Extração / Porta da Van
+   * Interação com Estações da Safe Room (Lojinha / Crafting) ou Zona de Extração / Porta da Van (Teclas E ou Espaço)
    */
   handleInteractShortcut() {
     if (this.appState !== 'PLAYING') return;
+    if (this.isStationModalOpen()) return;
 
-    const touchedStation = this.getTouchedSafeRoomStation();
-    if (touchedStation) {
-      const centerX = touchedStation.x + touchedStation.w / 2;
-      const centerY = touchedStation.y + 10;
-      this.floatingTexts.push(
-        new window.FloatingText(centerX, centerY, touchedStation.promptText, touchedStation.strokeColor, 1.4)
-      );
-      this.ui.showToast(`${touchedStation.icon} ${touchedStation.promptText}`, 2000);
+    // 1. Verifica primeiro se um jogador controlado está na Zona de Extração / Porta da Van
+    if (this.isAnyPlayerInTransitionZone()) {
+      this.advanceToNextStage('Interação na Zona de Saída');
       return;
     }
 
-    if (this.isAnyPlayerInTransitionZone()) {
-      this.advanceToNextStage('Interação na Zona de Saída');
-    } else {
-      const zoneName = this.getCurrentStageMeta().isSafeRoom
-        ? 'a Porta da Van (ou das estações de Loja/Craft)'
-        : 'a Zona de Extração';
-      this.ui.showToast(`Aproxime-se d${zoneName} para interagir!`, 1600);
+    // 2. Verifica se algum jogador está encostando na Lojinha ou na Mesa de Craft da Safe Room
+    const touchedStation = this.getTouchedSafeRoomStation();
+    if (touchedStation) {
+      if (touchedStation.id === 'crafting') {
+        this.ui.openCraftingModal();
+        return;
+      }
+      if (touchedStation.id === 'shop') {
+        this.ui.openShopModal();
+        return;
+      }
     }
+
+    const zoneName = this.getCurrentStageMeta().isSafeRoom
+      ? 'a Porta da Van (ou das estações de Loja/Craft)'
+      : 'a Zona de Extração';
+    this.ui.showToast(`Aproxime-se d${zoneName} para interagir!`, 1600);
   }
 
   /**
-   * Atalho de Debug [H]: Causa -10 de dano no personagem ativo
+   * Atalho de Debug [H]: Causa -10 de dano no personagem em foco (Shift+H no Multiplayer afeta P2)
    */
-  handleDebugDamage() {
+  handleDebugDamage(e) {
     if (this.appState !== 'PLAYING' && this.appState !== 'PAUSED') return;
+    if (this.ui && this.ui.isSettingsModalOpen()) return;
 
-    const target = this.getHudFocusPlayer();
-    target.takeDamage(10);
+    const target = (this.gameMode === 'multiplayer' && e && e.shiftKey)
+      ? this.p2
+      : this.getHudFocusPlayer();
+
     this.camera.triggerShake(0.16, 5);
-
     this.floatingTexts.push(
       new window.FloatingText(target.x, target.y - 36, '-10 HP [DEBUG]', '#ff4d4d')
     );
+
+    target.takeDamage(10);
 
     this.ui.updateHUD();
     if (this.appState === 'PAUSED') {
       this.ui.updatePauseInventoryPanel();
     }
-    this.ui.showToast(`[DEBUG] -10 HP em ${target.name} (${target.hp}/${target.maxHp} HP)`, 1600);
+    if (this.appState !== 'GAME_OVER') {
+      this.ui.showToast(`[DEBUG Tecla H] -10 HP em ${target.name} (${target.hp}/${target.maxHp} HP)`, 1600);
+    }
   }
 
   /**
-   * Atalho Extra de Debug [J]: Cura +20 HP no personagem ativo
+   * Atalho Extra de Debug [J]: Cura +20 HP no personagem em foco (Shift+J no Multiplayer afeta P2)
    */
-  handleDebugHeal() {
+  handleDebugHeal(e) {
     if (this.appState !== 'PLAYING' && this.appState !== 'PAUSED') return;
+    if (this.ui && this.ui.isSettingsModalOpen()) return;
 
-    const target = this.getHudFocusPlayer();
+    const target = (this.gameMode === 'multiplayer' && e && e.shiftKey)
+      ? this.p2
+      : this.getHudFocusPlayer();
+
     target.heal(20);
 
     this.floatingTexts.push(
@@ -476,18 +632,11 @@ class Game {
     this.ui.showToast(`[DEBUG] +20 HP em ${target.name} (${target.hp}/${target.maxHp} HP)`, 1600);
   }
 
-  /**
-   * Atalho de Debug [N]: Força avanço imediato para o próximo estado de mapa
-   */
   handleDebugNextStage() {
-    if (this.appState !== 'PLAYING') return;
+    if (this.appState !== 'PLAYING' || this.isStationModalOpen()) return;
     this.advanceToNextStage('Atalho de Debug [N]');
   }
 
-  /**
-   * Avança para o próximo estado na máquina de estados:
-   * Mapa 1 -> Safe Room (Van) -> Mapa 2 -> Safe Room (Van) -> Mapa 3
-   */
   advanceToNextStage(reason = '') {
     const totalStages = window.GameConfig.STAGE_FLOW.length;
     const nextIndex = (this.stageFlowIndex + 1) % totalStages;
@@ -497,17 +646,14 @@ class Game {
     const meta = this.getCurrentStageMeta();
 
     if (wrappedCycle) {
-      this.ui.showToast(`Ciclo concluído! Retornando ao ${meta.label} (Lixos coletados permanecem salvos)`);
+      this.ui.showToast(`Ciclo de 3 Mapas concluído! Reiniciando no ${meta.label}`);
     } else {
       this.ui.showToast(`Avançou (${reason}) → ${meta.label}`);
     }
   }
 
-  /**
-   * Seleção direta de Slot da Hotbar (1 a 5 ou clique)
-   */
   selectHotbarSlot(slotIndex, targetPlayerId = null) {
-    if (this.appState !== 'PLAYING') return;
+    if (this.appState !== 'PLAYING' || this.isStationModalOpen()) return;
 
     let player;
     if (this.gameMode === 'multiplayer') {
@@ -522,29 +668,8 @@ class Game {
     this.ui.renderHotbar();
   }
 
-  /**
-   * Gira o slot de inventário de um jogador específico via tecla remapeável de Inventário (Config.Controls.P1_Inventory / P2_Inventory)
-   */
-  cyclePlayerHotbarSlot(playerId, direction = 1) {
-    if (this.appState !== 'PLAYING') return;
-
-    const player =
-      this.gameMode === 'singleplayer'
-        ? this.getHudFocusPlayer()
-        : playerId === 2
-          ? this.p2
-          : this.p1;
-
-    const len = player.inventory.length;
-    player.selectedSlot = (player.selectedSlot + direction + len) % len;
-    this.ui.renderHotbar();
-  }
-
-  /**
-   * Alternância de Slot da Hotbar via Scroll do Mouse
-   */
   cycleHotbarSlot(direction) {
-    if (this.appState !== 'PLAYING') return;
+    if (this.appState !== 'PLAYING' || this.isStationModalOpen()) return;
 
     const player = this.gameMode === 'multiplayer'
       ? this.p2
@@ -585,17 +710,17 @@ class Game {
   }
 
   /**
-   * Loop Principal do Jogo (requestAnimationFrame)
+   * Loop Principal do Jogo (`requestAnimationFrame`)
    */
   _gameLoop(timestamp) {
     const dt = Math.min(0.05, (timestamp - this.lastTimestamp) / 1000);
     this.lastTimestamp = timestamp;
-    this.elapsedTime += dt;
 
-    // 1. Leitura nativa de Joysticks via navigator.getGamepads() dentro do requestAnimationFrame (Sprint 3)
-    this.input.pollGamepads(this.gameMode);
+    // 0. Polling nativo de Joysticks via Gamepad API dentro do requestAnimationFrame
+    this.input.pollGamepads();
 
     if (this.appState === 'PLAYING') {
+      this.elapsedTime += dt;
       this._updateGameplay(dt);
     } else if (this.ui.isSettingsModalOpen() && this.ui.activeSettingsTab === 'controls') {
       this.ui.updateGamepadStatusBanner();
@@ -607,40 +732,57 @@ class Game {
   }
 
   _updateGameplay(dt) {
-    // 1. Movimentação dos Personagens consumindo o Dicionário Global (Config.Controls) + Gamepad API
-    if (this.gameMode === 'singleplayer') {
-      const moveVec = this.input.getP1Vector();
-      const activePlayer = this.players[this.activePlayerIndex];
-      const inactivePlayer = this.players[this.activePlayerIndex === 0 ? 1 : 0];
+    if (this.appState !== 'PLAYING') return;
 
-      activePlayer.update(dt, moveVec, this.currentMap, null);
-      inactivePlayer.update(dt, { dx: 0, dy: 0 }, this.currentMap, null);
-
-      const camTarget = this._getCameraTargetPoint();
-      this.camera.update(dt, camTarget.x, camTarget.y, this.currentMap, null);
-    } else {
-      const p1Vec = this.input.getP1Vector();
-      const p2Vec = this.input.getP2Vector();
-
-      this._updateMultiplayerWithViewportClamp(dt, p1Vec, p2Vec);
+    // Se a Mesa de Crafting, Lojinha ou Configurações estiverem abertas, congela movimentação e timer
+    if (this.isStationModalOpen()) {
+      this.ui.updateHUD();
+      return;
     }
 
-    // 2. Coleta e Persistência Global de Lixo / Sucata nas Coordenadas Fixas (Sprint 3)
-    this._checkTrashCollection();
+    // 1. Movimentação dos Personagens conforme o Modo Selecionado
+    if (!this.editorFreeCamera) {
+      if (this.gameMode === 'singleplayer') {
+        const p1Vec = this.input.getP1Vector();
+        const activePlayer = this.players[this.activePlayerIndex];
+        const inactivePlayer = this.players[this.activePlayerIndex === 0 ? 1 : 0];
 
-    // 3. Cronômetro da Fase (Apenas nos 3 Mapas Grandes; pausado na Safe Room Van)
+        activePlayer.update(dt, p1Vec, this.currentMap, null);
+        inactivePlayer.update(dt, { dx: 0, dy: 0 }, this.currentMap, null);
+
+        const camTarget = this._getCameraTargetPoint();
+        this.camera.update(dt, camTarget.x, camTarget.y, this.currentMap, null);
+      } else {
+        const p1Vec = this.input.getP1Vector();
+        const p2Vec = this.input.getP2Vector();
+
+        this._updateMultiplayerWithViewportClamp(dt, p1Vec, p2Vec);
+      }
+    }
+
+    // 2. Coleta de Lixo / Sucata pelo chão dos 3 Mapas Grandes (com registro em window.collectedTrashIds)
+    if (!this.editorFreezeGameplay) {
+      this._checkTrashCollection();
+    }
+
+    // 3. Cronômetro da Fase (Morte por Tempo / Time Out se chegar a 00:00 -> Game Over imediato)
     const stageMeta = this.getCurrentStageMeta();
-    if (!stageMeta.isSafeRoom) {
+    if (!stageMeta.isSafeRoom && !this.editorFreezeGameplay) {
       this.stageTimeRemaining = Math.max(0, this.stageTimeRemaining - dt);
       if (this.stageTimeRemaining <= 0) {
-        this.restartCurrentStage();
-        this.ui.showToast('Tempo esgotado! Fase reiniciada (Lixos coletados permanecem salvos).');
+        // Ambos os personagens morrem instantaneamente quando o cronômetro chega a 00:00
+        this.p1.hp = 0;
+        this.p2.hp = 0;
+        this.triggerGameOver(
+          'Tempo Esgotado',
+          'O cronômetro da fase chegou a 00:00 e ambos os operadores morreram instantaneamente.'
+        );
         return;
       }
     }
 
     // 4. Verificação da Zona de Extração / Porta da Van (Auto-embarque ao permanecer na zona)
-    if (this.isAnyPlayerInTransitionZone()) {
+    if (!this.editorFreezeGameplay && this.isAnyPlayerInTransitionZone()) {
       this.zoneHoldTimer += dt;
       if (this.zoneHoldTimer >= this.zoneHoldDuration) {
         this.advanceToNextStage('Zona de Transição concluída');
@@ -650,7 +792,7 @@ class Game {
       this.zoneHoldTimer = Math.max(0, this.zoneHoldTimer - dt * 2);
     }
 
-    // 5. Atualiza Textos Flutuantes de Debug
+    // 5. Atualiza Textos Flutuantes
     for (let i = this.floatingTexts.length - 1; i >= 0; i--) {
       this.floatingTexts[i].update(dt);
       if (this.floatingTexts[i].life <= 0) {
@@ -662,6 +804,11 @@ class Game {
     this.ui.updateHUD();
   }
 
+  /**
+   * Atualiza a movimentação de P1 e P2 no Multiplayer Local aplicando o Clamp de Viewport:
+   * Se um personagem tentar se afastar além dos limites visíveis da câmera (Viewport),
+   * sua movimentação naquela direção é bloqueada para que nenhum jogador saia da tela.
+   */
   _updateMultiplayerWithViewportClamp(dt, p1Vec, p2Vec) {
     const map = this.currentMap;
     const pad = this.p1.size / 2 + 4;
@@ -671,6 +818,11 @@ class Game {
 
     const p1InwardX = (this.p1.x < this.p2.x && p1Vec.dx > 0) || (this.p1.x > this.p2.x && p1Vec.dx < 0);
     const p2InwardX = (this.p2.x < this.p1.x && p2Vec.dx > 0) || (this.p2.x > this.p1.x && p2Vec.dx < 0);
+    const p1InwardY = (this.p1.y < this.p2.y && p1Vec.dy > 0) || (this.p1.y > this.p2.y && p1Vec.dy < 0);
+    const p2InwardY = (this.p2.y < this.p1.y && p2Vec.dy > 0) || (this.p2.y > this.p1.y && p2Vec.dy < 0);
+
+    const p1Inward = p1InwardX || p1InwardY;
+    const p2Inward = p2InwardX || p2InwardY;
 
     const buildClampFor = (otherPlayer) => {
       const viewBounds = this.camera.getViewportBounds(map);
@@ -694,7 +846,7 @@ class Game {
       };
     };
 
-    if (p2InwardX && !p1InwardX) {
+    if (p2Inward && !p1Inward) {
       this.p2.update(dt, p2Vec, map, buildClampFor(this.p1));
       this.p1.update(dt, p1Vec, map, buildClampFor(this.p2));
     } else {
@@ -707,30 +859,48 @@ class Game {
 
     const finalBounds = this.camera.getViewportBounds(map);
     for (const player of this.players) {
+      let clampedX = player.x;
+      let clampedY = player.y;
+
       if (player.x < finalBounds.minX + pad) {
-        player.x = finalBounds.minX + pad;
+        clampedX = finalBounds.minX + pad;
         player.clampedByViewport = true;
       } else if (player.x > finalBounds.maxX - pad) {
-        player.x = finalBounds.maxX - pad;
+        clampedX = finalBounds.maxX - pad;
         player.clampedByViewport = true;
       }
 
       if (player.y < finalBounds.minY + pad) {
-        player.y = finalBounds.minY + pad;
+        clampedY = finalBounds.minY + pad;
         player.clampedByViewport = true;
       } else if (player.y > finalBounds.maxY - pad) {
-        player.y = finalBounds.maxY - pad;
+        clampedY = finalBounds.maxY - pad;
         player.clampedByViewport = true;
+      }
+
+      // Só aplica o deslocamento pós-câmera se não empurrar o jogador para dentro de uma parede sólida
+      if (clampedX !== player.x) {
+        const testBoxX = player.getBoundingBox(clampedX, player.y);
+        const hitsWallX = map.obstacles.some((obs) => !obs.noCollision && this._boxesOverlap(testBoxX, obs));
+        if (!hitsWallX) player.x = clampedX;
+      }
+      if (clampedY !== player.y) {
+        const testBoxY = player.getBoundingBox(player.x, clampedY);
+        const hitsWallY = map.obstacles.some((obs) => !obs.noCollision && this._boxesOverlap(testBoxY, obs));
+        if (!hitsWallY) player.y = clampedY;
       }
     }
   }
 
   /**
-   * Verifica se algum jogador encostou em um objeto "Lixo",
-   * registrando seu ID único no Estado Global (window.collectedTrashIds) para que nunca reapareça.
+   * Verifica se algum jogador passou por cima ou encostou em um objeto "Lixo",
+   * removendo-o do mapa, registrando seu ID em `window.collectedTrashIds` para persistência
+   * e incrementando o contador global `window.scrapCollected`.
    */
   _checkTrashCollection() {
     if (!this.trashItems || this.trashItems.length === 0) return;
+
+    const collectedSet = window.collectedTrashIds || (window.collectedTrashIds = new Set());
 
     for (let i = this.trashItems.length - 1; i >= 0; i--) {
       const trash = this.trashItems[i];
@@ -741,17 +911,20 @@ class Game {
 
       if (collectedByP1 || collectedByP2) {
         this.trashItems.splice(i, 1);
-        window.GlobalState.markTrashCollected(trash.id);
+        if (trash.id) {
+          collectedSet.add(trash.id);
+        }
+        window.scrapCollected = (window.scrapCollected || 0) + 1;
 
         console.log(
-          `♻️ [PERSISTÊNCIA DE LIXO] Item "${trash.id}" (${trash.typeInfo.name}) coletado em (${trash.x}, ${trash.y}). Total Global Salvo: ${window.scrapCollected}`
+          `♻ [Lixo Coletado] ID="${trash.id}" (${trash.typeInfo.name}) em (${trash.x}, ${trash.y}) | Total Global: ${window.scrapCollected}`
         );
 
         this.floatingTexts.push(
           new window.FloatingText(
             trash.x,
             trash.y - 18,
-            `+1 ${trash.typeInfo.name} [Salvo: ${window.scrapCollected}]`,
+            `+1 ${trash.typeInfo.name} [Sucata: ${window.scrapCollected}]`,
             '#bef264',
             1.15
           )
@@ -764,6 +937,7 @@ class Game {
     const ctx = this.ctx;
     const map = this.currentMap;
     const { width: viewW, height: viewH } = this.canvas;
+    const hideDebug = Boolean(window.hideDebugOverlays);
 
     ctx.fillStyle = '#090d14';
     ctx.fillRect(0, 0, viewW, viewH);
@@ -777,32 +951,36 @@ class Game {
     ctx.fillRect(0, 0, map.width, map.height);
 
     // 2. Grid de Referência no Chão
-    this._drawDebugGrid(ctx, map);
+    if (!hideDebug) {
+      this._drawDebugGrid(ctx, map);
+    }
 
-    // 3. Zonas de Referência / Trilhas no Chão
+    // 3. Trilhas / Zonas de Piso
     this._drawFloorZones(ctx, map);
 
     // 4. Áreas Demarcadas das Estações da Safe Room (Lojinha e Mesa de Craft)
     this._drawSafeRoomStationsZones(ctx, map);
 
-    // 5. Marcadores de Spawn P1 e P2
-    this._drawSpawnMarkers(ctx, map);
+    // 5. Marcadores de Spawn P1/P2
+    if (!hideDebug) {
+      this._drawSpawnMarkers(ctx, map);
+    }
 
-    // 6. Zona de Extração / Porta da Van
-    this._drawTransitionZone(ctx, map);
+    // 6. Zona de Extração / Transição
+    this._drawTransitionZone(ctx, map, hideDebug);
 
-    // 7. Entidades Coletáveis de "Lixo / Sucata" nas Posições Fixas
+    // 7. Entidades Coletáveis de "Lixo / Sucata" no Chão
     this._drawTrashItems(ctx);
 
-    // 8. Caixas de Colisão Visíveis para Paredes, Estruturas e Estações da Van
-    this._drawObstacles(ctx, map);
+    // 8. Caixas de Colisão / Sprites para Paredes, Estruturas, Props e Estações da Van
+    this._drawObstacles(ctx, map, hideDebug);
 
-    // 9. Linha de Ponto Médio no Multiplayer Local
-    if (this.gameMode === 'multiplayer') {
+    // 9. Linha de Ponto Médio e Moldura de Limite da Câmera (no modo Multiplayer Local)
+    if (!hideDebug && this.gameMode === 'multiplayer') {
       this._drawMultiplayerMidpointDebug(ctx);
     }
 
-    // 10. Personagens 1 e 2 (Ordenados por Y + Cone de Colisão de Ataque)
+    // 10. Personagens 1 e 2 (Ordenados por Y para profundidade Top-Down)
     const sortedPlayers = [...this.players].sort((a, b) => a.y - b.y);
     for (const player of sortedPlayers) {
       const isControlled =
@@ -811,20 +989,31 @@ class Game {
       player.draw(ctx, isControlled, this.gameMode, this.elapsedTime);
     }
 
-    // 11. Balão/Texto Flutuante de Interação nas Estações da Safe Room
+    // 11. Balão/Texto Flutuante de Interação nas Estações da Safe Room (Loja / Craft)
     this._drawSafeRoomStationFloatingNotice(ctx, map);
 
-    // 12. Textos Flutuantes de Debug
+    // 12. Textos Flutuantes de Debug (-10 HP, +1 Lixo, etc.)
     for (const ft of this.floatingTexts) {
       ft.draw(ctx);
     }
 
+    // Hook de Overlay no Espaço do Mundo para o Map Editor
+    if (typeof this.onRenderWorldOverlay === 'function') {
+      this.onRenderWorldOverlay(ctx, map);
+    }
+
     ctx.restore();
 
-    // 13. Indicadores de Tela Fixa no Canvas (Bússola de Extração + Minimapa Debug)
-    if (this.appState === 'PLAYING' || this.appState === 'PAUSED') {
+    if (this.appState === 'PLAYING' || this.appState === 'PAUSED' || this.appState === 'GAME_OVER') {
       this._drawExtractionCompass(ctx);
-      this._drawDebugMinimap(ctx);
+      if (!hideDebug) {
+        this._drawDebugMinimap(ctx);
+      }
+    }
+
+    // Hook de Overlay no Espaço de Tela para o Map Editor
+    if (typeof this.onRenderScreenOverlay === 'function') {
+      this.onRenderScreenOverlay(ctx, map);
     }
   }
 
@@ -991,41 +1180,51 @@ class Game {
     ctx.restore();
   }
 
-  _drawTransitionZone(ctx, map) {
+  _drawTransitionZone(ctx, map, hideDebug = false) {
     const z = map.transitionZone;
     if (!z) return;
 
     const pulse = 0.5 + 0.5 * Math.sin(this.elapsedTime * 5);
 
     ctx.save();
-    ctx.fillStyle = z.fillColor;
-    ctx.fillRect(z.x, z.y, z.w, z.h);
+    const drewSprite = z.sprite && window.SpriteCache
+      ? window.SpriteCache.draw(ctx, z.sprite, z.x, z.y, z.w, z.h, z.spriteFit || 'stretch')
+      : false;
 
-    ctx.strokeStyle = z.strokeColor;
-    ctx.lineWidth = 3;
-    ctx.strokeRect(z.x, z.y, z.w, z.h);
+    if (!drewSprite) {
+      ctx.fillStyle = z.fillColor;
+      ctx.fillRect(z.x, z.y, z.w, z.h);
+    }
 
-    ctx.strokeStyle = '#ffffff';
-    ctx.globalAlpha = 0.35 + pulse * 0.45;
-    ctx.lineWidth = 2;
-    ctx.setLineDash([10, 6]);
-    ctx.strokeRect(z.x + 8, z.y + 8, z.w - 16, z.h - 16);
-    ctx.setLineDash([]);
-    ctx.globalAlpha = 1;
+    if (!hideDebug || !drewSprite) {
+      ctx.strokeStyle = z.strokeColor;
+      ctx.lineWidth = 3;
+      ctx.strokeRect(z.x, z.y, z.w, z.h);
 
-    const centerX = z.x + z.w / 2;
-    const centerY = z.y + z.h / 2;
+      ctx.strokeStyle = '#ffffff';
+      ctx.globalAlpha = 0.35 + pulse * 0.45;
+      ctx.lineWidth = 2;
+      ctx.setLineDash([10, 6]);
+      ctx.strokeRect(z.x + 8, z.y + 8, z.w - 16, z.h - 16);
+      ctx.setLineDash([]);
+      ctx.globalAlpha = 1;
 
-    ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 13px Consolas, monospace';
-    ctx.textAlign = 'center';
-    ctx.fillText(z.label, centerX, centerY - 12);
+      const centerX = z.x + z.w / 2;
+      const centerY = z.y + z.h / 2;
 
-    ctx.fillStyle = '#e2e8f0';
-    ctx.font = '11px Consolas, monospace';
-    ctx.fillText(z.subLabel, centerX, centerY + 8);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 13px Consolas, monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(z.label, centerX, centerY - 12);
+
+      ctx.fillStyle = '#e2e8f0';
+      ctx.font = '11px Consolas, monospace';
+      ctx.fillText(z.subLabel, centerX, centerY + 8);
+    }
 
     if (this.zoneHoldTimer > 0) {
+      const centerX = z.x + z.w / 2;
+      const centerY = z.y + z.h / 2;
       const pct = Math.min(1, this.zoneHoldTimer / this.zoneHoldDuration);
       const barW = z.w - 40;
       const barH = 10;
@@ -1044,38 +1243,52 @@ class Game {
     ctx.restore();
   }
 
-  _drawObstacles(ctx, map) {
+  _drawObstacles(ctx, map, hideDebug = false) {
     ctx.save();
     for (const obs of map.obstacles) {
-      ctx.fillStyle = obs.customFill || map.palette.wallFill;
-      ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
+      const drewSprite = obs.sprite && window.SpriteCache
+        ? window.SpriteCache.draw(ctx, obs.sprite, obs.x, obs.y, obs.w, obs.h, obs.spriteFit || 'stretch')
+        : false;
 
-      ctx.strokeStyle = obs.customStroke || map.palette.wallStroke;
-      ctx.lineWidth = obs.customStroke ? 2.5 : 2;
-      ctx.strokeRect(obs.x, obs.y, obs.w, obs.h);
+      if (!drewSprite) {
+        ctx.fillStyle = obs.customFill || map.palette.wallFill;
+        ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
+      }
 
-      ctx.beginPath();
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
-      ctx.lineWidth = 1;
-      ctx.moveTo(obs.x, obs.y);
-      ctx.lineTo(obs.x + obs.w, obs.y + obs.h);
-      ctx.moveTo(obs.x + obs.w, obs.y);
-      ctx.lineTo(obs.x, obs.y + obs.h);
-      ctx.stroke();
+      if (!hideDebug) {
+        ctx.strokeStyle = obs.noCollision
+          ? 'rgba(148, 163, 184, 0.55)'
+          : (obs.customStroke || map.palette.wallStroke);
+        ctx.lineWidth = obs.customStroke ? 2.5 : 2;
+        if (obs.noCollision) ctx.setLineDash([4, 4]);
+        ctx.strokeRect(obs.x, obs.y, obs.w, obs.h);
+        if (obs.noCollision) ctx.setLineDash([]);
 
-      if (obs.w >= 120 && obs.h >= 70) {
-        ctx.fillStyle = '#f8fafc';
-        ctx.font = 'bold 11px Consolas, monospace';
-        ctx.textAlign = 'center';
-        ctx.fillText(obs.label || 'COLISÃO', obs.x + obs.w / 2, obs.y + obs.h / 2 - 4);
+        if (!drewSprite && !obs.noCollision) {
+          ctx.beginPath();
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+          ctx.lineWidth = 1;
+          ctx.moveTo(obs.x, obs.y);
+          ctx.lineTo(obs.x + obs.w, obs.y + obs.h);
+          ctx.moveTo(obs.x + obs.w, obs.y);
+          ctx.lineTo(obs.x, obs.y + obs.h);
+          ctx.stroke();
+        }
 
-        ctx.fillStyle = obs.customStroke || 'rgba(226, 232, 240, 0.65)';
-        ctx.font = '10px Consolas, monospace';
-        ctx.fillText(
-          obs.subTag || `[${obs.w}x${obs.h}px]`,
-          obs.x + obs.w / 2,
-          obs.y + obs.h / 2 + 12
-        );
+        if (obs.w >= 90 && obs.h >= 50) {
+          ctx.fillStyle = '#f8fafc';
+          ctx.font = 'bold 11px Consolas, monospace';
+          ctx.textAlign = 'center';
+          ctx.fillText(obs.label || (obs.noCollision ? 'PROP' : 'COLISÃO'), obs.x + obs.w / 2, obs.y + obs.h / 2 - 4);
+
+          ctx.fillStyle = obs.customStroke || 'rgba(226, 232, 240, 0.65)';
+          ctx.font = '10px Consolas, monospace';
+          ctx.fillText(
+            obs.subTag || `[${obs.w}x${obs.h}px]`,
+            obs.x + obs.w / 2,
+            obs.y + obs.h / 2 + 12
+          );
+        }
       }
     }
     ctx.restore();
@@ -1233,6 +1446,8 @@ class Game {
     ctx.restore();
   }
 }
+
+window.Game = Game;
 
 window.addEventListener('DOMContentLoaded', () => {
   window.gameInstance = new Game();

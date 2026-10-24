@@ -1,93 +1,235 @@
 /**
  * js/config.js
- * Configurações globais, constantes de física/câmera, variáveis globais de configurações,
- * Dicionário Global de Inputs (Config.Controls), estado global de persistência de lixos,
- * inventário de placeholder (5 slots) e definição da Máquina de Estados de Fases.
+ * Configurações globais, constantes de física/câmera/combate, Dicionário Global de Inputs (Config.Controls),
+ * persistência global de lixos coletados, receitas da Mesa de Crafting (Maleta 8x4),
+ * catálogo da Lojinha (Shop) na Van, inventário de placeholder (5 slots) e Máquina de Estados de Fases.
  */
 
-// Variáveis globais de Configuração e Progresso (Sprints 2 & 3)
+// Variáveis globais de Configuração e Progresso
 window.isMuted = false;
 window.friendlyFireEnabled = false;
 window.scrapCollected = 0;
+window.hideDebugOverlays = false; // Quando true, oculta wireframes/grids de debug
 
-// Estado Global de Persistência de Lixos Coletados (Sprint 3)
-// Armazena os IDs únicos dos lixos já coletados para que nunca reapareçam caso o jogador saia e volte para a fase
+// Estado global de persistência de IDs de lixos já coletados nos mapas (nunca reaparecem ao reiniciar/re-acessar a fase)
 window.collectedTrashIds = new Set();
 
-window.GlobalState = {
-  collectedTrashIds: window.collectedTrashIds,
-  isTrashCollected(trashId) {
-    return window.collectedTrashIds.has(trashId);
-  },
-  markTrashCollected(trashId) {
-    if (!window.collectedTrashIds.has(trashId)) {
-      window.collectedTrashIds.add(trashId);
-      window.scrapCollected = window.collectedTrashIds.size;
-      return true;
+// Alias de moeda global sincronizado com window.scrapCollected para a Lojinha (Shop)
+if (!Object.getOwnPropertyDescriptor(window, 'playerCoins')) {
+  Object.defineProperty(window, 'playerCoins', {
+    get() {
+      return window.scrapCollected;
+    },
+    set(val) {
+      window.scrapCollected = Math.max(0, Math.floor(Number(val) || 0));
+    },
+    configurable: true
+  });
+}
+
+/**
+ * Cache global de Imagens/Sprites (suporta Base64 Data URLs e caminhos relativos ex: 'assets/sprite.png')
+ */
+window.SpriteCache = {
+  _cache: new Map(),
+
+  get(src) {
+    if (!src || typeof src !== 'string') return null;
+    let entry = this._cache.get(src);
+    if (!entry) {
+      const img = new Image();
+      entry = { img, loaded: false, error: false, src };
+      img.onload = () => {
+        entry.loaded = true;
+      };
+      img.onerror = () => {
+        entry.error = true;
+      };
+      img.src = src;
+      this._cache.set(src, entry);
     }
-    return false;
+    return entry.loaded && !entry.error ? entry.img : null;
   },
-  resetAllTrash() {
-    window.collectedTrashIds.clear();
-    window.scrapCollected = 0;
+
+  /**
+   * Desenha um sprite em (x, y, w, h) respeitando o modo ('stretch' | 'contain' | 'tile')
+   */
+  draw(ctx, src, x, y, w, h, fit = 'stretch', alpha = 1) {
+    const img = this.get(src);
+    if (!img) return false;
+
+    ctx.save();
+    if (alpha < 1) ctx.globalAlpha *= alpha;
+
+    if (fit === 'contain') {
+      const scale = Math.min(w / img.naturalWidth, h / img.naturalHeight);
+      const dw = img.naturalWidth * scale;
+      const dh = img.naturalHeight * scale;
+      const dx = x + (w - dw) / 2;
+      const dy = y + (h - dh) / 2;
+      ctx.drawImage(img, dx, dy, dw, dh);
+    } else if (fit === 'tile') {
+      const pattern = ctx.createPattern(img, 'repeat');
+      if (pattern) {
+        ctx.translate(x, y);
+        ctx.fillStyle = pattern;
+        ctx.fillRect(0, 0, w, h);
+      } else {
+        ctx.drawImage(img, x, y, w, h);
+      }
+    } else {
+      ctx.drawImage(img, x, y, w, h);
+    }
+
+    ctx.restore();
+    return true;
   }
 };
 
-// Dicionário Padrão de Controles (para restauração rápida se necessário)
 const DEFAULT_CONTROLS = {
-  // Jogador 1 (e Jogador Ativo no Singleplayer)
-  P1_Up: 'KeyW',
-  P1_Down: 'KeyS',
-  P1_Left: 'KeyA',
-  P1_Right: 'KeyD',
-  P1_Attack: 'KeyR',
-  P1_Attack_Mouse: 'MouseRight',
-  P1_Inventory: 'KeyQ',
-  P1_Slot1: 'Digit1',
-  P1_Slot2: 'Digit2',
-  P1_Slot3: 'Digit3',
-  P1_Slot4: 'Digit4',
-  P1_Slot5: 'Digit5',
+  // Jogador 1 (ou Personagem Ativo no Singleplayer)
+  moveUp: 'KeyW',
+  moveDown: 'KeyS',
+  moveLeft: 'KeyA',
+  moveRight: 'KeyD',
+  attackP1: 'KeyR',
+  inventoryCycle: 'KeyQ',
 
   // Jogador 2 (Multiplayer Local)
-  P2_Up: 'ArrowUp',
-  P2_Down: 'ArrowDown',
-  P2_Left: 'ArrowLeft',
-  P2_Right: 'ArrowRight',
-  P2_Attack: 'Digit0',
-  P2_Attack_Alt: 'Numpad0',
-  P2_Inventory: 'KeyO',
+  p2MoveUp: 'ArrowUp',
+  p2MoveDown: 'ArrowDown',
+  p2MoveLeft: 'ArrowLeft',
+  p2MoveRight: 'ArrowRight',
+  attackP2: 'Digit0',
 
-  // Ações de Sistema / Interação / Debug
-  SwitchPlayer: 'Tab',
-  Interact: 'KeyE',
-  InteractAlt: 'Space',
-  Pause: 'Escape',
-  PauseAlt: 'KeyP',
-  DebugDamage: 'KeyH',
-  DebugHeal: 'KeyJ',
-  DebugNextStage: 'KeyN'
+  // Ações Gerais e Slots da Hotbar
+  interact: 'KeyE',
+  switchCharacter: 'Tab',
+  slot1: 'Digit1',
+  slot2: 'Digit2',
+  slot3: 'Digit3',
+  slot4: 'Digit4',
+  slot5: 'Digit5'
 };
 
 window.GameConfig = {
-  // Dicionário Global de Inputs (Sprint 3: ex. Config.Controls.P1_Up)
+  // Configurações de Grid e Escala
+  TILE_SIZE: 64,
+  MAJOR_GRID_STEP: 320,
+
+  // Tempo padrão de cada fase (em segundos) -> 03:00
+  STAGE_DURATION_SECONDS: 180,
+
+  // Configurações dos Jogadores e Combate / Dano
+  PLAYER_SPEED: 290,
+  PLAYER_SIZE: 40,
+  PLAYER_MAX_HP: 100,
+  PLAYER_ATTACK_DAMAGE: 20,
+  PLAYER_ATTACK_DURATION: 0.24,
+  PLAYER_ATTACK_COOLDOWN: 0.26,
+  PLAYER_ATTACK_RANGE: 48,
+  PLAYER_ATTACK_SIZE: 48,
+  ATTACK_ARC_ANGLE: Math.PI * 0.55,
+
+  // Suavização da câmera (Lerp factor)
+  CAMERA_LERP: 7.5,
+
+  // Dicionário Global de Inputs (Remapeável em tempo real no menu Configurações > Controles)
+  DEFAULT_CONTROLS: { ...DEFAULT_CONTROLS },
   Controls: { ...DEFAULT_CONTROLS },
 
-  resetDefaultControls() {
-    Object.assign(this.Controls, DEFAULT_CONTROLS);
+  // Metadados das ações exibidas na aba "Controles" do Menu de Configurações
+  CONTROL_ACTIONS_META: [
+    {
+      action: 'moveUp',
+      label: 'Mover Cima (P1 / Single)',
+      desc: 'Move o personagem para o norte (cima).'
+    },
+    {
+      action: 'moveDown',
+      label: 'Mover Baixo (P1 / Single)',
+      desc: 'Move o personagem para o sul (baixo).'
+    },
+    {
+      action: 'moveLeft',
+      label: 'Mover Esquerda (P1 / Single)',
+      desc: 'Move o personagem para o oeste (esquerda).'
+    },
+    {
+      action: 'moveRight',
+      label: 'Mover Direita (P1 / Single)',
+      desc: 'Move o personagem para o leste (direita).'
+    },
+    {
+      action: 'attackP1',
+      label: 'Atacar / Bater (P1 Multi)',
+      desc: 'No Multiplayer Local P1 ataca com esta tecla (No Singleplayer: Botão Direito do Mouse).'
+    },
+    {
+      action: 'inventoryCycle',
+      label: 'Inventário (Alternar Slot)',
+      desc: 'Avança para o próximo slot equipado da Hotbar.'
+    },
+    {
+      action: 'interact',
+      label: 'Interagir (Extração / Van)',
+      desc: 'Interage com zonas de extração, Lojinha e Mesa de Craft.'
+    },
+    {
+      action: 'switchCharacter',
+      label: 'Alternar Personagem (Single)',
+      desc: 'Troca instantaneamente entre P1 e P2 no modo Singleplayer.'
+    },
+    {
+      action: 'p2MoveUp',
+      label: 'P2 Mover Cima (Multi)',
+      desc: 'Move o Jogador 2 para cima no modo Multiplayer Local.'
+    },
+    {
+      action: 'p2MoveDown',
+      label: 'P2 Mover Baixo (Multi)',
+      desc: 'Move o Jogador 2 para baixo no modo Multiplayer Local.'
+    },
+    {
+      action: 'p2MoveLeft',
+      label: 'P2 Mover Esquerda (Multi)',
+      desc: 'Move o Jogador 2 para a esquerda no modo Multiplayer Local.'
+    },
+    {
+      action: 'p2MoveRight',
+      label: 'P2 Mover Direita (Multi)',
+      desc: 'Move o Jogador 2 para a direita no modo Multiplayer Local.'
+    },
+    {
+      action: 'attackP2',
+      label: 'P2 Atacar / Bater (Multi)',
+      desc: 'No Multiplayer Local o Jogador 2 ataca usando esta tecla (Padrão: 0).'
+    }
+  ],
+
+  resetControlsToDefault() {
+    Object.assign(this.Controls, this.DEFAULT_CONTROLS);
   },
 
-  // Utilitário para exibir nomes amigáveis das teclas na UI e HUD
+  resetDefaultControls() {
+    this.resetControlsToDefault();
+  },
+
+  /**
+   * Converte um KeyboardEvent.code (ex: 'KeyW', 'Digit0', 'ArrowUp') em rótulo legível na UI
+   */
   formatKeyCode(code) {
     if (!code) return '---';
+    if (code.startsWith('Key')) return code.slice(3).toUpperCase();
+    if (code.startsWith('Digit')) return code.slice(5);
+    if (code.startsWith('Numpad')) return `Num ${code.slice(6)}`;
     const map = {
-      ArrowUp: 'Seta ↑',
-      ArrowDown: 'Seta ↓',
-      ArrowLeft: 'Seta ←',
-      ArrowRight: 'Seta →',
+      ArrowUp: '↑ Cima',
+      ArrowDown: '↓ Baixo',
+      ArrowLeft: '← Esq',
+      ArrowRight: '→ Dir',
       Space: 'Espaço',
       Tab: 'Tab',
-      Escape: 'Esc',
       ShiftLeft: 'Shift Esq',
       ShiftRight: 'Shift Dir',
       ControlLeft: 'Ctrl Esq',
@@ -95,50 +237,123 @@ window.GameConfig = {
       AltLeft: 'Alt Esq',
       AltRight: 'Alt Dir',
       Enter: 'Enter',
-      Backspace: 'Backspace',
-      MouseRight: 'Botão Dir. Mouse',
-      MouseLeft: 'Botão Esq. Mouse',
-      MouseMiddle: 'Botão Meio Mouse'
+      Backspace: 'Backspace'
     };
-    if (map[code]) return map[code];
-    if (code.startsWith('Key')) return code.replace('Key', '');
-    if (code.startsWith('Digit')) return code.replace('Digit', '');
-    if (code.startsWith('Numpad')) return 'Num ' + code.replace('Numpad', '');
-    return code;
+    return map[code] || code;
   },
 
-  // Configurações de Grid e Escala
-  TILE_SIZE: 64,
-  MAJOR_GRID_STEP: 320, // A cada 5 tiles (320px), linha de referência forte com coordenadas
-
-  // Tempo padrão de cada fase (em segundos) -> 03:00
-  STAGE_DURATION_SECONDS: 180,
-
-  // Configurações dos Jogadores
-  PLAYER_SPEED: 290, // pixels por segundo (fluido estilo Stardew Valley)
-  PLAYER_SIZE: 40,   // hitbox quadrada 40x40px
-  PLAYER_MAX_HP: 100,
-
-  // Configurações de Ataque Placeholder (Sprint 3)
-  ATTACK_DURATION: 0.28,            // segundos que o arco/cone fica visível
-  ATTACK_COOLDOWN: 0.16,            // tempo mínimo entre ataques
-  ATTACK_RANGE: 76,                 // raio do cone de colisão em pixels
-  ATTACK_ARC_ANGLE: Math.PI * 0.52, // abertura angular do cone (~93 graus)
-
-  // Configurações de Gamepad (Sprint 3)
-  GAMEPAD_DEADZONE: 0.22,
-
-  // Suavização da câmera (Lerp factor)
-  CAMERA_LERP: 7.5,
-
-  // Configurações de Coleta de Lixo / Sucata (Sprints 2 & 3)
+  // Configurações de Coleta de Lixo / Sucata
+  TRASH_COUNT_PER_MAP: 16,
   TRASH_SIZE: 26,
   TRASH_TYPES: [
-    { id: 'scrap_metal', name: 'Sucata Metálica', shortLabel: 'LIXO: SUCATA', color: '#94a3b8', stroke: '#e2e8f0', shape: 'gear' },
-    { id: 'tin_can', name: 'Lata Amassada', shortLabel: 'LIXO: LATA', color: '#fb923c', stroke: '#fed7aa', shape: 'can' },
-    { id: 'plastic_bottle', name: 'Plástico Descartado', shortLabel: 'LIXO: PLÁSTICO', color: '#38bdf8', stroke: '#bae6fd', shape: 'bottle' },
-    { id: 'old_battery', name: 'Bateria Velha', shortLabel: 'LIXO: BATERIA', color: '#a3e635', stroke: '#ecfccb', shape: 'battery' },
-    { id: 'broken_circuit', name: 'Placa Quebrada', shortLabel: 'LIXO: ELETRÔNICO', color: '#facc15', stroke: '#fef08a', shape: 'chip' }
+    { id: 'scrap_metal', name: 'Sucata Metálica', shortLabel: 'LIXO: SUCATA', icon: '🔩', color: '#94a3b8', stroke: '#e2e8f0', shape: 'gear' },
+    { id: 'tin_can', name: 'Lata Amassada', shortLabel: 'LIXO: LATA', icon: '🥫', color: '#fb923c', stroke: '#fed7aa', shape: 'can' },
+    { id: 'plastic_bottle', name: 'Plástico Descartado', shortLabel: 'LIXO: PLÁSTICO', icon: '🧴', color: '#38bdf8', stroke: '#bae6fd', shape: 'bottle' },
+    { id: 'old_battery', name: 'Bateria Velha', shortLabel: 'LIXO: BATERIA', icon: '🪫', color: '#a3e635', stroke: '#ecfccb', shape: 'battery' },
+    { id: 'broken_circuit', name: 'Placa Quebrada', shortLabel: 'LIXO: ELETRÔNICO', icon: '📟', color: '#facc15', stroke: '#fef08a', shape: 'chip' }
+  ],
+
+  // Configurações da Mesa de Crafting na Van - Maleta 8x4 estilo RE4
+  CRAFTING_GRID_COLS: 8,
+  CRAFTING_GRID_ROWS: 4,
+  CRAFTING_RECIPES: [
+    {
+      id: 'recipe_processed_scrap',
+      name: 'Sucata Processada [Placeholder]',
+      shortName: 'Suc. Processada',
+      icon: '⚙️',
+      type: 'Material Refinado [Placeholder]',
+      category: 'processed_scrap',
+      color: '#c084fc',
+      sellValue: 4,
+      requires: ['raw_trash', 'raw_trash'],
+      description: 'Combina 2 unidades de Lixo para gerar 1 Sucata Processada [Placeholder].'
+    },
+    {
+      id: 'recipe_tactical_plate',
+      name: 'Placa Blindada [Placeholder]',
+      shortName: 'Placa Blindada',
+      icon: '🛡️',
+      type: 'Componente Tático [Placeholder]',
+      category: 'crafted_gear',
+      color: '#38bdf8',
+      sellValue: 9,
+      requires: ['processed_scrap', 'processed_scrap'],
+      description: 'Combina 2 Sucatas Processadas para gerar 1 Placa Blindada [Placeholder].'
+    },
+    {
+      id: 'recipe_improvised_charge',
+      name: 'Carga Explosiva [Placeholder]',
+      shortName: 'Carga Explosiva',
+      icon: '🧨',
+      type: 'Munição Especial [Placeholder]',
+      category: 'crafted_ammo',
+      color: '#fb923c',
+      sellValue: 6,
+      requires: ['raw_trash', 'processed_scrap'],
+      description: 'Combina 1 Lixo + 1 Sucata Processada para gerar 1 Carga Explosiva [Placeholder].'
+    }
+  ],
+
+  // Catálogo de Itens Placeholder da Lojinha na Van (Sprint 4)
+  SHOP_ITEMS: [
+    {
+      id: 'shop_medkit_debug',
+      name: 'Kit Médico [Debug]',
+      shortName: 'Kit Médico',
+      icon: '➕',
+      type: 'Suprimento [Placeholder]',
+      cost: 5,
+      sellValue: 3,
+      healAmount: 40,
+      color: '#4ade80',
+      description: 'Custa 5 Lixos • Restaura +40 HP e adiciona ao inventário pessoal.'
+    },
+    {
+      id: 'shop_weapon_upgrade_debug',
+      name: 'Melhoria de Arma [Debug]',
+      shortName: 'Mod. Arma',
+      icon: '🔧',
+      type: 'Upgrade [Placeholder]',
+      cost: 10,
+      sellValue: 6,
+      bonusDamage: 10,
+      color: '#facc15',
+      description: 'Custa 10 Lixos • Aumenta o dano de ataque em +10 HP e adiciona ao slot.'
+    },
+    {
+      id: 'shop_ammo_pack_debug',
+      name: 'Munição Tática [Debug]',
+      shortName: 'Munição',
+      icon: '📦',
+      type: 'Munição [Placeholder]',
+      cost: 4,
+      sellValue: 2,
+      color: '#fb923c',
+      description: 'Custa 4 Lixos • Caixa de munição reserva para armas da expedição.'
+    },
+    {
+      id: 'shop_kevlar_vest_debug',
+      name: 'Colete Tático [Debug]',
+      shortName: 'Colete Tático',
+      icon: '🦺',
+      type: 'Equipamento [Placeholder]',
+      cost: 8,
+      sellValue: 5,
+      color: '#38bdf8',
+      description: 'Custa 8 Lixos • Proteção balística leve para operadores em campo.'
+    },
+    {
+      id: 'shop_battery_cell_debug',
+      name: 'Bateria de Alta Carga [Debug]',
+      shortName: 'Bateria Carga',
+      icon: '🔋',
+      type: 'Utilitário [Placeholder]',
+      cost: 6,
+      sellValue: 3,
+      color: '#a3e635',
+      description: 'Custa 6 Lixos • Célula energética para lanternas e scanners.'
+    }
   ],
 
   // Sequência oficial da Máquina de Estados do Mundo:
@@ -191,6 +406,7 @@ window.GameConfig = {
         shortName: 'Pistola',
         icon: '🔫',
         type: 'Arma [Placeholder]',
+        sellValue: 5,
         color: '#38bdf8'
       },
       {
@@ -200,6 +416,7 @@ window.GameConfig = {
         shortName: 'Lanterna',
         icon: '🔦',
         type: 'Utilitário [Placeholder]',
+        sellValue: 3,
         color: '#facc15'
       },
       {
@@ -209,6 +426,7 @@ window.GameConfig = {
         shortName: 'Escopeta',
         icon: '💥',
         type: 'Arma [Placeholder]',
+        sellValue: 6,
         color: '#fb923c'
       },
       {
@@ -218,6 +436,7 @@ window.GameConfig = {
         shortName: 'Kit Médico',
         icon: '➕',
         type: 'Suprimento [Placeholder]',
+        sellValue: 3,
         color: '#4ade80'
       },
       {
@@ -227,6 +446,7 @@ window.GameConfig = {
         shortName: 'Vazio',
         icon: '·',
         type: 'Slot Livre',
+        sellValue: 0,
         isEmpty: true,
         color: '#64748b'
       }
@@ -242,6 +462,7 @@ window.GameConfig = {
         shortName: 'SMG',
         icon: '🔫',
         type: 'Arma [Placeholder]',
+        sellValue: 5,
         color: '#fb923c'
       },
       {
@@ -251,6 +472,7 @@ window.GameConfig = {
         shortName: 'Lanterna',
         icon: '🔦',
         type: 'Utilitário [Placeholder]',
+        sellValue: 3,
         color: '#facc15'
       },
       {
@@ -260,6 +482,7 @@ window.GameConfig = {
         shortName: 'Scanner',
         icon: '📡',
         type: 'Utilitário [Placeholder]',
+        sellValue: 4,
         color: '#22d3ee'
       },
       {
@@ -269,6 +492,7 @@ window.GameConfig = {
         shortName: 'Bandagem',
         icon: '🩹',
         type: 'Suprimento [Placeholder]',
+        sellValue: 3,
         color: '#4ade80'
       },
       {
@@ -278,6 +502,7 @@ window.GameConfig = {
         shortName: 'Vazio',
         icon: '·',
         type: 'Slot Livre',
+        sellValue: 0,
         isEmpty: true,
         color: '#64748b'
       }
@@ -285,5 +510,5 @@ window.GameConfig = {
   }
 };
 
-// Alias global Config -> GameConfig para acesso direto via Config.Controls.P1_Up
+// Alias global Config -> GameConfig para acesso via window.Config.Controls
 window.Config = window.GameConfig;

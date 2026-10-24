@@ -1,11 +1,11 @@
 /**
  * js/input.js
- * Sistema Modular de Inputs (Sprint 3):
- * - Consome exclusivamente o Dicionário Global de Inputs (window.Config.Controls)
- * - Suporte a modo de escuta (Keybinding / Remapeamento em tempo real)
- * - Ataque no Botão Direito do Mouse (Singleplayer) com bloqueio de contextmenu + Teclas R e 0 (Multiplayer)
- * - Suporte nativo a Joysticks via Gamepad API (navigator.getGamepads()) no loop principal
- * - Adaptação inteligente de hardware para controles Padrão (Xbox/PS), Genéricos/Bluetooth (DirectInput) e Modo Nintendo Switch
+ * Gerenciador de Input (Teclado + Mouse + Gamepad API + Keybinding Dinâmico):
+ * - Lê ações a partir do Dicionário Global `window.Config.Controls` (sem strings fixas de teclas).
+ * - Modo Singleplayer: Ataque acionado exclusivamente pelo Botão Direito do Mouse direcionado ao cursor (`contextmenu` bloqueado).
+ * - Modo Multiplayer Local: Jogador 1 ataca com `Config.Controls.attackP1` (padrão `KeyR`) e Jogador 2 com `Config.Controls.attackP2` (padrão `Digit0`).
+ * - Suporte nativo à Gamepad API (`navigator.getGamepads()`) no loop principal (Analógico Esquerdo / D-Pad, Botões de Face X/Quadrado para atacar, Bumpers L1/R1 para inventário), resiliente a controles genéricos e layouts Nintendo Switch.
+ * - Suporte a remapeamento de teclas em tempo real clicando na ação no menu Configurações > Controles.
  */
 
 window.InputManager = class InputManager {
@@ -13,135 +13,142 @@ window.InputManager = class InputManager {
     this.keysDown = new Set();
     this.callbacks = callbacks;
 
-    // Estado de remapeamento (Keybinding): guarda a chave de Config.Controls que aguarda o próximo keydown
-    this.rebindingAction = null;
+    // Posição atual do cursor do mouse na janela (para mirar o ataque no Singleplayer)
+    this.mouseX = window.innerWidth / 2;
+    this.mouseY = window.innerHeight / 2;
+
+    // Estado de captura de tecla para remapeamento (Keybinding)
+    this.rebindTargetAction = null;
     this.onRebindComplete = null;
 
-    // Estado dos Gamepads conectados (para detecção de borda de subida / rising edge nos botões)
-    this.prevGamepadButtons = {};
+    // Estado de Gamepads conectados (P1 = índice 1, P2 = índice 2)
     this.gamepadVectors = {
       1: { dx: 0, dy: 0 },
       2: { dx: 0, dy: 0 }
     };
-    this.connectedGamepadsInfo = [];
+    this.prevGamepadButtons = {};
+    this.connectedGamepadsSummary = [];
 
     this._onKeyDown = this._onKeyDown.bind(this);
     this._onKeyUp = this._onKeyUp.bind(this);
     this._onWheel = this._onWheel.bind(this);
+    this._onBlur = this._onBlur.bind(this);
+    this._onMouseMove = this._onMouseMove.bind(this);
     this._onMouseDown = this._onMouseDown.bind(this);
     this._onContextMenu = this._onContextMenu.bind(this);
-    this._onBlur = this._onBlur.bind(this);
 
     window.addEventListener('keydown', this._onKeyDown, { passive: false });
     window.addEventListener('keyup', this._onKeyUp);
     window.addEventListener('wheel', this._onWheel, { passive: true });
-    window.addEventListener('mousedown', this._onMouseDown);
-    window.addEventListener('contextmenu', this._onContextMenu, { passive: false });
     window.addEventListener('blur', this._onBlur);
-
-    window.addEventListener('gamepadconnected', (e) => {
-      const profile = this.detectControllerProfile(e.gamepad);
-      console.log(
-        `[GAMEPAD CONECTADO] Índice ${e.gamepad.index}: "${e.gamepad.id}" | Perfil: ${profile.label}`
-      );
-      if (this.callbacks.onGamepadStatusChange) {
-        this.callbacks.onGamepadStatusChange(e.gamepad, true, profile);
-      }
-    });
-
-    window.addEventListener('gamepaddisconnected', (e) => {
-      console.log(`[GAMEPAD DESCONECTADO] Índice ${e.gamepad.index}: "${e.gamepad.id}"`);
-      delete this.prevGamepadButtons[e.gamepad.index];
-      if (this.callbacks.onGamepadStatusChange) {
-        this.callbacks.onGamepadStatusChange(e.gamepad, false, null);
-      }
-    });
+    window.addEventListener('mousemove', this._onMouseMove, { passive: true });
+    window.addEventListener('mousedown', this._onMouseDown);
+    window.addEventListener('contextmenu', this._onContextMenu);
   }
 
   /**
-   * Inicia a escuta da próxima tecla pressionada para remapear uma ação no Dicionário Global
+   * Inicia a escuta do próximo evento keydown para remapear uma ação de Config.Controls
    */
   startKeyRebind(actionKey, onComplete) {
-    this.rebindingAction = actionKey;
-    this.onRebindComplete = onComplete || null;
+    this.rebindTargetAction = actionKey;
+    this.onRebindComplete = typeof onComplete === 'function' ? onComplete : null;
   }
 
   cancelKeyRebind() {
-    this.rebindingAction = null;
+    this.rebindTargetAction = null;
     this.onRebindComplete = null;
   }
 
-  isRebinding() {
-    return this.rebindingAction !== null;
-  }
-
-  /**
-   * Bloqueia o menu de contexto padrão do navegador ao clicar com o Botão Direito do Mouse
-   */
-  _onContextMenu(e) {
-    e.preventDefault();
-  }
-
-  /**
-   * Captura clique do Botão Direito do Mouse para ataque no Singleplayer
-   */
-  _onMouseDown(e) {
-    // Se estiver aguardando remapeamento e o usuário clicar em outra área fora dos botões de rebind, não dispara ataque
-    if (this.rebindingAction) return;
-
-    // Ignora cliques originados dentro de menus ou modais visíveis
-    if (e.target && e.target.closest && e.target.closest('.menu-overlay')) {
-      return;
-    }
-
-    const C = window.Config.Controls;
-    // e.button === 2 -> Botão Direito do Mouse
-    if (e.button === 2 && C.P1_Attack_Mouse === 'MouseRight') {
-      e.preventDefault();
-      if (this.callbacks.onMouseRightAttack) {
-        this.callbacks.onMouseRightAttack('Botão Direito do Mouse (MouseRight)');
+  _isFormInputFocused(e) {
+    const el = e && e.target;
+    if (!el || !el.tagName) return false;
+    const tag = el.tagName.toUpperCase();
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') {
+      const type = (el.type || '').toLowerCase();
+      if (type !== 'checkbox' && type !== 'radio' && type !== 'button') {
+        return true;
       }
     }
+    return Boolean(el.isContentEditable);
+  }
+
+  /**
+   * Verifica se o código de tecla pressionado corresponde à ação configurada em Config.Controls.
+   * Trata equivalência entre Digit0 e Numpad0 para facilitar o uso do teclado numérico/alfanumérico.
+   */
+  _matchesControl(code, configuredCode) {
+    if (!code || !configuredCode) return false;
+    if (code === configuredCode) return true;
+    if (
+      (configuredCode === 'Digit0' && code === 'Numpad0') ||
+      (configuredCode === 'Numpad0' && code === 'Digit0')
+    ) {
+      return true;
+    }
+    return false;
+  }
+
+  _isKeyDownForControl(configuredCode) {
+    if (!configuredCode) return false;
+    if (this.keysDown.has(configuredCode)) return true;
+    if (configuredCode === 'Digit0' && this.keysDown.has('Numpad0')) return true;
+    if (configuredCode === 'Numpad0' && this.keysDown.has('Digit0')) return true;
+    return false;
   }
 
   _onKeyDown(e) {
-    const code = e.code;
-
-    // 1. Modo de Remapeamento de Teclas (Keybinding no Menu de Configurações > Aba Controles)
-    if (this.rebindingAction) {
+    // 1. Se o menu de Configurações > Controles estiver aguardando uma tecla para remapeamento:
+    if (this.rebindTargetAction) {
       e.preventDefault();
       e.stopPropagation();
 
-      const actionKey = this.rebindingAction;
-      window.Config.Controls[actionKey] = code;
-
+      const code = e.code;
+      const action = this.rebindTargetAction;
       const cb = this.onRebindComplete;
-      this.rebindingAction = null;
+
+      this.rebindTargetAction = null;
       this.onRebindComplete = null;
 
-      console.log(
-        `[KEYBINDING] Ação "${actionKey}" remapeada para "${code}" (${window.Config.formatKeyCode(code)})`
-      );
+      // Escape cancela o remapeamento mantendo a tecla atual
+      if (code === 'Escape') {
+        if (cb) cb(action, window.Config.Controls[action], true);
+        return;
+      }
 
-      if (cb) cb(actionKey, code);
+      window.Config.Controls[action] = code;
+      console.log(
+        `[Keybinding] Ação "${action}" remapeada para "${code}" (${window.Config.formatKeyCode(code)})`
+      );
+      if (cb) cb(action, code, false);
       return;
     }
 
+    // 2. Se estiver digitando em um campo de texto, ignora atalhos do jogo
+    if (this._isFormInputFocused(e)) {
+      if (e.code === 'Escape' && e.target && e.target.blur) {
+        e.target.blur();
+      }
+      return;
+    }
+
+    const code = e.code;
     const C = window.Config.Controls;
 
-    // Previne comportamento padrão do navegador para teclas de jogo mapeadas (Tab, Espaço, Setas)
+    // Previne que Tab mude o foco do navegador ou que Setas/Espaço rolem a página durante o jogo
+    const tag = e.target && e.target.tagName ? e.target.tagName.toUpperCase() : '';
+    const isInteractiveControl = tag === 'BUTTON' || tag === 'INPUT' || tag === 'LABEL';
     if (
-      code === C.SwitchPlayer ||
-      code === C.InteractAlt ||
-      code === C.P1_Up ||
-      code === C.P1_Down ||
-      code === C.P1_Left ||
-      code === C.P1_Right ||
-      code === C.P2_Up ||
-      code === C.P2_Down ||
-      code === C.P2_Left ||
-      code === C.P2_Right
+      !isInteractiveControl &&
+      (code === 'Tab' ||
+        code === 'Space' ||
+        code === 'ArrowUp' ||
+        code === 'ArrowDown' ||
+        code === 'ArrowLeft' ||
+        code === 'ArrowRight' ||
+        this._matchesControl(code, C.switchCharacter))
     ) {
+      e.preventDefault();
+    } else if (code === 'Tab') {
       e.preventDefault();
     }
 
@@ -151,45 +158,41 @@ window.InputManager = class InputManager {
     // Atalhos de disparo único (ignora auto-repeat de tecla segurada)
     if (isRepeat) return;
 
-    // 2. Consumo estrito do Dicionário Global de Inputs (window.Config.Controls)
-    if (code === C.SwitchPlayer) {
-      if (this.callbacks.onSwitchPlayer) this.callbacks.onSwitchPlayer();
-    } else if (code === C.Pause || code === C.PauseAlt) {
+    if (code === 'Escape' || code === 'KeyP') {
       if (this.callbacks.onTogglePause) this.callbacks.onTogglePause();
-    } else if (code === C.Interact || code === C.InteractAlt) {
+      return;
+    }
+
+    if (this._matchesControl(code, C.switchCharacter)) {
+      if (this.callbacks.onSwitchPlayer) this.callbacks.onSwitchPlayer();
+    } else if (this._matchesControl(code, C.interact) || (code === 'Space' && !isInteractiveControl)) {
       if (this.callbacks.onInteract) this.callbacks.onInteract();
-    } else if (code === C.P1_Attack) {
-      if (this.callbacks.onPlayerAttack) {
-        this.callbacks.onPlayerAttack(1, `Tecla ${window.Config.formatKeyCode(code)} (${code})`);
+    } else if (this._matchesControl(code, C.inventoryCycle)) {
+      if (this.callbacks.onCycleInventoryKey) {
+        this.callbacks.onCycleInventoryKey(1);
+      } else if (this.callbacks.onCycleSlot) {
+        this.callbacks.onCycleSlot(1);
       }
-    } else if (code === C.P2_Attack || (C.P2_Attack === 'Digit0' && code === C.P2_Attack_Alt)) {
-      if (this.callbacks.onPlayerAttack) {
-        this.callbacks.onPlayerAttack(2, `Tecla ${window.Config.formatKeyCode(code)} (${code})`);
-      }
-    } else if (code === C.P1_Inventory) {
-      if (this.callbacks.onCyclePlayerSlot) {
-        this.callbacks.onCyclePlayerSlot(1, 1);
-      }
-    } else if (code === C.P2_Inventory) {
-      if (this.callbacks.onCyclePlayerSlot) {
-        this.callbacks.onCyclePlayerSlot(2, 1);
-      }
-    } else if (code === C.DebugDamage) {
-      if (this.callbacks.onDebugDamage) this.callbacks.onDebugDamage();
-    } else if (code === C.DebugHeal) {
-      if (this.callbacks.onDebugHeal) this.callbacks.onDebugHeal();
-    } else if (code === C.DebugNextStage) {
-      if (this.callbacks.onDebugNextStage) this.callbacks.onDebugNextStage();
-    } else if (code === C.P1_Slot1) {
+    } else if (this._matchesControl(code, C.attackP1)) {
+      if (this.callbacks.onAttackP1Key) this.callbacks.onAttackP1Key(code);
+    } else if (this._matchesControl(code, C.attackP2)) {
+      if (this.callbacks.onAttackP2Key) this.callbacks.onAttackP2Key(code);
+    } else if (this._matchesControl(code, C.slot1)) {
       if (this.callbacks.onSelectSlot) this.callbacks.onSelectSlot(0);
-    } else if (code === C.P1_Slot2) {
+    } else if (this._matchesControl(code, C.slot2)) {
       if (this.callbacks.onSelectSlot) this.callbacks.onSelectSlot(1);
-    } else if (code === C.P1_Slot3) {
+    } else if (this._matchesControl(code, C.slot3)) {
       if (this.callbacks.onSelectSlot) this.callbacks.onSelectSlot(2);
-    } else if (code === C.P1_Slot4) {
+    } else if (this._matchesControl(code, C.slot4)) {
       if (this.callbacks.onSelectSlot) this.callbacks.onSelectSlot(3);
-    } else if (code === C.P1_Slot5) {
+    } else if (this._matchesControl(code, C.slot5)) {
       if (this.callbacks.onSelectSlot) this.callbacks.onSelectSlot(4);
+    } else if (code === 'KeyH') {
+      if (this.callbacks.onDebugDamage) this.callbacks.onDebugDamage(e);
+    } else if (code === 'KeyJ') {
+      if (this.callbacks.onDebugHeal) this.callbacks.onDebugHeal(e);
+    } else if (code === 'KeyN') {
+      if (this.callbacks.onDebugNextStage) this.callbacks.onDebugNextStage();
     }
   }
 
@@ -197,8 +200,45 @@ window.InputManager = class InputManager {
     this.keysDown.delete(e.code);
   }
 
+  _onMouseMove(e) {
+    this.mouseX = e.clientX;
+    this.mouseY = e.clientY;
+  }
+
+  _onMouseDown(e) {
+    this.mouseX = e.clientX;
+    this.mouseY = e.clientY;
+
+    // Ignora cliques caso ocorram dentro de menus/modais ou do Map Editor
+    if (e.target && e.target.closest && e.target.closest('.menu-overlay, .map-editor-ui')) {
+      return;
+    }
+
+    // Modo Singleplayer: O ataque é acionado exclusivamente pelo Botão Direito do Mouse (e.button === 2)
+    if (e.button === 2) {
+      e.preventDefault();
+      if (this.callbacks.onSingleplayerRightClickAttack) {
+        this.callbacks.onSingleplayerRightClickAttack({
+          clientX: e.clientX,
+          clientY: e.clientY
+        });
+      }
+    }
+  }
+
+  _onContextMenu(e) {
+    // Impede que o menu de contexto padrão do navegador abra ao clicar com o Botão Direito
+    if (!e.target || !e.target.closest || !e.target.closest('.map-editor-ui')) {
+      e.preventDefault();
+    }
+  }
+
   _onWheel(e) {
-    if (e.deltaY === 0 || this.rebindingAction) return;
+    if (e.deltaY === 0) return;
+    // Ignora scroll caso ocorra dentro do painel do Editor ou Menus
+    if (e.target && e.target.closest && e.target.closest('.map-editor-ui, .menu-overlay')) {
+      return;
+    }
     const direction = e.deltaY > 0 ? 1 : -1;
     if (this.callbacks.onCycleSlot) {
       this.callbacks.onCycleSlot(direction);
@@ -207,218 +247,143 @@ window.InputManager = class InputManager {
 
   _onBlur() {
     this.keysDown.clear();
-  }
-
-  /**
-   * Identifica o perfil de hardware do Gamepad conectado:
-   * - 'switch': Modo Nintendo Switch (Pro Controller, Joy-Con, 8BitDo Switch Mode) onde B/A e Y/X físicos são invertidos
-   * - 'generic': Controles USB/Bluetooth genéricos (DirectInput sem standard mapping)
-   * - 'standard': Mapeamento W3C Standard (Xbox / DualShock / DualSense / XInput)
-   */
-  detectControllerProfile(gp) {
-    const idLower = (gp.id || '').toLowerCase();
-    const mapping = (gp.mapping || '').toLowerCase();
-
-    const isSwitch =
-      idLower.includes('nintendo') ||
-      idLower.includes('switch') ||
-      idLower.includes('joy-con') ||
-      idLower.includes('pro controller') ||
-      idLower.includes('057e') ||
-      idLower.includes('2009');
-
-    if (isSwitch) {
-      return {
-        type: 'switch',
-        label: 'Modo Nintendo Switch (Botões Invertidos B↔A / Y↔X)',
-        // Em Switch Standard Mapping, os botões de face superiores/laterais (X e Y físicos) ficam nos índices 2 e 3,
-        // mas em alguns adaptadores Bluetooth DirectInput de Switch o X/Y físico fica em 0, 2 ou 3.
-        attackButtons: [2, 3, 0],
-        interactButtons: [1],
-        l1Button: 4,
-        r1Button: 5
-      };
-    }
-
-    if (mapping !== 'standard') {
-      return {
-        type: 'generic',
-        label: 'Controle Genérico / Bluetooth (DirectInput)',
-        // Em controles genéricos/Bluetooth DirectInput, os botões de face X/Y costumam ser 0 e 3 (ou 2 e 3)
-        attackButtons: [0, 2, 3],
-        interactButtons: [1],
-        l1Button: 4,
-        r1Button: 5
-      };
-    }
-
-    return {
-      type: 'standard',
-      label: 'Padrão W3C (Xbox / PlayStation / XInput)',
-      // Botões de Face X (índice 2) e Y (índice 3) para ataque; A (índice 0) ou B (índice 1) para interagir
-      attackButtons: [2, 3],
-      interactButtons: [0, 1],
-      l1Button: 4,
-      r1Button: 5
-    };
-  }
-
-  /**
-   * Lê todos os joysticks via navigator.getGamepads() a cada frame do requestAnimationFrame
-   */
-  pollGamepads(gameMode = 'singleplayer') {
     this.gamepadVectors[1] = { dx: 0, dy: 0 };
     this.gamepadVectors[2] = { dx: 0, dy: 0 };
-    this.connectedGamepadsInfo = [];
+  }
 
-    if (!navigator.getGamepads) return;
+  /**
+   * Lê todos os joysticks conectados via `navigator.getGamepads()` dentro do `requestAnimationFrame`.
+   * Mapeia:
+   * - Analógico Esquerdo (Axes 0 e 1) ou D-Pad (Buttons 12-15 ou Axes 9/hat) -> Movimentação
+   * - Botões de Face (X / Quadrado / Y / A -> Buttons 0, 2, 3) -> Ataque
+   * - Gatilhos Superiores / Bumpers (L1 / R1 -> Buttons 4 e 5) -> Navegação de Inventário
+   * Estruturado de forma defensiva para não quebrar com controles genéricos ou Nintendo Switch.
+   */
+  pollGamepads() {
+    this.gamepadVectors[1] = { dx: 0, dy: 0 };
+    this.gamepadVectors[2] = { dx: 0, dy: 0 };
+    this.connectedGamepadsSummary = [];
 
-    const rawPads = navigator.getGamepads();
+    if (typeof navigator === 'undefined' || typeof navigator.getGamepads !== 'function') {
+      return;
+    }
+
+    let rawPads;
+    try {
+      rawPads = navigator.getGamepads();
+    } catch (_) {
+      return;
+    }
     if (!rawPads) return;
 
     const activePads = [];
     for (let i = 0; i < rawPads.length; i++) {
-      if (rawPads[i] && rawPads[i].connected) {
-        activePads.push(rawPads[i]);
+      const pad = rawPads[i];
+      if (pad && pad.connected !== false) {
+        activePads.push(pad);
       }
     }
 
-    activePads.forEach((gp, listIdx) => {
-      const profile = this.detectControllerProfile(gp);
-      this.connectedGamepadsInfo.push({
-        index: gp.index,
-        id: gp.id,
-        profileLabel: profile.label,
-        profileType: profile.type
-      });
+    for (let idx = 0; idx < activePads.length && idx < 2; idx++) {
+      const pad = activePads[idx];
+      const playerSlot = idx + 1; // 1 -> P1 (ou ativo no Single), 2 -> P2
+      const padKey = `${pad.index}_${pad.id || 'pad'}`;
+      const prev = this.prevGamepadButtons[padKey] || {};
+      const nextState = {};
 
-      // Define qual jogador este controle opera:
-      // No Singleplayer, qualquer controle ativo opera o personagem ativo (1 = canal principal).
-      // No Multiplayer Local, o 1º controle opera P1 e o 2º controle opera P2.
-      const targetSlot = gameMode === 'multiplayer' ? (listIdx === 0 ? 1 : 2) : 1;
+      const isPressed = (btnIdx) => {
+        if (!pad.buttons || btnIdx < 0 || btnIdx >= pad.buttons.length) return false;
+        const b = pad.buttons[btnIdx];
+        if (!b) return false;
+        return typeof b === 'object' ? Boolean(b.pressed || b.value > 0.5) : Boolean(b);
+      };
 
-      // 1. Leitura de Movimentação: Analógico Esquerdo (Axes 0 e 1) + D-Pad
-      const moveVec = this._readGamepadMovement(gp);
-      if (moveVec.dx !== 0 || moveVec.dy !== 0) {
-        this.gamepadVectors[targetSlot] = moveVec;
-      }
+      const readAxis = (axisIdx) => {
+        if (!pad.axes || axisIdx < 0 || axisIdx >= pad.axes.length) return 0;
+        const val = Number(pad.axes[axisIdx]);
+        return Number.isFinite(val) ? val : 0;
+      };
 
-      // Estado anterior dos botões deste gamepad para detecção de clique único (rising edge)
-      const prev = this.prevGamepadButtons[gp.index] || [];
-      const curr = gp.buttons.map((b) => this._isButtonPressed(b));
+      // 1. Movimentação: Analógico Esquerdo (Axes 0 e 1) com Deadzone + D-Pad (Buttons 12..15)
+      const deadzone = 0.22;
+      let gx = readAxis(0);
+      let gy = readAxis(1);
+      if (Math.abs(gx) < deadzone) gx = 0;
+      if (Math.abs(gy) < deadzone) gy = 0;
 
-      const justPressed = (btnIndex) => Boolean(curr[btnIndex] && !prev[btnIndex]);
+      // D-Pad padrão (12: Cima, 13: Baixo, 14: Esquerda, 15: Direita)
+      if (isPressed(12)) gy -= 1;
+      if (isPressed(13)) gy += 1;
+      if (isPressed(14)) gx -= 1;
+      if (isPressed(15)) gx += 1;
 
-      // 2. Gatilhos Superiores (Bumpers L1 / R1) -> Girar itens do inventário
-      if (justPressed(profile.l1Button)) {
-        if (this.callbacks.onGamepadCycleSlot) {
-          this.callbacks.onGamepadCycleSlot(targetSlot, -1, `Gamepad #${gp.index + 1} [L1]`);
-        }
-      }
-      if (justPressed(profile.r1Button)) {
-        if (this.callbacks.onGamepadCycleSlot) {
-          this.callbacks.onGamepadCycleSlot(targetSlot, 1, `Gamepad #${gp.index + 1} [R1]`);
-        }
-      }
+      this.gamepadVectors[playerSlot] = this._normalize(gx, gy);
 
-      // 3. Botões de Face (X / Y + compatibilidade Switch e Genérico/Bluetooth) -> Ataque
-      const attacked = profile.attackButtons.some((bIdx) => justPressed(bIdx));
-      if (attacked) {
+      // 2. Detecção de borda de subida (rising edge) para ações discretas
+      // Botão de Ataque nos Botões de Face:
+      // No padrão Xbox/PlayStation (standard) botão 2 = X/Quadrado e botão 3 = Y/Triângulo.
+      // Em controles de Nintendo Switch ou genéricos DirectInput, X/Y podem estar nos índices 0, 2 ou 3.
+      const attackFacePressed = isPressed(2) || isPressed(3) || isPressed(0);
+      nextState.attackFace = attackFacePressed;
+      if (attackFacePressed && !prev.attackFace) {
         if (this.callbacks.onGamepadAttack) {
-          this.callbacks.onGamepadAttack(
-            targetSlot,
-            `Gamepad #${gp.index + 1} [Botão de Face X/Y • ${profile.type.toUpperCase()}]`
-          );
+          this.callbacks.onGamepadAttack(playerSlot, pad.id || `Gamepad #${pad.index + 1}`);
         }
       }
 
-      // 4. Botões de Face Secundários (A / B) -> Interagir (ou atacar caso não esteja em zona de interação)
-      const interacted = profile.interactButtons.some((bIdx) => justPressed(bIdx));
-      if (interacted) {
-        if (this.callbacks.onGamepadInteractOrAttack) {
-          this.callbacks.onGamepadInteractOrAttack(
-            targetSlot,
-            `Gamepad #${gp.index + 1} [Botão Face • ${profile.type.toUpperCase()}]`
-          );
+      // 3. Navegação do Inventário nos Gatilhos Superiores (Bumpers L1 = 4, R1 = 5)
+      const l1Pressed = isPressed(4);
+      const r1Pressed = isPressed(5);
+      nextState.l1 = l1Pressed;
+      nextState.r1 = r1Pressed;
+
+      if (l1Pressed && !prev.l1) {
+        if (this.callbacks.onGamepadCycleSlot) {
+          this.callbacks.onGamepadCycleSlot(playerSlot, -1);
+        }
+      }
+      if (r1Pressed && !prev.r1) {
+        if (this.callbacks.onGamepadCycleSlot) {
+          this.callbacks.onGamepadCycleSlot(playerSlot, 1);
         }
       }
 
-      // 5. Botão Select/Back (8) -> Alternar personagem no Singleplayer
-      if (justPressed(8)) {
+      // 4. Botão de Interação secundário (B / Círculo = 1) e Start/Pause (9) e Select/Switch (8)
+      const interactPressed = isPressed(1);
+      nextState.interact = interactPressed;
+      if (interactPressed && !prev.interact) {
+        if (this.callbacks.onInteract) this.callbacks.onInteract();
+      }
+
+      const selectPressed = isPressed(8);
+      nextState.select = selectPressed;
+      if (selectPressed && !prev.select) {
         if (this.callbacks.onSwitchPlayer) this.callbacks.onSwitchPlayer();
       }
 
-      // 6. Botão Start/Options (9) -> Pausar Jogo
-      if (justPressed(9)) {
+      const startPressed = isPressed(9);
+      nextState.start = startPressed;
+      if (startPressed && !prev.start) {
         if (this.callbacks.onTogglePause) this.callbacks.onTogglePause();
       }
 
-      this.prevGamepadButtons[gp.index] = curr;
-    });
-  }
-
-  _isButtonPressed(btn) {
-    if (!btn) return false;
-    if (typeof btn === 'object') {
-      return Boolean(btn.pressed || btn.value > 0.5);
+      this.prevGamepadButtons[padKey] = nextState;
+      this.connectedGamepadsSummary.push(`P${playerSlot}: ${pad.id || 'Joystick USB'}`);
     }
-    return Boolean(btn > 0.5);
   }
 
   /**
-   * Lê Analógico Esquerdo (Axes 0 e 1) com Deadzone Radial e D-Pad (Botões 12-15 + POV Hat em controles genéricos)
-   */
-  _readGamepadMovement(gp) {
-    const deadzone = window.Config.GAMEPAD_DEADZONE || 0.22;
-    let dx = 0;
-    let dy = 0;
-
-    // 1. Analógico Esquerdo (Axes 0 e 1)
-    if (gp.axes && gp.axes.length >= 2) {
-      const rawX = gp.axes[0] || 0;
-      const rawY = gp.axes[1] || 0;
-      const mag = Math.hypot(rawX, rawY);
-      if (mag > deadzone) {
-        const normMag = Math.min(1, (mag - deadzone) / (1 - deadzone));
-        dx = (rawX / mag) * normMag;
-        dy = (rawY / mag) * normMag;
-      }
-    }
-
-    // 2. D-Pad Padrão (Botões 12: Cima, 13: Baixo, 14: Esquerda, 15: Direita)
-    let dpadX = 0;
-    let dpadY = 0;
-    if (gp.buttons && gp.buttons.length >= 16) {
-      if (this._isButtonPressed(gp.buttons[12])) dpadY -= 1;
-      if (this._isButtonPressed(gp.buttons[13])) dpadY += 1;
-      if (this._isButtonPressed(gp.buttons[14])) dpadX -= 1;
-      if (this._isButtonPressed(gp.buttons[15])) dpadX += 1;
-    }
-
-    // 3. Fallback D-Pad em Eixos Secundários (comum em controles Bluetooth/DirectInput genéricos: axes[6] e axes[7])
-    if (dpadX === 0 && dpadY === 0 && gp.mapping !== 'standard' && gp.axes && gp.axes.length >= 8) {
-      if (Math.abs(gp.axes[6]) > 0.5) dpadX = Math.sign(gp.axes[6]);
-      if (Math.abs(gp.axes[7]) > 0.5) dpadY = Math.sign(gp.axes[7]);
-    }
-
-    if (dpadX !== 0 || dpadY !== 0) {
-      return this._normalize(dpadX, dpadY);
-    }
-
-    return { dx, dy };
-  }
-
-  /**
-   * Retorna vetor normalizado (dx, dy) para o Jogador 1 (Teclado Config.Controls.P1_* + Gamepad 1)
+   * Retorna vetor normalizado (dx, dy) para o Jogador 1 (ou Personagem Ativo no Singleplayer)
+   * combinando o Dicionário Global `Config.Controls` e o Gamepad 1.
    */
   getP1Vector() {
     const C = window.Config.Controls;
     let dx = 0;
     let dy = 0;
-    if (this.keysDown.has(C.P1_Up)) dy -= 1;
-    if (this.keysDown.has(C.P1_Down)) dy += 1;
-    if (this.keysDown.has(C.P1_Left)) dx -= 1;
-    if (this.keysDown.has(C.P1_Right)) dx += 1;
+    if (this._isKeyDownForControl(C.moveUp)) dy -= 1;
+    if (this._isKeyDownForControl(C.moveDown)) dy += 1;
+    if (this._isKeyDownForControl(C.moveLeft)) dx -= 1;
+    if (this._isKeyDownForControl(C.moveRight)) dx += 1;
 
     const kbVec = this._normalize(dx, dy);
     const gpVec = this.gamepadVectors[1] || { dx: 0, dy: 0 };
@@ -431,16 +396,17 @@ window.InputManager = class InputManager {
   }
 
   /**
-   * Retorna vetor normalizado (dx, dy) para o Jogador 2 (Teclado Config.Controls.P2_* + Gamepad 2)
+   * Retorna vetor normalizado (dx, dy) para o Jogador 2 no Multiplayer Local
+   * combinando o Dicionário Global `Config.Controls` e o Gamepad 2.
    */
   getP2Vector() {
     const C = window.Config.Controls;
     let dx = 0;
     let dy = 0;
-    if (this.keysDown.has(C.P2_Up)) dy -= 1;
-    if (this.keysDown.has(C.P2_Down)) dy += 1;
-    if (this.keysDown.has(C.P2_Left)) dx -= 1;
-    if (this.keysDown.has(C.P2_Right)) dx += 1;
+    if (this._isKeyDownForControl(C.p2MoveUp)) dy -= 1;
+    if (this._isKeyDownForControl(C.p2MoveDown)) dy += 1;
+    if (this._isKeyDownForControl(C.p2MoveLeft)) dx -= 1;
+    if (this._isKeyDownForControl(C.p2MoveRight)) dx += 1;
 
     const kbVec = this._normalize(dx, dy);
     const gpVec = this.gamepadVectors[2] || { dx: 0, dy: 0 };
@@ -452,7 +418,7 @@ window.InputManager = class InputManager {
     return kbVec;
   }
 
-  // Mantém aliases retrocompatíveis que consomem o Dicionário Global
+  // Aliases retrocompatíveis que consomem o Dicionário Global
   getWASDVector() {
     return this.getP1Vector();
   }

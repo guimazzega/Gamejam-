@@ -1,10 +1,9 @@
 /**
  * js/maps.js
  * Definições dos 3 Mapas Grandes (2500x2500px) e da Safe Room Expandida (A Van).
- * Inclui paleta de cores de debug, obstáculos com caixas de colisão visíveis,
- * estações interativas de placeholder (Lojinha e Mesa de Craft),
- * pontos de Spawn para P1/P2, Zonas de Extração / Transição e
- * Coordenadas Fixas (Hardcoded) para os itens de Lixo/Sucata (Sprint 3).
+ * Inclui arrays fixos (hardcoded) de posicionamento de Lixo (fixedTrashSpawns) sem geração aleatória,
+ * paleta de cores de debug, obstáculos com caixas de colisão visíveis,
+ * estações interativas (Lojinha e Mesa de Craft), pontos de Spawn para P1/P2 e Zonas de Extração.
  */
 
 window.GameMaps = {
@@ -14,7 +13,7 @@ window.GameMaps = {
   map1: {
     id: 'map1',
     name: 'MAPA 1: ARREDORES FLORESTAIS [SETOR ALPHA]',
-    subtitle: 'Dimensões: 2500x2500px • Colete Lixo/Sucata (Posições Fixas) e siga até a Extração',
+    subtitle: 'Dimensões: 2500x2500px • 16 Lixos Fixos Persistentes • Siga até a Zona de Extração',
     width: 2500,
     height: 2500,
     isSafeRoom: false,
@@ -30,26 +29,25 @@ window.GameMaps = {
     },
     spawnP1: { x: 240, y: 260 },
     spawnP2: { x: 310, y: 260 },
-    // Coordenadas fixas (hardcoded) para o Lixo do Mapa 1 (Sprint 3 - Sem geração procedural)
-    trashSpawns: [
-      { id: 'map1_trash_01', x: 420, y: 360, typeIndex: 0, rotation: 0.15 },
-      { id: 'map1_trash_02', x: 580, y: 360, typeIndex: 1, rotation: -0.22 },
-      { id: 'map1_trash_03', x: 760, y: 360, typeIndex: 2, rotation: 0.08 },
-      { id: 'map1_trash_04', x: 900, y: 380, typeIndex: 3, rotation: -0.18 },
-      { id: 'map1_trash_05', x: 900, y: 560, typeIndex: 4, rotation: 0.25 },
-      { id: 'map1_trash_06', x: 900, y: 760, typeIndex: 0, rotation: -0.12 },
-      { id: 'map1_trash_07', x: 900, y: 960, typeIndex: 1, rotation: 0.20 },
-      { id: 'map1_trash_08', x: 300, y: 700, typeIndex: 2, rotation: -0.25 },
-      { id: 'map1_trash_09', x: 1120, y: 1080, typeIndex: 3, rotation: 0.14 },
-      { id: 'map1_trash_10', x: 1360, y: 1080, typeIndex: 4, rotation: -0.10 },
-      { id: 'map1_trash_11', x: 1640, y: 1080, typeIndex: 0, rotation: 0.18 },
-      { id: 'map1_trash_12', x: 1640, y: 820, typeIndex: 1, rotation: -0.20 },
-      { id: 'map1_trash_13', x: 1640, y: 1320, typeIndex: 2, rotation: 0.12 },
-      { id: 'map1_trash_14', x: 1640, y: 1580, typeIndex: 3, rotation: -0.16 },
-      { id: 'map1_trash_15', x: 1640, y: 1800, typeIndex: 4, rotation: 0.22 },
-      { id: 'map1_trash_16', x: 880, y: 1620, typeIndex: 0, rotation: -0.14 }
+    // Array fixo (hardcoded) com coordenadas exatas (X, Y) para os lixos do Mapa 1
+    fixedTrashSpawns: [
+      { id: 'm1_trash_01', x: 430, y: 360, typeIndex: 0 },
+      { id: 'm1_trash_02', x: 600, y: 360, typeIndex: 1 },
+      { id: 'm1_trash_03', x: 780, y: 360, typeIndex: 2 },
+      { id: 'm1_trash_04', x: 900, y: 450, typeIndex: 3 },
+      { id: 'm1_trash_05', x: 900, y: 680, typeIndex: 4 },
+      { id: 'm1_trash_06', x: 900, y: 920, typeIndex: 0 },
+      { id: 'm1_trash_07', x: 560, y: 850, typeIndex: 1 },
+      { id: 'm1_trash_08', x: 260, y: 740, typeIndex: 2 },
+      { id: 'm1_trash_09', x: 1120, y: 1080, typeIndex: 3 },
+      { id: 'm1_trash_10', x: 1380, y: 1080, typeIndex: 4 },
+      { id: 'm1_trash_11', x: 1640, y: 1140, typeIndex: 0 },
+      { id: 'm1_trash_12', x: 1640, y: 1420, typeIndex: 1 },
+      { id: 'm1_trash_13', x: 1640, y: 1700, typeIndex: 2 },
+      { id: 'm1_trash_14', x: 860, y: 1520, typeIndex: 3 },
+      { id: 'm1_trash_15', x: 1500, y: 820, typeIndex: 4 },
+      { id: 'm1_trash_16', x: 2150, y: 1320, typeIndex: 0 }
     ],
-    // Trilhas decorativas de referência no piso (sem colisão)
     floorZones: [
       { x: 180, y: 200, w: 240, h: 180, label: 'ZONA DE SPAWN [ALPHA]' },
       { x: 300, y: 310, w: 650, h: 110, label: 'TRILHA OESTE' },
@@ -57,7 +55,6 @@ window.GameMaps = {
       { x: 840, y: 1020, w: 860, h: 120, label: 'ESTRADA DE TERRA' },
       { x: 1580, y: 1020, w: 120, h: 980, label: 'ACESSO SUL' }
     ],
-    // Zona de Extração / Saída para a Safe Room (Van)
     transitionZone: {
       x: 1520,
       y: 1940,
@@ -68,26 +65,21 @@ window.GameMaps = {
       strokeColor: '#4ade80',
       fillColor: 'rgba(34, 197, 94, 0.24)'
     },
-    // Obstáculos de colisão (paredes da borda + estruturas de cenário)
     obstacles: [
-      // Paredes de Limite (Boundaries 2500x2500)
       { x: 0, y: 0, w: 2500, h: 40, label: 'LIMITE NORTE' },
       { x: 0, y: 2460, w: 2500, h: 40, label: 'LIMITE SUL' },
       { x: 0, y: 40, w: 40, h: 2420, label: 'LIMITE OESTE' },
       { x: 2460, y: 40, w: 40, h: 2420, label: 'LIMITE LESTE' },
 
-      // Obstáculos Internos - Setor Noroeste
       { x: 480, y: 120, w: 220, h: 140, label: 'CABANA ABANDONADA [COLISÃO]' },
       { x: 160, y: 480, w: 380, h: 90, label: 'CERCA DE MADEIRA' },
       { x: 640, y: 480, w: 140, h: 320, label: 'FORMAÇÃO ROCHOSA A1' },
 
-      // Setor Central
       { x: 1040, y: 240, w: 320, h: 220, label: 'BOSQUE DENSO [BLOQUEIO]' },
       { x: 1040, y: 600, w: 260, h: 280, label: 'TORRE DE VIGIA' },
       { x: 420, y: 920, w: 340, h: 240, label: 'LAGO SECO / ROCHAS' },
       { x: 1440, y: 520, w: 420, h: 180, label: 'BARREIRA DE TRONCOS' },
 
-      // Setor Sul / Arredores da Extração
       { x: 620, y: 1240, w: 480, h: 160, label: 'MURO DE CONTENÇÃO' },
       { x: 1240, y: 1240, w: 260, h: 420, label: 'DEPÓSITO FLORESTAL' },
       { x: 1780, y: 960, w: 360, h: 260, label: 'PENHASCO LESTE' },
@@ -98,7 +90,7 @@ window.GameMaps = {
   },
 
   // =========================================================================
-  // SAFE ROOM EXPANDIDA: A VAN (1440 x 920 px) - Sprint 2
+  // SAFE ROOM EXPANDIDA: A VAN (1440 x 920 px)
   // =========================================================================
   van: {
     id: 'van',
@@ -107,6 +99,7 @@ window.GameMaps = {
     width: 1440,
     height: 920,
     isSafeRoom: true,
+    fixedTrashSpawns: [],
     palette: {
       bg: '#1c1917',
       gridMinor: 'rgba(251, 191, 36, 0.10)',
@@ -119,12 +112,10 @@ window.GameMaps = {
     },
     spawnP1: { x: 260, y: 460 },
     spawnP2: { x: 340, y: 460 },
-    trashSpawns: [],
     floorZones: [
       { x: 160, y: 140, w: 1120, h: 640, label: 'INTERIOR & PÁTIO TÁTICO DA VAN' },
       { x: 200, y: 370, w: 210, h: 180, label: 'ÁREA DE DESCANSO DA EQUIPE' }
     ],
-    // Estações de Interação de Placeholder (Sprint 2: Lojinha e Mesa de Craft)
     interactiveStations: [
       {
         id: 'shop',
@@ -135,7 +126,7 @@ window.GameMaps = {
         w: 280,
         h: 195,
         zoneLabel: 'ÁREA D/ INTERAÇÃO: LOJINHA (SHOP)',
-        promptText: 'Pressione [E] para Loja (Em desenvolvimento)',
+        promptText: 'Pressione [E] ou [Espaço] para abrir a Lojinha (Compra & Venda)',
         strokeColor: '#facc15',
         fillColor: 'rgba(250, 204, 21, 0.16)'
       },
@@ -147,13 +138,12 @@ window.GameMaps = {
         y: 570,
         w: 280,
         h: 195,
-        zoneLabel: 'ÁREA D/ INTERAÇÃO: MESA DE CRAFT (CRAFTING)',
-        promptText: 'Pressione [E] para Crafting (Em desenvolvimento)',
+        zoneLabel: 'ÁREA D/ INTERAÇÃO: MESA DE CRAFT (MALETA 8x4)',
+        promptText: 'Pressione [E] ou [Espaço] para abrir a Mesa de Craft (Maleta 8x4)',
         strokeColor: '#c084fc',
         fillColor: 'rgba(192, 132, 252, 0.16)'
       }
     ],
-    // Porta da Van / Seguir Viagem
     transitionZone: {
       x: 1020,
       y: 360,
@@ -165,37 +155,33 @@ window.GameMaps = {
       fillColor: 'rgba(56, 189, 248, 0.25)'
     },
     obstacles: [
-      // Paredes do Compartimento Expandido da Van
       { x: 120, y: 100, w: 1200, h: 40, label: 'CHASSI NORTE DA VAN' },
       { x: 120, y: 780, w: 1200, h: 40, label: 'CHASSI SUL DA VAN' },
       { x: 120, y: 140, w: 40, h: 640, label: 'CABINE DO MOTORISTA [COLISÃO]' },
       { x: 1280, y: 140, w: 40, h: 640, label: 'PARACHOQUE TRASEIRO / PORTA' },
 
-      // 1. Caixa de Colisão da Estação: Lojinha (Shop)
       {
         x: 480,
         y: 170,
         w: 220,
         h: 95,
         label: '🛒 LOJINHA (SHOP)',
-        subTag: '[CAIXA DE COLISÃO • PLACEHOLDER]',
+        subTag: '[INTERAJA NA ÁREA]',
         customFill: 'rgba(161, 98, 7, 0.88)',
         customStroke: '#facc15'
       },
 
-      // 2. Caixa de Colisão da Estação: Mesa de Craft (Crafting)
       {
         x: 480,
         y: 655,
         w: 220,
         h: 95,
         label: '🔨 MESA DE CRAFT (CRAFTING)',
-        subTag: '[CAIXA DE COLISÃO • PLACEHOLDER]',
+        subTag: '[INTERAJA NA ÁREA]',
         customFill: 'rgba(88, 28, 135, 0.88)',
         customStroke: '#c084fc'
       },
 
-      // Equipamentos Auxiliares da Van
       { x: 800, y: 170, w: 180, h: 80, label: 'RÁDIO & TELEMETRIA [DEBUG]' },
       { x: 800, y: 670, w: 180, h: 80, label: 'GERADOR AUXILIAR [DEBUG]' }
     ]
@@ -207,7 +193,7 @@ window.GameMaps = {
   map2: {
     id: 'map2',
     name: 'MAPA 2: DISTRITO INDUSTRIAL [SETOR BETA]',
-    subtitle: 'Dimensões: 2500x2500px • Colete Lixo/Sucata (Posições Fixas) e atravesse o pátio até a Extração',
+    subtitle: 'Dimensões: 2500x2500px • 16 Lixos Fixos Persistentes • Atravesse o pátio até a Extração',
     width: 2500,
     height: 2500,
     isSafeRoom: false,
@@ -223,24 +209,24 @@ window.GameMaps = {
     },
     spawnP1: { x: 260, y: 2200 },
     spawnP2: { x: 340, y: 2200 },
-    // Coordenadas fixas (hardcoded) para o Lixo do Mapa 2 (Sprint 3 - Sem geração procedural)
-    trashSpawns: [
-      { id: 'map2_trash_01', x: 520, y: 2190, typeIndex: 1, rotation: 0.12 },
-      { id: 'map2_trash_02', x: 700, y: 2190, typeIndex: 2, rotation: -0.18 },
-      { id: 'map2_trash_03', x: 920, y: 2190, typeIndex: 0, rotation: 0.24 },
-      { id: 'map2_trash_04', x: 1120, y: 2140, typeIndex: 3, rotation: -0.15 },
-      { id: 'map2_trash_05', x: 1120, y: 1920, typeIndex: 4, rotation: 0.10 },
-      { id: 'map2_trash_06', x: 1120, y: 1700, typeIndex: 0, rotation: -0.22 },
-      { id: 'map2_trash_07', x: 1120, y: 1480, typeIndex: 1, rotation: 0.16 },
-      { id: 'map2_trash_08', x: 1120, y: 1240, typeIndex: 2, rotation: -0.12 },
-      { id: 'map2_trash_09', x: 1340, y: 1240, typeIndex: 3, rotation: 0.19 },
-      { id: 'map2_trash_10', x: 1580, y: 1240, typeIndex: 4, rotation: -0.25 },
-      { id: 'map2_trash_11', x: 1800, y: 1240, typeIndex: 0, rotation: 0.14 },
-      { id: 'map2_trash_12', x: 1920, y: 1080, typeIndex: 1, rotation: -0.18 },
-      { id: 'map2_trash_13', x: 1920, y: 880, typeIndex: 2, rotation: 0.21 },
-      { id: 'map2_trash_14', x: 1920, y: 680, typeIndex: 3, rotation: -0.11 },
-      { id: 'map2_trash_15', x: 1920, y: 500, typeIndex: 4, rotation: 0.17 },
-      { id: 'map2_trash_16', x: 640, y: 1480, typeIndex: 0, rotation: -0.20 }
+    // Array fixo (hardcoded) com coordenadas exatas (X, Y) para os lixos do Mapa 2
+    fixedTrashSpawns: [
+      { id: 'm2_trash_01', x: 520, y: 2190, typeIndex: 0 },
+      { id: 'm2_trash_02', x: 760, y: 2190, typeIndex: 1 },
+      { id: 'm2_trash_03', x: 1020, y: 2190, typeIndex: 2 },
+      { id: 'm2_trash_04', x: 1120, y: 1960, typeIndex: 3 },
+      { id: 'm2_trash_05', x: 1120, y: 1700, typeIndex: 4 },
+      { id: 'm2_trash_06', x: 1120, y: 1440, typeIndex: 0 },
+      { id: 'm2_trash_07', x: 740, y: 1500, typeIndex: 1 },
+      { id: 'm2_trash_08', x: 420, y: 1480, typeIndex: 2 },
+      { id: 'm2_trash_09', x: 1180, y: 1240, typeIndex: 3 },
+      { id: 'm2_trash_10', x: 1480, y: 1240, typeIndex: 4 },
+      { id: 'm2_trash_11', x: 1780, y: 1240, typeIndex: 0 },
+      { id: 'm2_trash_12', x: 1920, y: 1020, typeIndex: 1 },
+      { id: 'm2_trash_13', x: 1920, y: 780, typeIndex: 2 },
+      { id: 'm2_trash_14', x: 1920, y: 540, typeIndex: 3 },
+      { id: 'm2_trash_15', x: 1020, y: 760, typeIndex: 4 },
+      { id: 'm2_trash_16', x: 1680, y: 500, typeIndex: 0 }
     ],
     floorZones: [
       { x: 180, y: 2080, w: 280, h: 220, label: 'DOCA DE DESEMBARQUE [BETA]' },
@@ -260,13 +246,11 @@ window.GameMaps = {
       fillColor: 'rgba(56, 189, 248, 0.25)'
     },
     obstacles: [
-      // Paredes de Limite (Boundaries 2500x2500)
       { x: 0, y: 0, w: 2500, h: 40, label: 'LIMITE NORTE' },
       { x: 0, y: 2460, w: 2500, h: 40, label: 'LIMITE SUL' },
       { x: 0, y: 40, w: 40, h: 2420, label: 'LIMITE OESTE' },
       { x: 2460, y: 40, w: 40, h: 2420, label: 'LIMITE LESTE' },
 
-      // Containers e Galpões Industriais
       { x: 240, y: 1620, w: 480, h: 280, label: 'GALPÃO LOGÍSTICO 01' },
       { x: 820, y: 1620, w: 180, h: 420, label: 'CONTAINER AZUL #14' },
       { x: 1260, y: 1500, w: 460, h: 320, label: 'USINA DE FORÇA' },
@@ -284,7 +268,7 @@ window.GameMaps = {
   map3: {
     id: 'map3',
     name: 'MAPA 3: COMPLEXO SUBTERRÂNEO [SETOR GAMMA]',
-    subtitle: 'Dimensões: 2500x2500px • Fase Final • Lixo em Posições Fixas • Alcance a Extração Final',
+    subtitle: 'Dimensões: 2500x2500px • 16 Lixos Fixos Persistentes • Alcance o Ponto de Extração Final',
     width: 2500,
     height: 2500,
     isSafeRoom: false,
@@ -300,24 +284,24 @@ window.GameMaps = {
     },
     spawnP1: { x: 1210, y: 280 },
     spawnP2: { x: 1290, y: 280 },
-    // Coordenadas fixas (hardcoded) para o Lixo do Mapa 3 (Sprint 3 - Sem geração procedural)
-    trashSpawns: [
-      { id: 'map3_trash_01', x: 1250, y: 460, typeIndex: 4, rotation: 0.15 },
-      { id: 'map3_trash_02', x: 1250, y: 640, typeIndex: 3, rotation: -0.20 },
-      { id: 'map3_trash_03', x: 1250, y: 820, typeIndex: 0, rotation: 0.10 },
-      { id: 'map3_trash_04', x: 1250, y: 980, typeIndex: 1, rotation: -0.14 },
-      { id: 'map3_trash_05', x: 1020, y: 1080, typeIndex: 2, rotation: 0.22 },
-      { id: 'map3_trash_06', x: 820, y: 1080, typeIndex: 3, rotation: -0.18 },
-      { id: 'map3_trash_07', x: 660, y: 1080, typeIndex: 4, rotation: 0.12 },
-      { id: 'map3_trash_08', x: 1480, y: 1080, typeIndex: 0, rotation: -0.24 },
-      { id: 'map3_trash_09', x: 1680, y: 1080, typeIndex: 1, rotation: 0.16 },
-      { id: 'map3_trash_10', x: 1840, y: 1080, typeIndex: 2, rotation: -0.11 },
-      { id: 'map3_trash_11', x: 1250, y: 1240, typeIndex: 3, rotation: 0.19 },
-      { id: 'map3_trash_12', x: 1250, y: 1440, typeIndex: 4, rotation: -0.15 },
-      { id: 'map3_trash_13', x: 1250, y: 1640, typeIndex: 0, rotation: 0.21 },
-      { id: 'map3_trash_14', x: 1250, y: 1820, typeIndex: 1, rotation: -0.17 },
-      { id: 'map3_trash_15', x: 1020, y: 1820, typeIndex: 2, rotation: 0.14 },
-      { id: 'map3_trash_16', x: 1480, y: 1820, typeIndex: 3, rotation: -0.22 }
+    // Array fixo (hardcoded) com coordenadas exatas (X, Y) para os lixos do Mapa 3
+    fixedTrashSpawns: [
+      { id: 'm3_trash_01', x: 1250, y: 460, typeIndex: 0 },
+      { id: 'm3_trash_02', x: 1250, y: 660, typeIndex: 1 },
+      { id: 'm3_trash_03', x: 1250, y: 860, typeIndex: 2 },
+      { id: 'm3_trash_04', x: 1020, y: 1080, typeIndex: 3 },
+      { id: 'm3_trash_05', x: 760, y: 1080, typeIndex: 4 },
+      { id: 'm3_trash_06', x: 1480, y: 1080, typeIndex: 0 },
+      { id: 'm3_trash_07', x: 1740, y: 1080, typeIndex: 1 },
+      { id: 'm3_trash_08', x: 540, y: 640, typeIndex: 2 },
+      { id: 'm3_trash_09', x: 1960, y: 640, typeIndex: 3 },
+      { id: 'm3_trash_10', x: 1250, y: 1280, typeIndex: 4 },
+      { id: 'm3_trash_11', x: 1250, y: 1520, typeIndex: 0 },
+      { id: 'm3_trash_12', x: 1250, y: 1760, typeIndex: 1 },
+      { id: 'm3_trash_13', x: 640, y: 1520, typeIndex: 2 },
+      { id: 'm3_trash_14', x: 1860, y: 1520, typeIndex: 3 },
+      { id: 'm3_trash_15', x: 1060, y: 1940, typeIndex: 4 },
+      { id: 'm3_trash_16', x: 1440, y: 1940, typeIndex: 0 }
     ],
     floorZones: [
       { x: 1100, y: 180, w: 300, h: 220, label: 'ELEVADOR DE CARGA [GAMMA]' },
@@ -336,13 +320,11 @@ window.GameMaps = {
       fillColor: 'rgba(244, 63, 94, 0.26)'
     },
     obstacles: [
-      // Paredes de Limite (Boundaries 2500x2500)
       { x: 0, y: 0, w: 2500, h: 40, label: 'LIMITE NORTE' },
       { x: 0, y: 2460, w: 2500, h: 40, label: 'LIMITE SUL' },
       { x: 0, y: 40, w: 40, h: 2420, label: 'LIMITE OESTE' },
       { x: 2460, y: 40, w: 40, h: 2420, label: 'LIMITE LESTE' },
 
-      // Estruturas Simétricas do Laboratório Subterrâneo
       { x: 680, y: 420, w: 380, h: 440, label: 'CÂMARA DE CRIOGENIA OESTE' },
       { x: 1440, y: 420, w: 380, h: 440, label: 'CÂMARA DE CRIOGENIA LESTE' },
       { x: 320, y: 960, w: 260, h: 520, label: 'GERADOR AUXILIAR A' },

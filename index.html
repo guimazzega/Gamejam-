@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Protótipo 2D Top-Down [Sprint 3 • Controles, Gamepads &amp; Persistência]</title>
+  <title>Protótipo 2D Top-Down [Sprint 4 • Dano, Game Over, Shop, Crafting &amp; Keybinding]</title>
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
@@ -27,7 +27,7 @@
           <div class="hp-bar-outer">
             <div id="hud-p1-hp-bar" class="hp-bar-inner" style="width: 100%;"></div>
           </div>
-          <div class="player-controls-hint" id="hud-p1-keys">Mover: W,A,S,D • Atacar: Botão Dir. Mouse / R</div>
+          <div class="player-controls-hint" id="hud-p1-keys">Mov: W,A,S,D • Ataque: Botão Direito Mouse</div>
         </div>
       </div>
 
@@ -44,7 +44,7 @@
           <div class="hp-bar-outer">
             <div id="hud-p2-hp-bar" class="hp-bar-inner" style="width: 100%;"></div>
           </div>
-          <div class="player-controls-hint" id="hud-p2-keys">Alternar: [TAB]</div>
+          <div class="player-controls-hint" id="hud-p2-keys">Alternar: [TAB] • Ataque Multi: [0]</div>
         </div>
       </div>
     </div>
@@ -74,17 +74,17 @@
             ZONA SEGURA (VAN) — CRONÔMETRO PAUSADO
           </div>
 
-          <!-- Contador Global Persistente de Sucata / Lixo Coletado (Sprint 3) -->
-          <div id="hud-scrap-box" class="scrap-counter-pill" title="Contador Global Persistente de Lixo Coletado">
+          <!-- Contador Global Discreto de Sucata / Lixo Coletado -->
+          <div id="hud-scrap-box" class="scrap-counter-pill" title="Contador Global de Sucata/Lixo Coletado">
             <span class="scrap-icon">♻</span>
-            <span class="scrap-label">Lixo Coletado:</span>
+            <span class="scrap-label">Sucata/Lixo Coletado:</span>
             <strong id="hud-scrap-count" class="scrap-value">0</strong>
             <small id="hud-map-trash-remaining" class="scrap-remaining-tag">(Restam: 16)</small>
           </div>
         </div>
       </div>
 
-      <!-- Aviso Contextual de Interação (Zona de Extração / Porta da Van / Lojinha / Crafting) -->
+      <!-- Aviso Contextual de Interação -->
       <div id="hud-interaction-prompt" class="interaction-prompt hidden">
         Pressione <kbd>E</kbd> ou <kbd>Espaço</kbd> para avançar!
       </div>
@@ -94,25 +94,25 @@
     <div class="hud-top-right" id="hud-debug-container">
       <div class="debug-panel">
         <div class="debug-panel-title">
-          <span class="debug-dot"></span> SPRINT 3 • TELEMETRIA &amp; ATALHOS
+          <span class="debug-dot"></span> SPRINT 4 • TELEMETRIA &amp; ATALHOS
         </div>
         <ul class="debug-shortcuts-list">
-          <li><kbd>Botão Dir.</kbd> / <kbd id="dbg-key-p1-atk">R</kbd> <span>Atacar P1 (Cone + Log)</span></li>
-          <li><kbd id="dbg-key-p2-atk">0</kbd> <span>Atacar P2 (Multiplayer)</span></li>
-          <li><kbd>Gamepad</kbd> <span>Stick/D-Pad, L1/R1, X/Y</span></li>
-          <li><kbd>H</kbd> / <kbd>J</kbd> <span>Debug: -10 HP / +20 HP</span></li>
+          <li><kbd>Botão Direito</kbd> <span>Atacar p/ Cursor (Singleplayer)</span></li>
+          <li><kbd id="dbg-key-p1-atk">R</kbd> / <kbd id="dbg-key-p2-atk">0</kbd> <span>Atacar P1 / P2 (Multiplayer)</span></li>
+          <li><kbd>H</kbd> / <kbd>J</kbd> <span>Dano <strong>-10 HP</strong> / Cura <strong>+20 HP</strong></span></li>
           <li><kbd>N</kbd> <span>Avançar estado de mapa (Skip)</span></li>
-          <li id="debug-tab-hint"><kbd id="dbg-key-switch">Tab</kbd> <span>Alternar P1 / P2 (Single)</span></li>
-          <li><kbd id="dbg-key-interact">E</kbd> / <kbd>Espaço</kbd> <span>Interagir (Saída / Estações)</span></li>
-          <li><kbd>Esc</kbd> / <kbd>P</kbd> <span>Pausa &amp; Remapear Controles</span></li>
+          <li id="debug-tab-hint"><kbd id="dbg-key-switch">Tab</kbd> <span>Alternar P1 / P2 (Singleplayer)</span></li>
+          <li><kbd id="dbg-key-interact">E</kbd> / <kbd>Espaço</kbd> <span>Interagir (Van / Loja / Craft)</span></li>
+          <li><kbd>Esc</kbd> / <kbd>P</kbd> <span>Menu de Pausa &amp; Controles</span></li>
         </ul>
         <div class="debug-telemetry" id="debug-telemetry">
           <div>Modo: <strong id="dbg-mode">Singleplayer</strong></div>
           <div>Estado: <strong id="dbg-state">MAP_1</strong></div>
           <div>P1 Pos: <span id="dbg-p1-pos">0, 0</span></div>
           <div>P2 Pos: <span id="dbg-p2-pos">0, 0</span></div>
-          <div>Lixo Global: <strong id="dbg-scrap-count">0</strong></div>
-          <div>Joystick: <strong id="dbg-gamepad-state">0 Conectado(s)</strong></div>
+          <div>Câmera: <span id="dbg-cam-pos">0, 0</span></div>
+          <div>Sucata: <strong id="dbg-scrap-count">0</strong></div>
+          <div style="grid-column: span 2;">Gamepad: <strong id="dbg-gamepads">0 (Aguardando)</strong></div>
         </div>
       </div>
     </div>
@@ -125,45 +125,35 @@
       <div id="hud-hotbar" class="stardew-hotbar">
         <!-- 5 Slots gerados dinamicamente via ui.js -->
       </div>
-      <div class="hotbar-hint" id="hud-single-hotbar-hint">
-        Teclas <kbd>1</kbd>-<kbd>5</kbd>, <kbd id="hud-hint-inv-key">Q</kbd>, <strong>Scroll</strong> ou <strong>L1/R1 (Gamepad)</strong> alternam o slot • <strong>Botão Direito Mouse</strong> ataca
+      <div class="hotbar-hint">
+        Teclas <kbd>1</kbd>-<kbd>5</kbd>, <kbd id="hud-hint-inv-key">Q</kbd>, <strong>Scroll</strong> ou <strong>L1/R1 (Gamepad)</strong> alternam slot • <strong>Botão Direito</strong> ataca
       </div>
     </div>
 
     <!-- HOTBARS MULTIPLAYER LOCAL (Alinhadas Verticalmente no Centro-Esquerdo e Centro-Direito) -->
-    <!-- Centro-Esquerdo (Encostado na Borda): Inventário do Jogador 1 -->
     <div id="hud-multi-hotbar-p1" class="hud-side-hotbar hud-side-left hidden">
       <div class="side-hotbar-header p1-header-tag">
-        <strong>P1</strong> <span id="hud-multi-p1-hotbar-tag">Teclas <kbd>1</kbd>-<kbd>5</kbd> / <kbd>Q</kbd></span>
+        <strong>P1</strong> <span>Teclas <kbd>1</kbd>-<kbd>5</kbd></span>
       </div>
-      <div id="hud-hotbar-p1-slots" class="stardew-hotbar vertical-hotbar">
-        <!-- 5 Slots verticais de P1 -->
-      </div>
-      <div id="hud-p1-selected-label" class="side-selected-label">
-        Pistola
-      </div>
+      <div id="hud-hotbar-p1-slots" class="stardew-hotbar vertical-hotbar"></div>
+      <div id="hud-p1-selected-label" class="side-selected-label">Pistola</div>
     </div>
 
-    <!-- Centro-Direito (Encostado na Borda): Inventário do Jogador 2 -->
     <div id="hud-multi-hotbar-p2" class="hud-side-hotbar hud-side-right hidden">
       <div class="side-hotbar-header p2-header-tag">
-        <strong>P2</strong> <span id="hud-multi-p2-hotbar-tag"><kbd>Scroll</kbd> / <kbd>O</kbd></span>
+        <strong>P2</strong> <span><kbd>Scroll</kbd> Mouse</span>
       </div>
-      <div id="hud-hotbar-p2-slots" class="stardew-hotbar vertical-hotbar">
-        <!-- 5 Slots verticais de P2 -->
-      </div>
-      <div id="hud-p2-selected-label" class="side-selected-label">
-        SMG
-      </div>
+      <div id="hud-hotbar-p2-slots" class="stardew-hotbar vertical-hotbar"></div>
+      <div id="hud-p2-selected-label" class="side-selected-label">SMG</div>
     </div>
   </div>
 
   <!-- ==================== MENU PRINCIPAL ==================== -->
   <div id="main-menu-overlay" class="menu-overlay">
     <div class="stardew-panel main-menu-card">
-      <div class="dev-ribbon">SPRINT 3 • CONTROLES MODULARES, GAMEPAD API &amp; PERSISTÊNCIA</div>
+      <div class="dev-ribbon">SPRINT 4 • DANO, GAME OVER, LOJINHA, CRAFTING 8x4 &amp; CONTROLES</div>
       <h1 class="game-title">PROJETO EXPEDIÇÃO 2D</h1>
-      <p class="game-subtitle">Protótipo Top-Down • Lixo com Persistência Global, Ataque em Cone, Suporte a Joysticks &amp; Keybinding</p>
+      <p class="game-subtitle">Protótipo Top-Down • Persistência de Lixos, Fogo Amigo, Safe Room (Loja &amp; Maleta 8x4) e Gamepad API</p>
 
       <!-- Seletor de Modo de Jogo -->
       <div class="mode-selector-section">
@@ -175,8 +165,7 @@
               <strong>Modo Singleplayer</strong>
             </div>
             <p class="mode-card-desc">
-              Controle 1 personagem por vez (<kbd>Tab</kbd> alterna P1/P2).
-              Ataque no <strong>Botão Direito do Mouse</strong> (ou tecla remapeada / Gamepad <kbd>X</kbd>/<kbd>Y</kbd>).
+              Movimentação em <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> (ou Analógico/D-Pad) e ataque exclusivo no <strong>Botão Direito do Mouse</strong> na direção do cursor. <kbd>Tab</kbd> alterna P1/P2.
             </p>
           </button>
 
@@ -186,8 +175,8 @@
               <strong>Modo Multiplayer Local</strong>
             </div>
             <p class="mode-card-desc">
-              <strong>P1</strong> ataca com <kbd>R</kbd> e <strong>P2</strong> ataca com <kbd>0</kbd>.
-              Suporte simultâneo a Teclado e Joysticks (Padrão, Bluetooth e Switch).
+              <strong>P1</strong> anda em <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> e ataca com <kbd>R</kbd>.
+              <strong>P2</strong> anda nas <kbd>Setas</kbd> e ataca com <kbd>0</kbd>. Suporte a 2 Gamepads e Fogo Amigo!
             </p>
           </button>
         </div>
@@ -199,11 +188,11 @@
         <div class="flow-pills">
           <span class="pill">Mapa 1 (16 Lixos Fixos)</span>
           <span class="arrow">→</span>
-          <span class="pill van">Safe Room (Van)</span>
+          <span class="pill van">Safe Room (Van: Loja + Craft)</span>
           <span class="arrow">→</span>
           <span class="pill">Mapa 2 (16 Lixos Fixos)</span>
           <span class="arrow">→</span>
-          <span class="pill van">Safe Room (Van)</span>
+          <span class="pill van">Safe Room (Van: Loja + Craft)</span>
           <span class="arrow">→</span>
           <span class="pill">Mapa 3 (16 Lixos Fixos)</span>
         </div>
@@ -236,9 +225,7 @@
         </div>
       </div>
 
-      <!-- Painel Duplo de Status de Vida (HP) e Grade de Itens dos 2 Personagens -->
       <div class="pause-characters-grid">
-        <!-- Coluna Personagem 1 -->
         <div class="char-inventory-box" id="pause-p1-box">
           <div class="char-box-header">
             <div class="player-avatar p1-avatar">P1</div>
@@ -254,12 +241,9 @@
             </div>
           </div>
           <div class="inventory-grid-title">Inventário Carregado (5 Slots):</div>
-          <div id="pause-p1-items-grid" class="inventory-slots-grid">
-            <!-- Preenchido via ui.js -->
-          </div>
+          <div id="pause-p1-items-grid" class="inventory-slots-grid"></div>
         </div>
 
-        <!-- Coluna Personagem 2 -->
         <div class="char-inventory-box" id="pause-p2-box">
           <div class="char-box-header">
             <div class="player-avatar p2-avatar">P2</div>
@@ -275,9 +259,7 @@
             </div>
           </div>
           <div class="inventory-grid-title">Inventário Carregado (5 Slots):</div>
-          <div id="pause-p2-items-grid" class="inventory-slots-grid">
-            <!-- Preenchido via ui.js -->
-          </div>
+          <div id="pause-p2-items-grid" class="inventory-slots-grid"></div>
         </div>
       </div>
 
@@ -299,26 +281,26 @@
     </div>
   </div>
 
-  <!-- ==================== MODAL DE CONFIGURAÇÕES COM ABA DE CONTROLES (SPRINT 3) ==================== -->
+  <!-- ==================== MODAL DE CONFIGURAÇÕES + ABA CONTROLES (KEYBINDING) ==================== -->
   <div id="settings-modal-overlay" class="menu-overlay settings-overlay hidden">
     <div class="stardew-panel modal-card settings-modal-wide">
       <h2 class="modal-title">⚙ Configurações do Jogo</h2>
       <p class="settings-subtitle">
-        Ajuste preferências de exibição, áudio, regras de combate e remapeamento de teclas (<code>Config.Controls</code>):
+        Ajuste preferências gerais ou remapeie o Dicionário Global de Inputs (<code>Config.Controls</code>):
       </p>
 
-      <!-- Barra de Abas do Menu de Configurações (Sprint 3) -->
-      <div class="settings-tabs-bar" role="tablist">
-        <button type="button" id="tab-btn-general" class="settings-tab-btn active" data-tab="general">
-          ⚙ Geral &amp; Áudio
+      <!-- Barra de Abas: Geral vs Controles -->
+      <div class="settings-tabs-bar">
+        <button type="button" id="tab-btn-general" class="settings-tab-btn active-tab" data-tab="general">
+          🛠️ Geral (Tela, Áudio &amp; Combate)
         </button>
         <button type="button" id="tab-btn-controls" class="settings-tab-btn" data-tab="controls">
-          🎮 Controles (Keybinding &amp; Gamepad)
+          🎮 Controles &amp; Keybinding
         </button>
       </div>
 
-      <!-- ABA 1: GERAL & ÁUDIO -->
-      <div id="settings-tab-general" class="settings-tab-pane">
+      <!-- ABA 1: CONFIGURAÇÕES GERAIS -->
+      <div id="settings-tab-general" class="settings-tab-content">
         <div class="settings-options-list">
           <!-- Opção 1: Tela Cheia (Fullscreen) -->
           <label class="setting-option-row" for="toggle-fullscreen">
@@ -362,7 +344,7 @@
                 <span id="badge-friendly-fire-state" class="setting-state-badge state-off">OFF</span>
               </div>
               <p class="setting-option-desc">
-                Quando ativo, o cone de ataque de um jogador pode atingir o parceiro causando dano!
+                Quando ativo, o ataque de um jogador reduz a barra de vida do outro ao acertar sua hitbox!
               </p>
             </div>
             <div class="setting-control">
@@ -373,41 +355,202 @@
         </div>
       </div>
 
-      <!-- ABA 2: CONTROLES (REMAPEAMENTO / KEYBINDING & GAMEPAD API - SPRINT 3) -->
-      <div id="settings-tab-controls" class="settings-tab-pane hidden">
-        <!-- Status ao vivo de Gamepads conectados -->
-        <div class="gamepad-info-banner" id="settings-gamepad-banner">
-          <div class="gamepad-banner-title">
-            🕹️ <strong>Suporte Nativo a Gamepad API:</strong>
-            <span id="settings-gamepad-status" class="gamepad-status-pill">Pressione qualquer botão no Joystick para detectar</span>
-          </div>
-          <div class="gamepad-banner-details">
-            <span><strong>Movimento:</strong> Analógico Esq. (Axes 0/1) ou D-Pad</span> •
-            <span><strong>Inventário:</strong> Bumpers <kbd>L1</kbd> / <kbd>R1</kbd></span> •
-            <span><strong>Atacar:</strong> Botões de Face (<kbd>X</kbd> / <kbd>Y</kbd>)</span> •
-            <span>Compatível c/ Genéricos/Bluetooth e modo <strong>Nintendo Switch</strong></span>
-          </div>
-        </div>
-
-        <p class="keybind-instructions">
-          Clique com o mouse em qualquer ação abaixo e pressione a <strong>nova tecla desejada</strong> para atualizar o Dicionário Global (<code>Config.Controls</code>):
-        </p>
-
-        <!-- Lista de Ações para Remapeamento (Keybinding) -->
-        <div id="keybinding-list" class="keybinding-list">
-          <!-- Preenchido e atualizado dinamicamente via ui.js -->
-        </div>
-
-        <div class="controls-tab-footer">
-          <button type="button" id="btn-reset-controls" class="stardew-btn btn-warning btn-sm">
-            ↺ Restaurar Teclas Padrão
+      <!-- ABA 2: CONTROLES & KEYBINDING (Config.Controls) -->
+      <div id="settings-tab-controls" class="settings-tab-content hidden">
+        <div class="controls-help-banner">
+          <span>💡 Clique em uma ação abaixo e pressione qualquer tecla para remapear <code>window.Config.Controls</code> em tempo real.</span>
+          <button type="button" id="btn-reset-keybinds" class="stardew-btn btn-secondary btn-small">
+            ↺ Restaurar Padrão
           </button>
+        </div>
+
+        <div id="keybind-actions-list" class="keybind-list">
+          <!-- Linhas de ações geradas dinamicamente via ui.js -->
+        </div>
+
+        <div class="gamepad-status-banner" id="gamepad-status-banner">
+          🎮 Suporte a Joysticks (Gamepad API): Analógico Esq / D-Pad move • Botão X/Quadrado ataca • L1/R1 alterna inventário.
         </div>
       </div>
 
       <div class="menu-actions">
         <button type="button" id="btn-close-settings" class="stardew-btn btn-primary">
           ✓ Salvar e Voltar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== TELA DE GAME OVER (SPRINT 4) ==================== -->
+  <div id="gameover-overlay" class="menu-overlay gameover-overlay hidden">
+    <div class="stardew-panel gameover-card">
+      <div class="gameover-skull">💀</div>
+      <h2 id="gameover-title" class="gameover-title">Você Morreu</h2>
+      <p id="gameover-subtitle" class="gameover-subtitle">
+        A expedição falhou. Pressione o botão abaixo para restaurar o cronômetro, encher o HP da equipe e retornar ao ponto de spawn.
+      </p>
+      <div class="menu-actions">
+        <button type="button" id="btn-gameover-restart" class="stardew-btn btn-danger btn-large">
+          ↺ Reiniciar Fase
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MESA DE CRAFTING NA VAN - MALETA 8x4 ESTILO RE4 (SPRINT 4) ==================== -->
+  <div id="crafting-modal-overlay" class="menu-overlay station-modal-overlay hidden">
+    <div class="stardew-panel station-modal-card crafting-modal-card">
+      <div class="station-modal-header">
+        <div>
+          <span class="station-badge crafting-badge">SAFE ROOM • VAN DE OPERAÇÕES (EXCLUSIVO)</span>
+          <h2 class="station-title">🔨 Mesa de Crafting — Maleta Tática (Grid 8x4)</h2>
+          <p class="station-subtitle">
+            Inspiração RE4 (Attache Case) • Isolada do inventário pessoal • Clique em 2 itens compatíveis na grade para combiná-los.
+          </p>
+        </div>
+        <div class="station-wallet-box">
+          <div class="wallet-line">♻ Lixo Disponível: <strong id="crafting-scrap-total">0</strong></div>
+          <div class="wallet-sub">Slots Ocupados: <span id="crafting-slots-used">0 / 32</span></div>
+        </div>
+      </div>
+
+      <div class="crafting-layout">
+        <!-- Grade Espacial 8x4 (Attache Case) -->
+        <div class="attache-case-frame">
+          <div class="attache-case-top-bar">
+            <span>MALETA DE BANCADA 8x4 (32 SLOTS ESPACIAIS)</span>
+            <span class="attache-hint">Clique em até 2 unidades para selecionar</span>
+          </div>
+          <div id="crafting-attache-grid" class="attache-grid-8x4">
+            <!-- 32 células geradas dinamicamente via ui.js -->
+          </div>
+        </div>
+
+        <!-- Painel Lateral de Combinação e Receitas Placeholder -->
+        <div class="crafting-workbench-side">
+          <div class="workbench-box">
+            <h3 class="workbench-heading">Bancada de Combinação</h3>
+            <div class="selected-slots-preview">
+              <div id="craft-sel-slot-1" class="craft-sel-pill">1º Slot: (Clique na grade)</div>
+              <span class="craft-plus">+</span>
+              <div id="craft-sel-slot-2" class="craft-sel-pill">2º Slot: (Clique na grade)</div>
+            </div>
+            <div id="craft-result-preview" class="craft-result-preview">
+              Resultado: ---
+            </div>
+
+            <div class="workbench-actions">
+              <button type="button" id="btn-craft-combine" class="stardew-btn btn-primary" disabled>
+                ⚒️ Combinar Selecionados
+              </button>
+              <button type="button" id="btn-craft-quick-combine" class="stardew-btn btn-secondary">
+                ⚡ Combinar 2x Lixo → Sucata Processada
+              </button>
+              <button type="button" id="btn-craft-add-debug-trash" class="stardew-btn btn-warning btn-small">
+                +2 Lixos na Maleta [Debug]
+              </button>
+              <button type="button" id="btn-craft-sort-case" class="stardew-btn btn-secondary btn-small">
+                ⇄ Organizar Maleta 8x4
+              </button>
+            </div>
+          </div>
+
+          <div class="recipes-reference-box">
+            <div class="recipes-title">Receitas Placeholder Disponíveis:</div>
+            <ul class="recipes-list">
+              <li><strong>2x Lixo</strong> → <span>⚙️ Sucata Processada [Placeholder]</span></li>
+              <li><strong>2x Sucata Processada</strong> → <span>🛡️ Placa Blindada [Placeholder]</span></li>
+              <li><strong>1x Lixo + 1x Sucata Processada</strong> → <span>🧨 Carga Explosiva [Placeholder]</span></li>
+            </ul>
+          </div>
+
+          <div id="crafting-feedback-log" class="station-feedback-log">
+            Selecione duas unidades de "Lixo" na maleta 8x4 e clique em "Combinar".
+          </div>
+        </div>
+      </div>
+
+      <div class="menu-actions station-footer-actions">
+        <button type="button" id="btn-close-crafting" class="stardew-btn btn-danger">
+          ✕ Fechar Mesa de Craft (Esc)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== LOJINHA (SHOP) NA VAN (SPRINT 4) ==================== -->
+  <div id="shop-modal-overlay" class="menu-overlay station-modal-overlay hidden">
+    <div class="stardew-panel station-modal-card shop-modal-card">
+      <div class="station-modal-header">
+        <div>
+          <span class="station-badge shop-badge">SAFE ROOM • TERMINAL COMERCIAL DA VAN</span>
+          <h2 class="station-title">🛒 Lojinha da Van — Compra &amp; Venda de Suprimentos</h2>
+          <p class="station-subtitle">
+            Use o <strong>Lixo / Sucata</strong> coletado nas fases como moeda de troca ou venda itens do inventário pessoal.
+          </p>
+        </div>
+        <div class="station-wallet-box shop-wallet-box">
+          <div class="wallet-line">💰 Saldo Global (Lixos/Moedas): <strong id="shop-scrap-balance">0</strong></div>
+          <button type="button" id="btn-shop-add-debug-coins" class="stardew-btn btn-warning btn-small">
+            +10 Lixos [Debug]
+          </button>
+        </div>
+      </div>
+
+      <!-- Seletor de Operador Alvo da Transação -->
+      <div class="shop-operator-bar">
+        <span>Inventário do Operador para Compra / Venda:</span>
+        <div class="shop-operator-btns">
+          <button type="button" id="btn-shop-target-p1" class="settings-tab-btn active-tab">
+            Jogador 1 (P1)
+          </button>
+          <button type="button" id="btn-shop-target-p2" class="settings-tab-btn">
+            Jogador 2 (P2)
+          </button>
+        </div>
+      </div>
+
+      <div class="shop-columns-grid">
+        <!-- Coluna Esquerda: Catálogo de Compra (Loja -> Jogador) -->
+        <div class="shop-column-box">
+          <h3 class="shop-col-title">📦 Catálogo da Loja (Comprar)</h3>
+          <div id="shop-catalog-list" class="shop-items-list">
+            <!-- Itens da loja gerados via ui.js -->
+          </div>
+          <div class="shop-action-bar">
+            <div id="shop-buy-selected-info" class="shop-selected-info">
+              Selecione um item do catálogo acima.
+            </div>
+            <button type="button" id="btn-shop-buy" class="stardew-btn btn-primary" disabled>
+              🛒 Comprar Item
+            </button>
+          </div>
+        </div>
+
+        <!-- Coluna Direita: Inventário Pessoal do Operador (Vender -> Loja) -->
+        <div class="shop-column-box">
+          <h3 class="shop-col-title">🎒 Inventário do Operador (Vender)</h3>
+          <div id="shop-sell-inventory-list" class="shop-items-list">
+            <!-- Slots do inventário do jogador gerados via ui.js -->
+          </div>
+          <div class="shop-action-bar">
+            <div id="shop-sell-selected-info" class="shop-selected-info">
+              Selecione um item do seu inventário para vender.
+            </div>
+            <button type="button" id="btn-shop-sell" class="stardew-btn btn-warning" disabled>
+              💰 Vender Item Selecionado
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div id="shop-console-log" class="station-feedback-log">
+        Terminal pronto. Selecione um item da lista para Comprar ou um item do inventário para Vender.
+      </div>
+
+      <div class="menu-actions station-footer-actions">
+        <button type="button" id="btn-close-shop" class="stardew-btn btn-danger">
+          ✕ Fechar Lojinha (Esc)
         </button>
       </div>
     </div>
