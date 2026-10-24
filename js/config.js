@@ -1,39 +1,144 @@
 /**
  * js/config.js
- * Configurações globais, constantes de física/câmera, variáveis globais de configurações,
- * Dicionário Global de Inputs (Config.Controls), estado global de persistência de lixos,
- * inventário de placeholder (5 slots) e definição da Máquina de Estados de Fases.
+ * Configurações globais, constantes de física/câmera, Dicionário Global de Inputs (Config.Controls),
+ * persistência de posições fixas dos lixos (máx. 16 por mapa), sistema de armas melee da Loja
+ * e definição da Máquina de Estados de Fases.
  */
 
-// Variáveis globais de Configuração e Progresso (Sprints 2 & 3)
 window.isMuted = false;
 window.friendlyFireEnabled = false;
+window.colorblindMode = false;
 window.scrapCollected = 0;
 
-// Estado Global de Persistência de Lixos Coletados (Sprint 3)
-// Armazena os IDs únicos dos lixos já coletados para que nunca reapareçam caso o jogador saia e volte para a fase
+// Conjunto de IDs de lixos coletados na sessão/corrida atual
 window.collectedTrashIds = new Set();
+
+const TRASH_POSITIONS_STORAGE_KEY = 'scienceeco_fixed_trash_positions_v2';
 
 window.GlobalState = {
   collectedTrashIds: window.collectedTrashIds,
+  unlockedWeapons: new Set(['baton']),
+  equippedWeaponId: 'baton',
+  savedTrashLayouts: {},
+
+  _loadSavedLayouts() {
+    if (Object.keys(this.savedTrashLayouts).length > 0) return;
+    try {
+      const raw = localStorage.getItem(TRASH_POSITIONS_STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === 'object') {
+          this.savedTrashLayouts = parsed;
+        }
+      }
+    } catch (e) {
+      this.savedTrashLayouts = {};
+    }
+  },
+
+  _persistSavedLayouts() {
+    try {
+      localStorage.setItem(TRASH_POSITIONS_STORAGE_KEY, JSON.stringify(this.savedTrashLayouts));
+    } catch (e) {}
+  },
+
+  /**
+   * Retorna as 16 posições fixas de lixo do mapa, garantindo que uma vez definidas na primeira jogada,
+   * permaneçam rigorosamente as mesmas em todas as jogadas subsequentes.
+   */
+  getFixedTrashSpawns(map) {
+    if (!map || map.isSafeRoom || !Array.isArray(map.trashSpawns)) return [];
+    this._loadSavedLayouts();
+
+    if (Array.isArray(this.savedTrashLayouts[map.id]) && this.savedTrashLayouts[map.id].length > 0) {
+      return this.savedTrashLayouts[map.id];
+    }
+
+    // Limita rigorosamente a no máximo 16 lixos por mapa e congela suas coordenadas
+    const fixedList = map.trashSpawns.slice(0, 16).map((item, idx) => ({
+      id: item.id || `${map.id}_trash_${String(idx + 1).padStart(2, '0')}`,
+      x: Math.round(item.x),
+      y: Math.round(item.y),
+      typeIndex: item.typeIndex !== undefined ? item.typeIndex : idx % 5,
+      rotation: item.rotation !== undefined ? item.rotation : 0
+    }));
+
+    this.savedTrashLayouts[map.id] = fixedList;
+    this._persistSavedLayouts();
+    return fixedList;
+  },
+
   isTrashCollected(trashId) {
     return window.collectedTrashIds.has(trashId);
   },
+
   markTrashCollected(trashId) {
     if (!window.collectedTrashIds.has(trashId)) {
       window.collectedTrashIds.add(trashId);
-      window.scrapCollected = window.collectedTrashIds.size;
+      window.scrapCollected = (window.scrapCollected || 0) + 1;
       return true;
     }
     return false;
   },
+
+  resetMapTrash(map) {
+    if (!map || !Array.isArray(map.trashSpawns)) return;
+    const layout = this.getFixedTrashSpawns(map);
+    for (const item of layout) {
+      window.collectedTrashIds.delete(item.id);
+    }
+  },
+
   resetAllTrash() {
     window.collectedTrashIds.clear();
     window.scrapCollected = 0;
+    this.unlockedWeapons = new Set(['baton']);
+    this.equippedWeaponId = 'baton';
+  },
+
+  getEquippedWeapon() {
+    const weapons = window.GameConfig ? window.GameConfig.WEAPONS : null;
+    if (!weapons) return { id: 'baton', name: 'Bastão', damage: 30, range: 84, color: '#38bdf8' };
+    return weapons[this.equippedWeaponId] || weapons.baton;
+  },
+
+  isWeaponUnlocked(weaponId) {
+    return this.unlockedWeapons.has(weaponId);
+  },
+
+  buyOrEquipWeapon(weaponId) {
+    const weapons = window.GameConfig ? window.GameConfig.WEAPONS : null;
+    if (!weapons || !weapons[weaponId]) return { success: false, reason: 'INVALID' };
+    const weapon = weapons[weaponId];
+
+    if (this.unlockedWeapons.has(weaponId)) {
+      this.equippedWeaponId = weaponId;
+      return { success: true, action: 'EQUIPPED', weapon };
+    }
+
+    const currentScrap = window.scrapCollected || 0;
+    if (currentScrap < weapon.price) {
+      return { success: false, reason: 'INSUFFICIENT_SCRAP', weapon };
+    }
+
+    window.scrapCollected = currentScrap - weapon.price;
+    this.unlockedWeapons.add(weaponId);
+    this.equippedWeaponId = weaponId;
+    return { success: true, action: 'PURCHASED', weapon };
   }
 };
 
-// Dicionário Padrão de Controles (para restauração rápida se necessário)
+/**
+ * Retorna o Rank de desempenho baseado no tempo gasto (em segundos)
+ */
+window.computePerformanceRank = function(timeSeconds) {
+  if (timeSeconds <= 45) return 'S+';
+  if (timeSeconds <= 90) return 'S';
+  if (timeSeconds <= 140) return 'A';
+  return 'B';
+};
+
+// Dicionário Padrão de Controles (Sem atalhos de debug e sem teclas de inventário)
 const DEFAULT_CONTROLS = {
   // Jogador 1 (e Jogador Ativo no Singleplayer)
   P1_Up: 'KeyW',
@@ -41,13 +146,7 @@ const DEFAULT_CONTROLS = {
   P1_Left: 'KeyA',
   P1_Right: 'KeyD',
   P1_Attack: 'KeyR',
-  P1_Attack_Mouse: 'MouseRight',
-  P1_Inventory: 'KeyQ',
-  P1_Slot1: 'Digit1',
-  P1_Slot2: 'Digit2',
-  P1_Slot3: 'Digit3',
-  P1_Slot4: 'Digit4',
-  P1_Slot5: 'Digit5',
+  P1_Attack_Mouse: 'MouseLeft',
 
   // Jogador 2 (Multiplayer Local)
   P2_Up: 'ArrowUp',
@@ -56,28 +155,25 @@ const DEFAULT_CONTROLS = {
   P2_Right: 'ArrowRight',
   P2_Attack: 'Digit0',
   P2_Attack_Alt: 'Numpad0',
-  P2_Inventory: 'KeyO',
 
-  // Ações de Sistema / Interação / Debug
+  // Ações de Sistema / Interação
   SwitchPlayer: 'Tab',
   Interact: 'KeyE',
   InteractAlt: 'Space',
   Pause: 'Escape',
-  PauseAlt: 'KeyP',
-  DebugDamage: 'KeyH',
-  DebugHeal: 'KeyJ',
-  DebugNextStage: 'KeyN'
+  PauseAlt: 'KeyP'
 };
 
 window.GameConfig = {
-  // Dicionário Global de Inputs (Sprint 3: ex. Config.Controls.P1_Up)
   Controls: { ...DEFAULT_CONTROLS },
+
+  createDefaultInventoryP1() { return []; },
+  createDefaultInventoryP2() { return []; },
 
   resetDefaultControls() {
     Object.assign(this.Controls, DEFAULT_CONTROLS);
   },
 
-  // Utilitário para exibir nomes amigáveis das teclas na UI e HUD
   formatKeyCode(code) {
     if (!code) return '---';
     const map = {
@@ -96,8 +192,8 @@ window.GameConfig = {
       AltRight: 'Alt Dir',
       Enter: 'Enter',
       Backspace: 'Backspace',
-      MouseRight: 'Botão Dir. Mouse',
       MouseLeft: 'Botão Esq. Mouse',
+      MouseRight: 'Botão Dir. Mouse',
       MouseMiddle: 'Botão Meio Mouse'
     };
     if (map[code]) return map[code];
@@ -107,183 +203,151 @@ window.GameConfig = {
     return code;
   },
 
-  // Configurações de Grid e Escala
+  // Configurações de Escala e Tempo
   TILE_SIZE: 64,
-  MAJOR_GRID_STEP: 320, // A cada 5 tiles (320px), linha de referência forte com coordenadas
-
-  // Tempo padrão de cada fase (em segundos) -> 03:00
   STAGE_DURATION_SECONDS: 180,
 
   // Configurações dos Jogadores
-  PLAYER_SPEED: 290, // pixels por segundo (fluido estilo Stardew Valley)
-  PLAYER_SIZE: 40,   // hitbox quadrada 40x40px
+  PLAYER_SPEED: 290,
+  PLAYER_SIZE: 38,
   PLAYER_MAX_HP: 100,
 
-  // Configurações de Ataque Placeholder (Sprint 3)
-  ATTACK_DURATION: 0.28,            // segundos que o arco/cone fica visível
-  ATTACK_COOLDOWN: 0.16,            // tempo mínimo entre ataques
-  ATTACK_RANGE: 76,                 // raio do cone de colisão em pixels
-  ATTACK_ARC_ANGLE: Math.PI * 0.52, // abertura angular do cone (~93 graus)
+  // Configurações de Ataque Corpo a Corpo (Melee)
+  ATTACK_DURATION: 0.28,
+  ATTACK_COOLDOWN: 0.16,
+  ATTACK_RANGE: 84,
+  ATTACK_ARC_ANGLE: Math.PI * 0.58,
 
-  // Configurações de Gamepad (Sprint 3)
+  // Armas de Curta Distância (Melee) da Loja:
+  // 1. Bastão: Dano Base = 30
+  // 2. Barra de Ferro: +10% sobre o Bastão = 33
+  // 3. Katana: +10% sobre a Barra de Ferro = 36.3
+  WEAPONS: {
+    baton: {
+      id: 'baton',
+      name: 'Bastão',
+      shortName: 'Bastão',
+      icon: '🏏',
+      damage: 30,
+      price: 0,
+      range: 84,
+      color: '#38bdf8',
+      stroke: '#e0f2fe',
+      desc: 'Arma básica de curta distância.',
+      bonusLabel: 'Arma Básica • Dano Base (30)'
+    },
+    iron_bar: {
+      id: 'iron_bar',
+      name: 'Barra de Ferro',
+      shortName: 'Barra de Ferro',
+      icon: '🔩',
+      damage: 30 * 1.10, // 33 (+10% sobre o Bastão)
+      price: 8,
+      range: 88,
+      color: '#cbd5e1',
+      stroke: '#f8fafc',
+      desc: 'Causa 10% a mais de dano que o Bastão.',
+      bonusLabel: '+10% de Dano sobre o Bastão (33)'
+    },
+    katana: {
+      id: 'katana',
+      name: 'Katana',
+      shortName: 'Katana',
+      icon: '⚔️',
+      damage: +(30 * 1.10 * 1.10).toFixed(2), // 36.3 (+10% sobre a Barra de Ferro)
+      price: 15,
+      range: 94,
+      color: '#facc15',
+      stroke: '#fef08a',
+      desc: 'Causa 10% a mais de dano que a Barra de Ferro.',
+      bonusLabel: '+10% de Dano sobre a Barra de Ferro (36.3)'
+    }
+  },
+
   GAMEPAD_DEADZONE: 0.22,
-
-  // Suavização da câmera (Lerp factor)
   CAMERA_LERP: 7.5,
 
-  // Configurações de Coleta de Lixo / Sucata (Sprints 2 & 3)
-  TRASH_SIZE: 26,
+  // Lixos visivelmente maiores (46px) e mais fáceis de identificar no cenário
+  TRASH_SIZE: 46,
   TRASH_TYPES: [
-    { id: 'scrap_metal', name: 'Sucata Metálica', shortLabel: 'LIXO: SUCATA', color: '#94a3b8', stroke: '#e2e8f0', shape: 'gear' },
-    { id: 'tin_can', name: 'Lata Amassada', shortLabel: 'LIXO: LATA', color: '#fb923c', stroke: '#fed7aa', shape: 'can' },
-    { id: 'plastic_bottle', name: 'Plástico Descartado', shortLabel: 'LIXO: PLÁSTICO', color: '#38bdf8', stroke: '#bae6fd', shape: 'bottle' },
-    { id: 'old_battery', name: 'Bateria Velha', shortLabel: 'LIXO: BATERIA', color: '#a3e635', stroke: '#ecfccb', shape: 'battery' },
-    { id: 'broken_circuit', name: 'Placa Quebrada', shortLabel: 'LIXO: ELETRÔNICO', color: '#facc15', stroke: '#fef08a', shape: 'chip' }
+    { id: 'scrap_metal', name: 'Sucata Metálica', shortLabel: 'SUCATA', color: '#94a3b8', stroke: '#f1f5f9', glow: 'rgba(148, 163, 184, 0.45)', shape: 'gear' },
+    { id: 'tin_can', name: 'Lata Amassada', shortLabel: 'LATA', color: '#fb923c', stroke: '#ffedd5', glow: 'rgba(251, 146, 60, 0.45)', shape: 'can' },
+    { id: 'plastic_bottle', name: 'Plástico Descartado', shortLabel: 'PLÁSTICO', color: '#38bdf8', stroke: '#e0f2fe', glow: 'rgba(56, 189, 248, 0.45)', shape: 'bottle' },
+    { id: 'old_battery', name: 'Bateria Velha', shortLabel: 'BATERIA', color: '#a3e635', stroke: '#ecfccb', glow: 'rgba(163, 230, 53, 0.45)', shape: 'battery' },
+    { id: 'broken_circuit', name: 'Placa Quebrada', shortLabel: 'CIRCUITO', color: '#facc15', stroke: '#fef9c3', glow: 'rgba(250, 204, 21, 0.45)', shape: 'chip' }
   ],
 
-  // Sequência oficial da Máquina de Estados do Mundo:
-  // Mapa 1 -> Safe Room (Van) -> Mapa 2 -> Safe Room (Van) -> Mapa 3
+  // Fluxo de Fases:
+  // Van Inicial -> Mapa 1 -> Van -> Mapa 2 -> Van -> Mapa 3 -> Van Final
   STAGE_FLOW: [
+    {
+      stateId: 'VAN_START',
+      mapKey: 'van',
+      stepIndex: 0,
+      label: 'Safe Room: Van de Operações [Início da Expedição]',
+      isSafeRoom: true,
+      vanType: 'start',
+      nextStageIndex: 1
+    },
     {
       stateId: 'MAP_1',
       mapKey: 'map1',
-      stepIndex: 0,
-      label: 'Mapa 1: Arredores Florestais [Setor Alpha]',
-      isSafeRoom: false
+      stepIndex: 1,
+      label: 'Mapa 1: Vila Inundada [Setor Alpha]',
+      isSafeRoom: false,
+      hasRisingWater: true,
+      stageNumber: 1,
+      nextStageIndex: 2
     },
     {
       stateId: 'VAN_1',
       mapKey: 'van',
-      stepIndex: 1,
-      label: 'Safe Room: Interior / Arredores da Van (Transição 1→2)',
-      isSafeRoom: true
+      stepIndex: 2,
+      label: 'Safe Room: A Van (Pós-Mapa 1)',
+      isSafeRoom: true,
+      vanType: 'mid',
+      previousMapIndex: 1,
+      nextMapIndex: 3
     },
     {
       stateId: 'MAP_2',
       mapKey: 'map2',
-      stepIndex: 2,
-      label: 'Mapa 2: Distrito Industrial [Setor Beta]',
-      isSafeRoom: false
+      stepIndex: 3,
+      label: 'Mapa 2: Esgoto Subterrâneo [Setor Beta]',
+      isSafeRoom: false,
+      stageNumber: 2,
+      nextStageIndex: 4
     },
     {
       stateId: 'VAN_2',
       mapKey: 'van',
-      stepIndex: 3,
-      label: 'Safe Room: Interior / Arredores da Van (Transição 2→3)',
-      isSafeRoom: true
+      stepIndex: 4,
+      label: 'Safe Room: A Van (Pós-Mapa 2)',
+      isSafeRoom: true,
+      vanType: 'mid',
+      previousMapIndex: 3,
+      nextMapIndex: 5
     },
     {
       stateId: 'MAP_3',
       mapKey: 'map3',
-      stepIndex: 4,
+      stepIndex: 5,
       label: 'Mapa 3: Complexo Subterrâneo [Setor Gamma]',
-      isSafeRoom: false
+      isSafeRoom: false,
+      stageNumber: 3,
+      nextStageIndex: 6
+    },
+    {
+      stateId: 'VAN_FINAL',
+      mapKey: 'van',
+      stepIndex: 6,
+      label: 'Safe Room: A Van [Expedição Concluída]',
+      isSafeRoom: true,
+      vanType: 'final',
+      previousMapIndex: 5,
+      nextMapIndex: 1
     }
-  ],
-
-  // Inventário de Armas / Itens de Placeholder (5 Slots na Hotbar: 1 a 5)
-  createDefaultInventoryP1() {
-    return [
-      {
-        slot: 1,
-        id: 'pistol_debug',
-        name: 'Pistola [Debug]',
-        shortName: 'Pistola',
-        icon: '🔫',
-        type: 'Arma [Placeholder]',
-        color: '#38bdf8'
-      },
-      {
-        slot: 2,
-        id: 'flashlight_debug',
-        name: 'Lanterna [Debug]',
-        shortName: 'Lanterna',
-        icon: '🔦',
-        type: 'Utilitário [Placeholder]',
-        color: '#facc15'
-      },
-      {
-        slot: 3,
-        id: 'shotgun_debug',
-        name: 'Escopeta [Debug]',
-        shortName: 'Escopeta',
-        icon: '💥',
-        type: 'Arma [Placeholder]',
-        color: '#fb923c'
-      },
-      {
-        slot: 4,
-        id: 'medkit_debug',
-        name: 'Kit Médico [Debug]',
-        shortName: 'Kit Médico',
-        icon: '➕',
-        type: 'Suprimento [Placeholder]',
-        color: '#4ade80'
-      },
-      {
-        slot: 5,
-        id: 'empty_5',
-        name: 'Vazio',
-        shortName: 'Vazio',
-        icon: '·',
-        type: 'Slot Livre',
-        isEmpty: true,
-        color: '#64748b'
-      }
-    ];
-  },
-
-  createDefaultInventoryP2() {
-    return [
-      {
-        slot: 1,
-        id: 'smg_debug',
-        name: 'Submetralhadora [Debug]',
-        shortName: 'SMG',
-        icon: '🔫',
-        type: 'Arma [Placeholder]',
-        color: '#fb923c'
-      },
-      {
-        slot: 2,
-        id: 'flashlight_p2',
-        name: 'Lanterna Tática [Debug]',
-        shortName: 'Lanterna',
-        icon: '🔦',
-        type: 'Utilitário [Placeholder]',
-        color: '#facc15'
-      },
-      {
-        slot: 3,
-        id: 'radar_debug',
-        name: 'Scanner de Pulso [Debug]',
-        shortName: 'Scanner',
-        icon: '📡',
-        type: 'Utilitário [Placeholder]',
-        color: '#22d3ee'
-      },
-      {
-        slot: 4,
-        id: 'medkit_p2',
-        name: 'Bandagem [Debug]',
-        shortName: 'Bandagem',
-        icon: '🩹',
-        type: 'Suprimento [Placeholder]',
-        color: '#4ade80'
-      },
-      {
-        slot: 5,
-        id: 'empty_p2_5',
-        name: 'Vazio',
-        shortName: 'Vazio',
-        icon: '·',
-        type: 'Slot Livre',
-        isEmpty: true,
-        color: '#64748b'
-      }
-    ];
-  }
+  ]
 };
 
-// Alias global Config -> GameConfig para acesso direto via Config.Controls.P1_Up
 window.Config = window.GameConfig;

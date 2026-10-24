@@ -1,10 +1,10 @@
 /**
  * js/ui.js
- * Gerenciador de Interfaces (Sprints 2 & 3):
- * - HUD In-Game Dinâmica (Singleplayer vs Multiplayer Local Separado)
- * - Dicas de Teclas sincronizadas em tempo real com o Dicionário Global (Config.Controls)
- * - Contador Global Persistente de Lixo Coletado + Lixos Restantes no Mapa
- * - Modal de Configurações com Aba "Geral & Áudio" e Nova Aba "Controles" (Keybinding + Status Gamepad)
+ * Gerenciador de Interfaces:
+ * - HUD Exclusivo: Apenas Vida (Health) e Tempo (Time) no gameplay
+ * - Loja da Van: Arsenal com 3 Armas Melee (Bastão, Barra de Ferro, Katana)
+ * - Telas de Transição, Estatísticas, Menu Principal, Pausa e Vitória ("Obrigado por jogar!")
+ * - Remoção completa de hotbars, inventário e ferramentas de dev
  */
 
 window.UIManager = class UIManager {
@@ -13,22 +13,20 @@ window.UIManager = class UIManager {
     this.toastTimeout = null;
     this.activeSettingsTab = 'general';
 
-    // Lista estruturada de ações exibidas na Aba "Controles" (Sprint 3)
+    // Lista estruturada de ações exibidas na Aba "Controles"
     this.rebindableActions = [
-      { key: 'P1_Up', label: 'Mover Cima (P1)', group: 'Jogador 1 / Principal', desc: 'Move o personagem para o Norte (Cima)' },
-      { key: 'P1_Down', label: 'Mover Baixo (P1)', group: 'Jogador 1 / Principal', desc: 'Move o personagem para o Sul (Baixo)' },
-      { key: 'P1_Left', label: 'Mover Esquerda (P1)', group: 'Jogador 1 / Principal', desc: 'Move o personagem para o Oeste (Esquerda)' },
-      { key: 'P1_Right', label: 'Mover Direita (P1)', group: 'Jogador 1 / Principal', desc: 'Move o personagem para o Leste (Direita)' },
-      { key: 'P1_Attack', label: 'Atacar (P1)', group: 'Jogador 1 / Principal', desc: 'Executa o ataque (No Singleplayer o Botão Direito do Mouse também ataca)' },
-      { key: 'P1_Inventory', label: 'Inventário (Girar Slot P1)', group: 'Jogador 1 / Principal', desc: 'Alterna o item equipado na Hotbar do Jogador 1 (além de 1-5)' },
+      { key: 'P1_Up', label: 'Mover Cima (P1)', group: 'Jogador 1 / Principal', desc: 'Move o personagem para Cima' },
+      { key: 'P1_Down', label: 'Mover Baixo (P1)', group: 'Jogador 1 / Principal', desc: 'Move o personagem para Baixo' },
+      { key: 'P1_Left', label: 'Mover Esquerda (P1)', group: 'Jogador 1 / Principal', desc: 'Move o personagem para a Esquerda' },
+      { key: 'P1_Right', label: 'Mover Direita (P1)', group: 'Jogador 1 / Principal', desc: 'Move o personagem para a Direita' },
+      { key: 'P1_Attack', label: 'Atacar (P1)', group: 'Jogador 1 / Principal', desc: 'No Singleplayer o Botão Esquerdo do Mouse mira e ataca' },
       { key: 'P2_Up', label: 'Mover Cima (P2)', group: 'Jogador 2 (Multiplayer Local)', desc: 'Move o Jogador 2 para Cima' },
       { key: 'P2_Down', label: 'Mover Baixo (P2)', group: 'Jogador 2 (Multiplayer Local)', desc: 'Move o Jogador 2 para Baixo' },
       { key: 'P2_Left', label: 'Mover Esquerda (P2)', group: 'Jogador 2 (Multiplayer Local)', desc: 'Move o Jogador 2 para a Esquerda' },
       { key: 'P2_Right', label: 'Mover Direita (P2)', group: 'Jogador 2 (Multiplayer Local)', desc: 'Move o Jogador 2 para a Direita' },
-      { key: 'P2_Attack', label: 'Atacar (P2)', group: 'Jogador 2 (Multiplayer Local)', desc: 'Executa o ataque do Jogador 2 no Multiplayer Local' },
-      { key: 'P2_Inventory', label: 'Inventário (Girar Slot P2)', group: 'Jogador 2 (Multiplayer Local)', desc: 'Alterna o item equipado do Jogador 2 (além do Scroll do Mouse)' },
-      { key: 'Interact', label: 'Interagir (Saída / Estações)', group: 'Ações Gerais', desc: 'Interage com Zona de Extração, Porta da Van, Lojinha e Craft' },
-      { key: 'SwitchPlayer', label: 'Alternar Personagem (Single)', group: 'Ações Gerais', desc: 'Troca imediatamente entre P1 e P2 no modo Singleplayer' }
+      { key: 'P2_Attack', label: 'Atacar (P2)', group: 'Jogador 2 (Multiplayer Local)', desc: 'Executa o ataque do Jogador 2' },
+      { key: 'Interact', label: 'Interagir (Saída / Hub)', group: 'Ações Gerais', desc: 'Interage com Porta da Van, Loja e Zonas de Extração' },
+      { key: 'SwitchPlayer', label: 'Alternar Personagem (Single)', group: 'Ações Gerais', desc: 'Troca imediatamente entre P1 e P2 no Singleplayer' }
     ];
 
     // Referências de Camadas / Overlays
@@ -36,59 +34,73 @@ window.UIManager = class UIManager {
     this.mainMenuOverlay = document.getElementById('main-menu-overlay');
     this.settingsModalOverlay = document.getElementById('settings-modal-overlay');
     this.pauseMenuOverlay = document.getElementById('pause-menu-overlay');
-    this.debugToast = document.getElementById('debug-toast');
+    this.gameToast = document.getElementById('game-toast') || document.getElementById('debug-toast');
 
-    // Referências HUD - HP Cards
+    // Tela de Estatísticas da Fase
+    this.stageStatsModal = document.getElementById('stage-stats-modal-overlay');
+    this.statsStageTitle = document.getElementById('stats-stage-title');
+    this.statsStageSubtitle = document.getElementById('stats-stage-subtitle');
+    this.statsTrashValue = document.getElementById('stats-trash-value');
+    this.statsEnemiesCard = document.getElementById('stats-enemies-card');
+    this.statsEnemiesValue = document.getElementById('stats-enemies-value');
+    this.statsTimeValue = document.getElementById('stats-time-value');
+    this.statsRankBadge = document.getElementById('stats-rank-badge');
+    this.statsRankDesc = document.getElementById('stats-rank-desc');
+    this.btnCloseStats = document.getElementById('btn-close-stats');
+
+    // Modal de Transição / Escolha da Van
+    this.vanTransitionModal = document.getElementById('van-transition-modal-overlay');
+    this.btnVanNextStage = document.getElementById('btn-van-next-stage');
+    this.btnVanReplayStage = document.getElementById('btn-van-replay-stage');
+    this.btnVanStay = document.getElementById('btn-van-stay');
+    this.vanNextStageDesc = document.getElementById('van-next-stage-desc');
+    this.vanReplayStageDesc = document.getElementById('van-replay-stage-desc');
+
+    // Loja (Shop) de Armas Melee
+    this.shopModal = document.getElementById('shop-modal-overlay');
+    this.shopScrapBalance = document.getElementById('shop-scrap-balance');
+    this.shopWeaponsGrid = document.getElementById('shop-weapons-grid');
+    this.btnCloseShop = document.getElementById('btn-close-shop');
+
+    // Mural de Avisos
+    this.noticeBoardModal = document.getElementById('notice-board-modal-overlay');
+    this.btnCloseNoticeBoard = document.getElementById('btn-close-notice-board');
+
+    // Modal de Game Over
+    this.gameoverModal = document.getElementById('gameover-modal-overlay');
+    this.gameoverDesc = document.getElementById('gameover-desc');
+    this.gameoverTimeValue = document.getElementById('gameover-time-value');
+    this.gameoverTrashValue = document.getElementById('gameover-trash-value');
+    this.btnGameoverRestart = document.getElementById('btn-gameover-restart');
+    this.btnGameoverMenu = document.getElementById('btn-gameover-menu');
+
+    // Referências Barra do Chefe da Fase 3
+    this.bossContainer = document.getElementById('hud-boss-container');
+    this.bossNameEl = document.getElementById('hud-boss-name');
+    this.bossStageBadgeEl = document.getElementById('hud-boss-stage-badge');
+    this.bossHpTextEl = document.getElementById('hud-boss-hp-text');
+    this.bossHpBarEl = document.getElementById('hud-boss-hp-bar');
+
+    // Modal de Vitória Definitiva
+    this.victoryModal = document.getElementById('victory-modal-overlay');
+    this.victoryTimeValue = document.getElementById('victory-time-value');
+    this.victoryTrashValue = document.getElementById('victory-trash-value');
+    this.btnVictoryAdvance = document.getElementById('btn-victory-advance');
+
+    // Referências HUD - HP Cards (Vida)
     this.p1Card = document.getElementById('hud-p1-card');
     this.p1Badge = document.getElementById('hud-p1-badge');
     this.p1HpText = document.getElementById('hud-p1-hp-text');
     this.p1HpBar = document.getElementById('hud-p1-hp-bar');
-    this.p1KeysHint = document.getElementById('hud-p1-keys');
 
     this.p2Card = document.getElementById('hud-p2-card');
     this.p2Badge = document.getElementById('hud-p2-badge');
     this.p2HpText = document.getElementById('hud-p2-hp-text');
     this.p2HpBar = document.getElementById('hud-p2-hp-bar');
-    this.p2KeysHint = document.getElementById('hud-p2-keys');
 
-    // Referências HUD - Topo Central (Timer, Fase e Contador de Sucata/Lixo)
-    this.stageStepper = document.getElementById('hud-stage-stepper');
-    this.mapTitle = document.getElementById('hud-map-title');
+    // Referências HUD - Tempo (Time)
     this.timerBox = document.getElementById('hud-timer-box');
     this.timerValue = document.getElementById('hud-timer-value');
-    this.saferoomBadge = document.getElementById('hud-saferoom-badge');
-    this.scrapCountEl = document.getElementById('hud-scrap-count');
-    this.mapTrashRemainingEl = document.getElementById('hud-map-trash-remaining');
-    this.interactionPrompt = document.getElementById('hud-interaction-prompt');
-
-    // Referências HUD - Hotbar Singleplayer (Base Central)
-    this.singleHotbarWrapper = document.getElementById('hud-single-hotbar-wrapper');
-    this.hotbarContainer = document.getElementById('hud-hotbar');
-    this.selectedItemLabel = document.getElementById('hud-selected-item-label');
-    this.hudHintInvKey = document.getElementById('hud-hint-inv-key');
-
-    // Referências HUD - Hotbars Verticais Multiplayer (Centro-Esquerdo e Centro-Direito)
-    this.multiHotbarP1Panel = document.getElementById('hud-multi-hotbar-p1');
-    this.multiHotbarP1Slots = document.getElementById('hud-hotbar-p1-slots');
-    this.multiP1SelectedLabel = document.getElementById('hud-p1-selected-label');
-    this.multiP1HotbarTag = document.getElementById('hud-multi-p1-hotbar-tag');
-
-    this.multiHotbarP2Panel = document.getElementById('hud-multi-hotbar-p2');
-    this.multiHotbarP2Slots = document.getElementById('hud-hotbar-p2-slots');
-    this.multiP2SelectedLabel = document.getElementById('hud-p2-selected-label');
-    this.multiP2HotbarTag = document.getElementById('hud-multi-p2-hotbar-tag');
-
-    // Referências HUD - Telemetria Debug
-    this.dbgMode = document.getElementById('dbg-mode');
-    this.dbgState = document.getElementById('dbg-state');
-    this.dbgP1Pos = document.getElementById('dbg-p1-pos');
-    this.dbgP2Pos = document.getElementById('dbg-p2-pos');
-    this.dbgScrapCount = document.getElementById('dbg-scrap-count');
-    this.dbgGamepadState = document.getElementById('dbg-gamepad-state');
-    this.dbgKeyP1Atk = document.getElementById('dbg-key-p1-atk');
-    this.dbgKeyP2Atk = document.getElementById('dbg-key-p2-atk');
-    this.dbgKeySwitch = document.getElementById('dbg-key-switch');
-    this.dbgKeyInteract = document.getElementById('dbg-key-interact');
 
     // Referências Menu Principal
     this.btnModeSingle = document.getElementById('btn-mode-single');
@@ -96,7 +108,7 @@ window.UIManager = class UIManager {
     this.btnStartGame = document.getElementById('btn-start-game');
     this.btnOpenSettings = document.getElementById('btn-open-settings');
 
-    // Referências Modal de Configurações & Abas (Sprint 3)
+    // Referências Modal de Configurações
     this.btnCloseSettings = document.getElementById('btn-close-settings');
     this.tabBtnGeneral = document.getElementById('tab-btn-general');
     this.tabBtnControls = document.getElementById('tab-btn-controls');
@@ -106,6 +118,8 @@ window.UIManager = class UIManager {
     this.btnResetControls = document.getElementById('btn-reset-controls');
     this.settingsGamepadStatus = document.getElementById('settings-gamepad-status');
 
+    this.toggleColorblind = document.getElementById('toggle-colorblind');
+    this.badgeColorblindState = document.getElementById('badge-colorblind-state');
     this.toggleFullscreen = document.getElementById('toggle-fullscreen');
     this.badgeFullscreenState = document.getElementById('badge-fullscreen-state');
     this.toggleMute = document.getElementById('toggle-mute');
@@ -116,13 +130,10 @@ window.UIManager = class UIManager {
     // Referências Menu de Pausa
     this.pauseMapName = document.getElementById('pause-map-name');
     this.pauseTimerStatus = document.getElementById('pause-timer-status');
-    this.pauseScrapStatus = document.getElementById('pause-scrap-status');
     this.pauseP1HpLabel = document.getElementById('pause-p1-hp-label');
     this.pauseP1HpFill = document.getElementById('pause-p1-hp-fill');
-    this.pauseP1ItemsGrid = document.getElementById('pause-p1-items-grid');
     this.pauseP2HpLabel = document.getElementById('pause-p2-hp-label');
     this.pauseP2HpFill = document.getElementById('pause-p2-hp-fill');
-    this.pauseP2ItemsGrid = document.getElementById('pause-p2-items-grid');
 
     this.btnResumeGame = document.getElementById('btn-resume-game');
     this.btnPauseSettings = document.getElementById('btn-pause-settings');
@@ -135,7 +146,6 @@ window.UIManager = class UIManager {
   }
 
   _bindEvents() {
-    // Seletor de Modo no Menu Principal
     this.btnModeSingle.addEventListener('click', () => {
       this.selectMenuMode('singleplayer');
     });
@@ -144,12 +154,10 @@ window.UIManager = class UIManager {
       this.selectMenuMode('multiplayer');
     });
 
-    // Iniciar Jogo
     this.btnStartGame.addEventListener('click', () => {
       this.game.startNewGame();
     });
 
-    // Abrir Configurações (a partir do Menu Principal ou do Menu de Pausa)
     this.btnOpenSettings.addEventListener('click', () => {
       this.openSettingsModal();
     });
@@ -160,12 +168,10 @@ window.UIManager = class UIManager {
       });
     }
 
-    // Fechar Configurações
     this.btnCloseSettings.addEventListener('click', () => {
       this.closeSettingsModal();
     });
 
-    // Alternância de Abas no Menu de Configurações (Geral vs Controles)
     if (this.tabBtnGeneral) {
       this.tabBtnGeneral.addEventListener('click', () => {
         this.switchSettingsTab('general');
@@ -177,18 +183,22 @@ window.UIManager = class UIManager {
       });
     }
 
-    // Botão Restaurar Teclas Padrão
     if (this.btnResetControls) {
       this.btnResetControls.addEventListener('click', () => {
         this.game.input.cancelKeyRebind();
-        window.Config.resetDefaultControls();
+        if (window.GameConfig) window.GameConfig.resetDefaultControls();
         this.renderKeybindingList();
         this.updateHUD();
-        this.showToast('Controles restaurados para os valores padrão (Config.Controls)!', 1800);
+        this.showToast('Controles restaurados para os padrões!', 1800);
       });
     }
 
-    // 1. Toggle Tela Cheia (Fullscreen API)
+    if (this.toggleColorblind) {
+      this.toggleColorblind.addEventListener('change', () => {
+        this.setColorblindMode(Boolean(this.toggleColorblind.checked));
+      });
+    }
+
     if (this.toggleFullscreen) {
       this.toggleFullscreen.addEventListener('change', () => {
         this.handleFullscreenToggle(this.toggleFullscreen.checked);
@@ -199,31 +209,22 @@ window.UIManager = class UIManager {
       this.syncSettingsUI();
     });
 
-    // 2. Toggle Muta/Desmuta Áudio (window.isMuted)
     if (this.toggleMute) {
       this.toggleMute.addEventListener('change', () => {
         window.isMuted = Boolean(this.toggleMute.checked);
         this.syncSettingsUI();
-        this.showToast(
-          `Áudio ${window.isMuted ? 'MUTADO (isMuted = true)' : 'ATIVADO (isMuted = false)'}`,
-          1600
-        );
+        this.showToast(`Áudio ${window.isMuted ? 'MUTADO' : 'ATIVADO'}`, 1600);
       });
     }
 
-    // 3. Toggle Fogo Amigo (window.friendlyFireEnabled)
     if (this.toggleFriendlyFire) {
       this.toggleFriendlyFire.addEventListener('change', () => {
         window.friendlyFireEnabled = Boolean(this.toggleFriendlyFire.checked);
         this.syncSettingsUI();
-        this.showToast(
-          `Fogo Amigo: ${window.friendlyFireEnabled ? 'ON (friendlyFireEnabled = true)' : 'OFF (friendlyFireEnabled = false)'}`,
-          1600
-        );
+        this.showToast(`Fogo Amigo: ${window.friendlyFireEnabled ? 'ON' : 'OFF'}`, 1600);
       });
     }
 
-    // Botões do Menu de Pausa
     this.btnResumeGame.addEventListener('click', () => {
       this.game.togglePause(false);
     });
@@ -235,11 +236,313 @@ window.UIManager = class UIManager {
     this.btnQuitToMenu.addEventListener('click', () => {
       this.game.returnToMainMenu();
     });
+
+    if (this.btnCloseStats) {
+      this.btnCloseStats.addEventListener('click', () => {
+        this.hideStageStats();
+        this.game.dismissStageStatsAndResume();
+      });
+    }
+
+    if (this.btnVanNextStage) {
+      this.btnVanNextStage.addEventListener('click', () => {
+        this.hideVanTransitionChoice();
+        this.game.confirmVanAdvanceToNext();
+      });
+    }
+
+    if (this.btnVanReplayStage) {
+      this.btnVanReplayStage.addEventListener('click', () => {
+        this.hideVanTransitionChoice();
+        this.game.confirmVanReplayPrevious();
+      });
+    }
+
+    if (this.btnVanStay) {
+      this.btnVanStay.addEventListener('click', () => {
+        this.hideVanTransitionChoice();
+      });
+    }
+
+    if (this.btnCloseShop) {
+      this.btnCloseShop.addEventListener('click', () => {
+        this.hideShopModal();
+      });
+    }
+
+    if (this.btnCloseNoticeBoard) {
+      this.btnCloseNoticeBoard.addEventListener('click', () => {
+        this.hideNoticeBoardModal();
+      });
+    }
+
+    if (this.btnGameoverRestart) {
+      this.btnGameoverRestart.addEventListener('click', () => {
+        this.hideGameOver();
+        this.game.restartCurrentStage();
+      });
+    }
+
+    if (this.btnGameoverMenu) {
+      this.btnGameoverMenu.addEventListener('click', () => {
+        this.hideGameOver();
+        this.game.returnToMainMenu();
+      });
+    }
+
+    if (this.btnVictoryAdvance) {
+      this.btnVictoryAdvance.addEventListener('click', () => {
+        this.hideVictoryModal();
+        if (typeof this.game.advanceToFinalVanAfterVictory === 'function') {
+          this.game.advanceToFinalVanAfterVictory();
+        }
+      });
+    }
+  }
+
+  setColorblindMode(enabled) {
+    window.colorblindMode = enabled;
+    const canvas = document.getElementById('game-canvas');
+    if (canvas) {
+      canvas.classList.toggle('colorblind-mode', enabled);
+    }
+    this.syncSettingsUI();
+    this.showToast(`Modo Daltônico: ${enabled ? 'ATIVADO' : 'DESATIVADO'}`, 1800);
+  }
+
+  showStageStats(stats) {
+    if (!this.stageStatsModal) return;
+
+    this.statsStageTitle.textContent = `Estatísticas: ${stats.stageName || 'Fase Concluída'}`;
+    this.statsStageSubtitle.textContent = `Relatório da equipe após extração para a Van de Operações:`;
+
+    this.statsTrashValue.textContent = `${stats.trashCollected} / ${stats.trashTotal}`;
+
+    if (stats.isMap1) {
+      this.statsEnemiesCard.classList.add('hidden');
+    } else {
+      this.statsEnemiesCard.classList.remove('hidden');
+      this.statsEnemiesValue.textContent = `${stats.enemiesDefeated} Abates`;
+    }
+
+    this.statsTimeValue.textContent = this.formatTime(stats.timeSpent);
+
+    const rank = stats.rank || 'S';
+    this.statsRankBadge.textContent = rank;
+    this.statsRankBadge.className = 'rank-badge';
+
+    if (rank === 'S+') {
+      this.statsRankBadge.classList.add('rank-s-plus');
+      this.statsRankDesc.textContent = 'Velocidade Lendária!';
+    } else if (rank === 'S') {
+      this.statsRankBadge.classList.add('rank-s');
+      this.statsRankDesc.textContent = 'Excelente ritmo!';
+    } else if (rank === 'A') {
+      this.statsRankBadge.classList.add('rank-a');
+      this.statsRankDesc.textContent = 'Bom desempenho tático!';
+    } else {
+      this.statsRankBadge.classList.add('rank-b');
+      this.statsRankDesc.textContent = 'Ritmo cauteloso.';
+    }
+
+    this.stageStatsModal.classList.remove('hidden');
+  }
+
+  hideStageStats() {
+    if (this.stageStatsModal) {
+      this.stageStatsModal.classList.add('hidden');
+    }
+  }
+
+  showGameOver(stats = {}) {
+    if (!this.gameoverModal) return;
+
+    if (this.gameoverTimeValue) {
+      const minutes = Math.floor((stats.timeSpent || 0) / 60);
+      const seconds = Math.floor((stats.timeSpent || 0) % 60);
+      this.gameoverTimeValue.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    }
+
+    if (this.gameoverTrashValue) {
+      this.gameoverTrashValue.textContent = `${stats.trashCollected || 0} / ${stats.trashTotal || 0}`;
+    }
+
+    if (this.gameoverDesc) {
+      if (stats.reason === 'WATER_FLOOD') {
+        this.gameoverDesc.textContent =
+          'O cronômetro esgotou e a água subiu completamente, submergindo a expedição!';
+      } else if (stats.reason === 'DEFEATED') {
+        this.gameoverDesc.textContent =
+          'Os operadores foram derrotados pelas ameaças do setor! A expedição falhou.';
+      } else {
+        this.gameoverDesc.textContent =
+          'A expedição falhou e o tempo da missão foi esgotado!';
+      }
+    }
+
+    this.hidePauseMenu();
+    this.hideSettingsModal();
+    this.hideStageStats();
+    this.hideVanTransitionChoice();
+
+    this.gameoverModal.classList.remove('hidden');
+  }
+
+  hideGameOver() {
+    if (this.gameoverModal) {
+      this.gameoverModal.classList.add('hidden');
+    }
+  }
+
+  showVictoryModal(stats = {}) {
+    if (!this.victoryModal) return;
+
+    if (this.victoryTimeValue) {
+      this.victoryTimeValue.textContent = this.formatTime(stats.timeSpent || 0);
+    }
+    if (this.victoryTrashValue) {
+      this.victoryTrashValue.textContent = String(window.scrapCollected || 0);
+    }
+
+    this.hideGameOver();
+    this.hideStageStats();
+    this.hideVanTransitionChoice();
+    this.hideShopModal();
+    this.hideNoticeBoardModal();
+
+    this.victoryModal.classList.remove('hidden');
+  }
+
+  hideVictoryModal() {
+    if (this.victoryModal) {
+      this.victoryModal.classList.add('hidden');
+    }
+  }
+
+  showVanTransitionChoice(nextMeta, replayMeta) {
+    if (!this.vanTransitionModal) return;
+
+    if (nextMeta && this.vanNextStageDesc) {
+      this.vanNextStageDesc.textContent = `Avança para ${nextMeta.label}.`;
+    }
+    if (replayMeta && this.vanReplayStageDesc) {
+      this.vanReplayStageDesc.textContent = `Reinicia ${replayMeta.label}.`;
+    }
+
+    this.vanTransitionModal.classList.remove('hidden');
+  }
+
+  hideVanTransitionChoice() {
+    if (this.vanTransitionModal) {
+      this.vanTransitionModal.classList.add('hidden');
+    }
   }
 
   /**
-   * Alterna entre as abas "Geral & Áudio" e "Controles" no Menu de Configurações
+   * Renderiza e exibe a Loja da Expedição com as 3 armas de curta distância:
+   * 1. Bastão (básica)
+   * 2. Barra de Ferro (+10% de dano sobre o Bastão)
+   * 3. Katana (+10% de dano sobre a Barra de Ferro)
    */
+  showShopModal() {
+    if (!this.shopModal) return;
+    this.renderShop();
+    this.shopModal.classList.remove('hidden');
+  }
+
+  hideShopModal() {
+    if (this.shopModal) {
+      this.shopModal.classList.add('hidden');
+    }
+  }
+
+  renderShop() {
+    if (this.shopScrapBalance) {
+      this.shopScrapBalance.textContent = String(window.scrapCollected || 0);
+    }
+
+    if (!this.shopWeaponsGrid) return;
+    this.shopWeaponsGrid.innerHTML = '';
+
+    const weapons = window.GameConfig ? window.GameConfig.WEAPONS : {};
+    const weaponKeys = ['baton', 'iron_bar', 'katana'];
+    const currentScrap = window.scrapCollected || 0;
+    const equippedId = window.GlobalState.equippedWeaponId;
+
+    weaponKeys.forEach((key) => {
+      const w = weapons[key];
+      if (!w) return;
+
+      const isEquipped = equippedId === w.id;
+      const isUnlocked = window.GlobalState.isWeaponUnlocked(w.id);
+      const canAfford = currentScrap >= w.price;
+
+      const itemCard = document.createElement('div');
+      itemCard.className = `shop-weapon-card ${isEquipped ? 'weapon-equipped' : ''}`;
+
+      const dmgLabel = Number.isInteger(w.damage) ? `${w.damage}` : w.damage.toFixed(1);
+
+      let actionButtonHtml = '';
+      if (isEquipped) {
+        actionButtonHtml = `<button type="button" class="stardew-btn btn-sm btn-equipped" disabled>✓ Equipado</button>`;
+      } else if (isUnlocked) {
+        actionButtonHtml = `<button type="button" class="stardew-btn btn-sm btn-primary btn-equip-action" data-weapon-id="${w.id}">Equipar</button>`;
+      } else {
+        actionButtonHtml = `<button type="button" class="stardew-btn btn-sm ${canAfford ? 'btn-warning' : 'btn-disabled'} btn-buy-action" data-weapon-id="${w.id}" ${canAfford ? '' : 'disabled'}>Comprar (${w.price} ♻)</button>`;
+      }
+
+      itemCard.innerHTML = `
+        <div class="shop-weapon-icon" style="border-color: ${w.color};">${w.icon}</div>
+        <div class="shop-weapon-details">
+          <div class="shop-weapon-title-row">
+            <strong class="shop-weapon-name">${w.name}</strong>
+            <span class="shop-weapon-damage-tag" style="background: ${w.color}22; color: ${w.color}; border: 1px solid ${w.color}66;">Dano: ${dmgLabel}</span>
+          </div>
+          <p class="shop-weapon-desc">${w.desc}</p>
+          <small class="shop-weapon-bonus">${w.bonusLabel}</small>
+        </div>
+        <div class="shop-weapon-action">
+          ${actionButtonHtml}
+        </div>
+      `;
+
+      // Event listener do botão de ação
+      const btn = itemCard.querySelector('.btn-equip-action, .btn-buy-action');
+      if (btn && !btn.disabled) {
+        btn.addEventListener('click', () => {
+          const res = window.GlobalState.buyOrEquipWeapon(w.id);
+          if (res.success) {
+            if (res.action === 'PURCHASED') {
+              this.showToast(`Adquiriu e equipou ${w.name}!`, 2000);
+            } else {
+              this.showToast(`Equipou ${w.name}!`, 1800);
+            }
+            this.renderShop();
+            this.updateHUD();
+          } else {
+            if (res.reason === 'INSUFFICIENT_SCRAP') {
+              this.showToast(`Lixo insuficiente! Precisa de ${w.price} ♻.`, 2200);
+            }
+          }
+        });
+      }
+
+      this.shopWeaponsGrid.appendChild(itemCard);
+    });
+  }
+
+  showNoticeBoardModal() {
+    if (this.noticeBoardModal) {
+      this.noticeBoardModal.classList.remove('hidden');
+    }
+  }
+
+  hideNoticeBoardModal() {
+    if (this.noticeBoardModal) {
+      this.noticeBoardModal.classList.add('hidden');
+    }
+  }
+
   switchSettingsTab(tabName) {
     this.activeSettingsTab = tabName;
     this.game.input.cancelKeyRebind();
@@ -257,19 +560,16 @@ window.UIManager = class UIManager {
     }
   }
 
-  /**
-   * Renderiza a lista interativa de ações na aba "Controles" para remapeamento (Keybinding)
-   */
   renderKeybindingList() {
     if (!this.keybindingListEl) return;
     this.keybindingListEl.innerHTML = '';
 
-    const C = window.Config.Controls;
+    const C = (window.GameConfig && window.GameConfig.Controls) || {};
     const listeningKey = this.game.input.rebindingAction;
 
     this.rebindableActions.forEach((item) => {
       const currentCode = C[item.key];
-      const formattedKey = window.Config.formatKeyCode(currentCode);
+      const formattedKey = window.GameConfig ? window.GameConfig.formatKeyCode(currentCode) : currentCode;
       const isListening = listeningKey === item.key;
 
       const row = document.createElement('button');
@@ -283,32 +583,28 @@ window.UIManager = class UIManager {
             <span class="keybind-action-name">${item.label}</span>
             <span class="keybind-group-tag">${item.group}</span>
           </div>
-          <div class="keybind-action-desc">${item.desc} <code>Config.Controls.${item.key}</code></div>
+          <div class="keybind-action-desc">${item.desc}</div>
         </div>
         <div class="keybind-badge-wrapper">
           <span class="keybind-key-badge ${isListening ? 'badge-listening' : ''}">
             ${isListening ? '⌨ Pressione uma tecla...' : formattedKey}
           </span>
-          <small class="keybind-raw-code">${isListening ? 'Aguardando keydown' : currentCode}</small>
+          <small class="keybind-raw-code">${isListening ? 'Aguardando' : currentCode}</small>
         </div>
       `;
 
       row.addEventListener('click', () => {
         if (this.game.input.rebindingAction === item.key) {
-          // Clicar novamente na mesma ação cancela a escuta
           this.game.input.cancelKeyRebind();
           this.renderKeybindingList();
           return;
         }
 
-        // Inicia a escuta da próxima tecla pressionada (evento keydown)
         this.game.input.startKeyRebind(item.key, (actionKey, newCode) => {
           this.renderKeybindingList();
           this.updateHUD();
-          this.showToast(
-            `✓ [${item.label}] remapeado para "${window.Config.formatKeyCode(newCode)}" (${newCode})!`,
-            2000
-          );
+          const keyName = window.GameConfig ? window.GameConfig.formatKeyCode(newCode) : newCode;
+          this.showToast(`[${item.label}] remapeado para "${keyName}"!`, 2000);
         });
 
         this.renderKeybindingList();
@@ -318,37 +614,20 @@ window.UIManager = class UIManager {
     });
   }
 
-  /**
-   * Atualiza o status dos Gamepads conectados na aba Controles e na HUD
-   */
   updateGamepadStatusBanner() {
     const pads = this.game.input.connectedGamepadsInfo || [];
     if (this.settingsGamepadStatus) {
       if (pads.length === 0) {
-        this.settingsGamepadStatus.textContent = 'Nenhum controle ativo (Pressione um botão no Joystick)';
+        this.settingsGamepadStatus.textContent = 'Nenhum controle ativo';
         this.settingsGamepadStatus.className = 'gamepad-status-pill status-idle';
       } else {
-        const summary = pads
-          .map((p) => `#${p.index + 1}: ${p.profileLabel}`)
-          .join(' | ');
+        const summary = pads.map((p) => `#${p.index + 1}: ${p.profileLabel}`).join(' | ');
         this.settingsGamepadStatus.textContent = `${pads.length} Conectado(s) — ${summary}`;
         this.settingsGamepadStatus.className = 'gamepad-status-pill status-connected';
       }
     }
-
-    if (this.dbgGamepadState) {
-      if (pads.length === 0) {
-        this.dbgGamepadState.textContent = '0 Conectado(s)';
-      } else {
-        const types = pads.map((p) => p.profileType.toUpperCase()).join(', ');
-        this.dbgGamepadState.textContent = `${pads.length} (${types})`;
-      }
-    }
   }
 
-  /**
-   * Abre o Modal de Configurações sincronizando o estado atual dos toggles e controles
-   */
   openSettingsModal() {
     this.syncSettingsUI();
     this.renderKeybindingList();
@@ -356,9 +635,6 @@ window.UIManager = class UIManager {
     this.settingsModalOverlay.classList.remove('hidden');
   }
 
-  /**
-   * Fecha o Modal de Configurações cancelando qualquer remapeamento pendente
-   */
   closeSettingsModal() {
     this.game.input.cancelKeyRebind();
     this.settingsModalOverlay.classList.add('hidden');
@@ -368,9 +644,6 @@ window.UIManager = class UIManager {
     return !this.settingsModalOverlay.classList.contains('hidden');
   }
 
-  /**
-   * Alterna Fullscreen usando document.documentElement.requestFullscreen()
-   */
   handleFullscreenToggle(shouldEnterFullscreen) {
     if (shouldEnterFullscreen && !document.fullscreenElement) {
       if (document.documentElement.requestFullscreen) {
@@ -378,11 +651,10 @@ window.UIManager = class UIManager {
           .requestFullscreen()
           .then(() => {
             this.syncSettingsUI();
-            this.showToast('Modo Tela Cheia (Fullscreen): ON', 1500);
+            this.showToast('Tela Cheia: ON', 1500);
           })
           .catch(() => {
             this.syncSettingsUI();
-            this.showToast('Não foi possível ativar Tela Cheia neste contexto do navegador.', 2000);
           });
       }
     } else if (!shouldEnterFullscreen && document.fullscreenElement) {
@@ -391,7 +663,7 @@ window.UIManager = class UIManager {
           .exitFullscreen()
           .then(() => {
             this.syncSettingsUI();
-            this.showToast('Modo Tela Cheia (Fullscreen): OFF', 1500);
+            this.showToast('Tela Cheia: OFF', 1500);
           })
           .catch(() => {
             this.syncSettingsUI();
@@ -400,10 +672,13 @@ window.UIManager = class UIManager {
     }
   }
 
-  /**
-   * Atualiza os checkboxes e badges ON/OFF do painel de configurações
-   */
   syncSettingsUI() {
+    const isColorblind = Boolean(window.colorblindMode);
+    if (this.toggleColorblind) {
+      this.toggleColorblind.checked = isColorblind;
+    }
+    this._updateBadge(this.badgeColorblindState, isColorblind);
+
     const isFull = Boolean(document.fullscreenElement);
     if (this.toggleFullscreen) {
       this.toggleFullscreen.checked = isFull;
@@ -446,6 +721,11 @@ window.UIManager = class UIManager {
     this.mainMenuOverlay.classList.remove('hidden');
     this.settingsModalOverlay.classList.add('hidden');
     this.pauseMenuOverlay.classList.add('hidden');
+    this.hideStageStats();
+    this.hideVanTransitionChoice();
+    this.hideShopModal();
+    this.hideNoticeBoardModal();
+    this.hideVictoryModal();
     this.hudLayer.classList.add('hidden');
   }
 
@@ -458,13 +738,12 @@ window.UIManager = class UIManager {
     const isMulti = this.game.gameMode === 'multiplayer';
     this.hudLayer.classList.toggle('multiplayer-hud', isMulti);
 
-    this.renderHotbar();
     this.updateHUD();
   }
 
   showPauseMenu(isPaused) {
     if (isPaused) {
-      this.updatePauseInventoryPanel();
+      this.updatePausePanel();
       this.pauseMenuOverlay.classList.remove('hidden');
     } else {
       this.game.input.cancelKeyRebind();
@@ -473,210 +752,80 @@ window.UIManager = class UIManager {
     }
   }
 
-  /**
-   * Renderiza a Hotbar:
-   * - Singleplayer: Hotbar horizontal inferior centralizada (5 slots)
-   * - Multiplayer Local: Duas Hotbars verticais nas bordas esquerda (P1) e direita (P2)
-   */
-  renderHotbar() {
-    const isMulti = this.game.gameMode === 'multiplayer';
-
-    if (!isMulti) {
-      this.singleHotbarWrapper.classList.remove('hidden');
-      this.multiHotbarP1Panel.classList.add('hidden');
-      this.multiHotbarP2Panel.classList.add('hidden');
-
-      const activePlayer = this.game.getHudFocusPlayer();
-      this._populateHotbarSlots(
-        this.hotbarContainer,
-        activePlayer,
-        (idx) => this.game.selectHotbarSlot(idx, activePlayer.id),
-        true
-      );
-
-      const currentItem = activePlayer.inventory[activePlayer.selectedSlot];
-      if (currentItem) {
-        this.selectedItemLabel.textContent = `[P${activePlayer.id}] Slot ${activePlayer.selectedSlot + 1}: ${currentItem.name}`;
-      }
-    } else {
-      this.singleHotbarWrapper.classList.add('hidden');
-      this.multiHotbarP1Panel.classList.remove('hidden');
-      this.multiHotbarP2Panel.classList.remove('hidden');
-
-      this._populateHotbarSlots(
-        this.multiHotbarP1Slots,
-        this.game.p1,
-        (idx) => this.game.selectHotbarSlot(idx, 1),
-        true
-      );
-      const itemP1 = this.game.p1.getEquippedItem();
-      if (itemP1 && this.multiP1SelectedLabel) {
-        this.multiP1SelectedLabel.textContent = `Slot ${this.game.p1.selectedSlot + 1}: ${itemP1.shortName}`;
-      }
-
-      this._populateHotbarSlots(
-        this.multiHotbarP2Slots,
-        this.game.p2,
-        (idx) => this.game.selectHotbarSlot(idx, 2),
-        false
-      );
-      const itemP2 = this.game.p2.getEquippedItem();
-      if (itemP2 && this.multiP2SelectedLabel) {
-        this.multiP2SelectedLabel.textContent = `Slot ${this.game.p2.selectedSlot + 1}: ${itemP2.shortName}`;
-      }
-    }
+  hidePauseMenu() {
+    this.showPauseMenu(false);
   }
 
-  _populateHotbarSlots(container, player, onClickSlot, showKeyNumbers = true) {
-    if (!container) return;
-    container.innerHTML = '';
-
-    player.inventory.forEach((item, index) => {
-      const slotEl = document.createElement('div');
-      slotEl.className = 'hotbar-slot';
-      if (index === player.selectedSlot) slotEl.classList.add('active-slot');
-      if (item.isEmpty) slotEl.classList.add('empty-slot');
-
-      const badgeLabel = showKeyNumbers ? `${index + 1}` : `S${index + 1}`;
-      slotEl.innerHTML = `
-        <span class="slot-key-num">${badgeLabel}</span>
-        <span class="slot-icon">${item.icon}</span>
-        <span class="slot-short-name">${item.shortName}</span>
-      `;
-
-      slotEl.addEventListener('click', () => {
-        onClickSlot(index);
-      });
-
-      container.appendChild(slotEl);
-    });
+  hideSettingsModal() {
+    this.closeSettingsModal();
   }
 
   /**
-   * Atualiza todos os elementos dinâmicos da HUD durante o gameplay, consumindo Config.Controls
+   * Atualiza a HUD in-game: Exclusivamente Vida e Tempo
    */
   updateHUD() {
     const { p1, p2, gameMode, activePlayerIndex, stageTimeRemaining } = this.game;
     const currentStageMeta = this.game.getCurrentStageMeta();
-    const currentMap = this.game.currentMap;
-    const C = window.Config.Controls;
-    const fmt = (k) => window.Config.formatKeyCode(k);
 
     this.hudLayer.classList.toggle('multiplayer-hud', gameMode === 'multiplayer');
 
-    // 1. Atualiza Barras de Vida (HP)
-    this._updatePlayerCard(this.p1HpText, this.p1HpBar, p1);
-    this._updatePlayerCard(this.p2HpText, this.p2HpBar, p2);
+    // 1. Barras de Vida (HP)
+    if (this.p1HpText && this.p1HpBar) {
+      this._updatePlayerCard(this.p1HpText, this.p1HpBar, p1);
+    }
+    if (this.p2HpText && this.p2HpBar) {
+      this._updatePlayerCard(this.p2HpText, this.p2HpBar, p2);
+    }
 
-    const p1MoveStr = `${fmt(C.P1_Up)},${fmt(C.P1_Left)},${fmt(C.P1_Down)},${fmt(C.P1_Right)}`;
-    const p2MoveStr = `${fmt(C.P2_Up)},${fmt(C.P2_Left)},${fmt(C.P2_Down)},${fmt(C.P2_Right)}`;
-
-    // 2. Destaque de Controle Singleplayer vs Multiplayer Local
+    // Destaque P1/P2
     if (gameMode === 'singleplayer') {
       const p1Active = activePlayerIndex === 0;
-      this.p1Card.classList.toggle('active-player-card', p1Active);
-      this.p2Card.classList.toggle('active-player-card', !p1Active);
+      if (this.p1Card) this.p1Card.classList.toggle('active-player-card', p1Active);
+      if (this.p2Card) this.p2Card.classList.toggle('active-player-card', !p1Active);
 
-      this.p1Badge.textContent = p1Active ? 'ATIVO' : 'ESPERA';
-      this.p2Badge.textContent = !p1Active ? 'ATIVO' : 'ESPERA';
-
-      const activeHint = `Mover: ${p1MoveStr} • Atacar: Botão Dir. Mouse / ${fmt(C.P1_Attack)}`;
-      const waitHint = `Pressione [${fmt(C.SwitchPlayer)}] para assumir`;
-
-      this.p1KeysHint.textContent = p1Active ? activeHint : waitHint;
-      this.p2KeysHint.textContent = !p1Active ? activeHint : waitHint;
+      if (this.p1Badge) this.p1Badge.textContent = p1Active ? 'ATIVO' : 'COMPANHEIRA';
+      if (this.p2Badge) this.p2Badge.textContent = !p1Active ? 'ATIVO' : 'COMPANHEIRA';
     } else {
-      this.p1Card.classList.add('active-player-card');
-      this.p2Card.classList.add('active-player-card');
-
-      this.p1Badge.textContent = 'JOGADOR 1';
-      this.p2Badge.textContent = 'JOGADOR 2';
-
-      this.p1KeysHint.textContent = `Mover: ${p1MoveStr} • Atacar: [${fmt(C.P1_Attack)}] • Inv: [${fmt(C.P1_Inventory)}]`;
-      this.p2KeysHint.textContent = `Mover: ${p2MoveStr} • Atacar: [${fmt(C.P2_Attack)}] • Inv: Scroll/[${fmt(C.P2_Inventory)}]`;
+      if (this.p1Card) this.p1Card.classList.add('active-player-card');
+      if (this.p2Card) this.p2Card.classList.add('active-player-card');
+      if (this.p1Badge) this.p1Badge.textContent = 'JOGADOR 1';
+      if (this.p2Badge) this.p2Badge.textContent = 'JOGADOR 2';
     }
 
-    // Atualiza tags de atalho nas Hotbars e Painel Debug
-    if (this.hudHintInvKey) this.hudHintInvKey.textContent = fmt(C.P1_Inventory);
-    if (this.multiP1HotbarTag) {
-      this.multiP1HotbarTag.innerHTML = `Slots <kbd>1</kbd>-<kbd>5</kbd> / <kbd>${fmt(C.P1_Inventory)}</kbd>`;
-    }
-    if (this.multiP2HotbarTag) {
-      this.multiP2HotbarTag.innerHTML = `<kbd>Scroll</kbd> / <kbd>${fmt(C.P2_Inventory)}</kbd>`;
-    }
-    if (this.dbgKeyP1Atk) this.dbgKeyP1Atk.textContent = fmt(C.P1_Attack);
-    if (this.dbgKeyP2Atk) this.dbgKeyP2Atk.textContent = fmt(C.P2_Attack);
-    if (this.dbgKeySwitch) this.dbgKeySwitch.textContent = fmt(C.SwitchPlayer);
-    if (this.dbgKeyInteract) this.dbgKeyInteract.textContent = fmt(C.Interact);
-
-    // 3. Stepper da Máquina de Estados (M1 -> VAN -> M2 -> VAN -> M3)
-    const dots = this.stageStepper.querySelectorAll('.step-dot');
-    dots.forEach((dot) => {
-      const step = parseInt(dot.getAttribute('data-step'), 10);
-      dot.classList.remove('active', 'completed');
-      if (step < currentStageMeta.stepIndex) {
-        dot.classList.add('completed');
-      } else if (step === currentStageMeta.stepIndex) {
-        dot.classList.add('active');
-      }
-    });
-
-    // 4. Título do Mapa e Cronômetro da Fase (Pausado/Oculto na Safe Room Van)
-    this.mapTitle.textContent = currentMap.name;
-    if (currentStageMeta.isSafeRoom) {
-      this.timerBox.classList.add('hidden');
-      this.saferoomBadge.classList.remove('hidden');
-    } else {
-      this.timerBox.classList.remove('hidden');
-      this.saferoomBadge.classList.add('hidden');
-      this.timerValue.textContent = this.formatTime(stageTimeRemaining);
-      this.timerValue.classList.toggle('timer-warning', stageTimeRemaining <= 30);
-    }
-
-    // 5. Contador Global Persistente de Sucata / Lixo Coletado
-    const scrapTotal = window.scrapCollected || 0;
-    if (this.scrapCountEl) {
-      this.scrapCountEl.textContent = String(scrapTotal);
-    }
-    if (this.dbgScrapCount) {
-      this.dbgScrapCount.textContent = String(scrapTotal);
-    }
-    if (this.mapTrashRemainingEl) {
-      if (currentStageMeta.isSafeRoom) {
-        this.mapTrashRemainingEl.textContent = '(Safe Room)';
+    // 2. Cronômetro de Tempo (Time)
+    if (this.timerBox && this.timerValue) {
+      if (currentStageMeta && currentStageMeta.isSafeRoom) {
+        this.timerBox.classList.add('hidden');
       } else {
-        const remainingInMap = this.game.trashItems ? this.game.trashItems.length : 0;
-        const totalInMap = currentMap.trashSpawns ? currentMap.trashSpawns.length : 0;
-        this.mapTrashRemainingEl.textContent = `(Mapa: ${remainingInMap}/${totalInMap} restantes)`;
+        this.timerBox.classList.remove('hidden');
+        this.timerValue.textContent = this.formatTime(stageTimeRemaining);
+        this.timerValue.classList.toggle('timer-warning', stageTimeRemaining <= 30);
       }
     }
 
-    // 6. Prompt de Interação na Zona de Extração, Porta da Van ou Estações da Safe Room (Loja / Craft)
-    const activeStation = this.game.getTouchedSafeRoomStation();
-    if (activeStation) {
-      this.interactionPrompt.classList.remove('hidden');
-      this.interactionPrompt.classList.add('station-prompt');
-      this.interactionPrompt.textContent = activeStation.promptText;
-    } else if (this.game.isAnyPlayerInTransitionZone()) {
-      this.interactionPrompt.classList.remove('hidden');
-      this.interactionPrompt.classList.remove('station-prompt');
-      this.interactionPrompt.innerHTML = currentStageMeta.isSafeRoom
-        ? `Na Porta da Van! Pressione <kbd>${fmt(C.Interact)}</kbd> ou <kbd>${fmt(C.InteractAlt)}</kbd> para Seguir Viagem →`
-        : `Na Zona de Extração! Pressione <kbd>${fmt(C.Interact)}</kbd> ou <kbd>${fmt(C.InteractAlt)}</kbd> para entrar na Van →`;
-    } else {
-      this.interactionPrompt.classList.add('hidden');
-      this.interactionPrompt.classList.remove('station-prompt');
+    // 3. Barra do Chefe da Fase 3
+    const boss = this.game.enemyManager ? this.game.enemyManager.boss : null;
+    if (this.bossContainer) {
+      if (boss && !boss.isDefeated && currentStageMeta && currentStageMeta.stateId === 'MAP_3') {
+        this.bossContainer.classList.remove('hidden');
+        if (this.bossNameEl) this.bossNameEl.textContent = boss.name;
+        if (this.bossHpTextEl) this.bossHpTextEl.textContent = `${boss.hp} / ${boss.maxHp} HP`;
+        if (this.bossHpBarEl) {
+          const bossPct = Math.max(0, Math.min(100, (boss.hp / boss.maxHp) * 100));
+          this.bossHpBarEl.style.width = `${bossPct}%`;
+          this.bossHpBarEl.className = `boss-hp-bar-inner stage-${boss.stage}-bar`;
+        }
+        if (this.bossStageBadgeEl) {
+          this.bossStageBadgeEl.textContent = `ESTÁGIO ${boss.stage}`;
+        }
+      } else {
+        this.bossContainer.classList.add('hidden');
+      }
     }
-
-    // 7. Telemetria do Painel de Debug e Status do Gamepad
-    this.dbgMode.textContent = gameMode === 'singleplayer' ? `Singleplayer (${fmt(C.SwitchPlayer)})` : 'Multiplayer Local';
-    this.dbgState.textContent = `${currentStageMeta.stateId} (${currentStageMeta.stepIndex + 1}/5)`;
-    this.dbgP1Pos.textContent = `${Math.round(p1.x)}, ${Math.round(p1.y)}`;
-    this.dbgP2Pos.textContent = `${Math.round(p2.x)}, ${Math.round(p2.y)}`;
-    this.updateGamepadStatusBanner();
   }
 
   _updatePlayerCard(textEl, barEl, player) {
+    if (!textEl || !barEl || !player) return;
     const pct = Math.max(0, Math.min(100, (player.hp / player.maxHp) * 100));
     textEl.textContent = `${player.hp} / ${player.maxHp} HP`;
     barEl.style.width = `${pct}%`;
@@ -689,44 +838,21 @@ window.UIManager = class UIManager {
     }
   }
 
-  /**
-   * Atualiza o Painel Estilo Inventário no Menu de Pausa (Esc ou P)
-   */
-  updatePauseInventoryPanel() {
+  updatePausePanel() {
     const { p1, p2, stageTimeRemaining } = this.game;
     const currentStageMeta = this.game.getCurrentStageMeta();
 
-    this.pauseMapName.textContent = currentStageMeta.label;
-    this.pauseTimerStatus.textContent = currentStageMeta.isSafeRoom
-      ? 'Safe Room (Van): Cronômetro Pausado'
-      : `Tempo Restante na Fase: ${this.formatTime(stageTimeRemaining)}`;
-
-    if (this.pauseScrapStatus) {
-      this.pauseScrapStatus.textContent = `♻ Lixo Coletado (Persistência Global): ${window.scrapCollected || 0}`;
+    if (this.pauseMapName && currentStageMeta) {
+      this.pauseMapName.textContent = currentStageMeta.label;
+    }
+    if (this.pauseTimerStatus && currentStageMeta) {
+      this.pauseTimerStatus.textContent = currentStageMeta.isSafeRoom
+        ? 'Safe Room (Van): Cronômetro Pausado'
+        : `Tempo Restante: ${this.formatTime(stageTimeRemaining)}`;
     }
 
     this._updatePlayerCard(this.pauseP1HpLabel, this.pauseP1HpFill, p1);
-    this._renderPauseCharacterGrid(this.pauseP1ItemsGrid, p1);
-
     this._updatePlayerCard(this.pauseP2HpLabel, this.pauseP2HpFill, p2);
-    this._renderPauseCharacterGrid(this.pauseP2ItemsGrid, p2);
-  }
-
-  _renderPauseCharacterGrid(container, player) {
-    container.innerHTML = '';
-    player.inventory.forEach((item, idx) => {
-      const div = document.createElement('div');
-      div.className = 'pause-item-slot';
-      if (idx === player.selectedSlot) div.classList.add('equipped');
-      if (item.isEmpty) div.classList.add('empty');
-
-      div.innerHTML = `
-        <div class="pause-slot-icon">${item.icon}</div>
-        <div class="pause-slot-name">Slot ${idx + 1}: ${item.name}</div>
-        <div class="pause-slot-tag">${idx === player.selectedSlot ? '★ EQUIPADO' : item.type}</div>
-      `;
-      container.appendChild(div);
-    });
   }
 
   formatTime(seconds) {
@@ -737,12 +863,16 @@ window.UIManager = class UIManager {
   }
 
   showToast(message, durationMs = 2200) {
-    if (!this.debugToast) return;
-    this.debugToast.textContent = message;
-    this.debugToast.classList.remove('hidden');
+    if (!this.gameToast) {
+      this.gameToast = document.getElementById('game-toast') || document.getElementById('debug-toast');
+    }
+    if (!this.gameToast) return;
+
+    this.gameToast.textContent = message;
+    this.gameToast.classList.remove('hidden');
     if (this.toastTimeout) clearTimeout(this.toastTimeout);
     this.toastTimeout = setTimeout(() => {
-      this.debugToast.classList.add('hidden');
+      if (this.gameToast) this.gameToast.classList.add('hidden');
     }, durationMs);
   }
 };

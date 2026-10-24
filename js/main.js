@@ -1,12 +1,18 @@
 /**
  * js/main.js
- * Motor Principal do Protótipo 2D Top-Down (Sprint 3):
- * - Persistência Global de Lixos em Coordenadas Fixas (Hardcoded) nos 3 Mapas (sem geração procedural)
- * - Sistema de Ataque/Bater Placeholder (Arco/Cone de colisão colorido + Log no Console)
- *   • Singleplayer: Botão Direito do Mouse (com bloqueio de contextmenu) ou Tecla de Ataque remapeada
- *   • Multiplayer Local: Jogador 1 na tecla R e Jogador 2 na tecla 0 (ou teclas remapeadas em Config.Controls)
- * - Suporte Nativo a Gamepad API (navigator.getGamepads()) dentro do requestAnimationFrame
- * - Consumo integral do Dicionário Global de Inputs (window.Config.Controls)
+ * Motor Principal do Protótipo 2D Top-Down ("ScienceEco Girls"):
+ * - Máquina de Estados e Fluxo: Van Inicial -> Mapa 1 -> Van -> Mapa 2 -> Van -> Mapa 3 -> Van Final
+ * - Escolha na Van: Avançar para a próxima fase vs Voltar para a fase anterior (Replay/Farm)
+ * - Tela de Estatísticas na Van (Lixos X/Y, Inimigos [oculto no M1], Rank S+/S/A/B baseado no tempo)
+ * - Zonas de Interação da Van (Hub): Loja de Armas Melee e Mural de Avisos
+ * - Sistema de Inputs de Ataque:
+ *   • Singleplayer: Botão Esquerdo do Mouse mirando na direção do cursor / Tecla R
+ *   • Multiplayer Local: Jogador 1 ataca com 'R' e Jogador 2 ataca com '0'
+ * - HUD Exclusivo: Apenas Vida (Health) e Tempo (Time)
+ * - Persistência das 16 posições fixas de lixos por mapa
+ * - Drenagem automática da água na Fase 1 ao coletar metade dos lixos (8 lixos)
+ * - Tela de Vitória Definitiva ao derrotar o Chefão Final: "Obrigado por jogar!"
+ * - Remoção total de ferramentas de desenvolvimento, inventário e crafting
  */
 
 class Game {
@@ -14,34 +20,49 @@ class Game {
     this.canvas = document.getElementById('game-canvas');
     this.ctx = this.canvas.getContext('2d');
 
-    // Garante bloqueio do menu de contexto padrão do navegador também diretamente no Canvas
+    // Bloqueio do menu de contexto padrão do navegador
     this.canvas.addEventListener('contextmenu', (e) => e.preventDefault());
 
-    // Estado de Alto Nível: 'MAIN_MENU' | 'PLAYING' | 'PAUSED'
+    // Estado da Aplicação: 'MAIN_MENU' | 'PLAYING' | 'PAUSED' | 'GAMEOVER'
     this.appState = 'MAIN_MENU';
 
-    // Modo de Operação: 'singleplayer' | 'multiplayer'
+    // Modo de Jogo: 'singleplayer' | 'multiplayer'
     this.gameMode = 'singleplayer';
 
-    // Índice na Máquina de Estados de Fases (0: Mapa 1 -> 1: Van -> 2: Mapa 2 -> 3: Van -> 4: Mapa 3)
+    // Máquina de Estados de Fases:
+    // 0: Van Inicial -> 1: Mapa 1 -> 2: Van -> 3: Mapa 2 -> 4: Van -> 5: Mapa 3 -> 6: Van Final
     this.stageFlowIndex = 0;
-    this.currentMap = window.GameMaps.map1;
+    this.currentMap = window.GameMaps ? window.GameMaps.van : null;
 
-    // Timer regressivo da fase (em segundos)
-    this.stageTimeRemaining = window.GameConfig.STAGE_DURATION_SECONDS;
+    // Cronômetros e Telemetria de Fase
+    this.stageDuration = (window.GameConfig && window.GameConfig.STAGE_DURATION_SECONDS) || 180;
+    this.stageTimeRemaining = this.stageDuration;
+    this.stageElapsedTime = 0;
+    this.stageTrashCollectedInRun = 0;
+    this.stageEnemiesDefeated = 0;
 
-    // Tempo de permanência na Zona de Transição (para auto-avançar ao encostar, além de E/Espaço)
+    // Histórico para Replay/Farm e Estatísticas
+    this.lastCompletedStageIndex = 1;
+    this.lastCompletedStageStats = null;
+    this.isShowingStageStats = false;
+    this.isVictorySequence = false;
+    this.victoryConfetti = [];
+
+    // Cache de imagens de mapas / cenários
+    this.mapImages = new Map();
+    this._preloadMapImages();
+
+    // Tempo de permanência na Zona de Transição dos Mapas para extração
     this.zoneHoldTimer = 0;
-    this.zoneHoldDuration = 1.15;
+    this.zoneHoldDuration = 1.0;
 
-    // Instancia os 2 Personagens em cena (5 slots de inventário cada)
+    // Instancia os 2 Personagens (sem inventário)
     this.p1 = new window.Player({
       id: 1,
       name: 'Jogador 1',
       role: 'Batedor',
       primaryColor: '#38bdf8',
-      secondaryColor: '#0284c7',
-      inventory: window.GameConfig.createDefaultInventoryP1()
+      secondaryColor: '#0284c7'
     });
 
     this.p2 = new window.Player({
@@ -49,51 +70,50 @@ class Game {
       name: 'Jogador 2',
       role: 'Suporte',
       primaryColor: '#fb923c',
-      secondaryColor: '#ea580c',
-      inventory: window.GameConfig.createDefaultInventoryP2()
+      secondaryColor: '#ea580c'
     });
 
     this.players = [this.p1, this.p2];
-    this.activePlayerIndex = 0; // Usado no Singleplayer (0 = P1, 1 = P2)
+    this.activePlayerIndex = 0; // 0 = P1, 1 = P2
 
-    // Entidades de Lixo / Sucata fixas restantes no mapa atual (Sprint 3)
+    // Entidades de Lixo fixas restantes no mapa atual
     this.trashItems = [];
 
-    // Lista de textos flutuantes de debug (ex: "-10 HP", "+1 Lixo", "⚔️ ATAQUE", avisos de estação)
+    // Textos flutuantes de feedback visual
     this.floatingTexts = [];
 
     // Câmera 2D
     this.camera = new window.Camera2D(window.innerWidth, window.innerHeight);
 
-    // Input Manager (Teclado via Config.Controls + Mouse Right Click + Gamepad API)
+    // Gerenciador de Inputs (sem atalhos de dev)
     this.input = new window.InputManager({
       onSwitchPlayer: () => this.handleSwitchPlayer(),
       onTogglePause: () => this.handlePauseShortcut(),
       onInteract: () => this.handleInteractShortcut(),
-      onMouseRightAttack: (source) => this.handleMouseRightAttack(source),
+      onMouseLeftAttack: (clientX, clientY) => this.handleMouseLeftAttack(clientX, clientY),
       onPlayerAttack: (playerId, source) => this.handleKeyboardAttack(playerId, source),
       onGamepadAttack: (targetSlot, source) => this.handleGamepadAttack(targetSlot, source),
       onGamepadInteractOrAttack: (targetSlot, source) => this.handleGamepadInteractOrAttack(targetSlot, source),
-      onGamepadCycleSlot: (targetSlot, dir, source) => this.handleGamepadCycleSlot(targetSlot, dir, source),
-      onGamepadStatusChange: (gp, connected, profile) => this.handleGamepadStatusChange(gp, connected, profile),
-      onCyclePlayerSlot: (playerId, dir) => this.cyclePlayerHotbarSlot(playerId, dir),
-      onDebugDamage: () => this.handleDebugDamage(),
-      onDebugHeal: () => this.handleDebugHeal(),
-      onDebugNextStage: () => this.handleDebugNextStage(),
-      onSelectSlot: (slotIndex) => this.selectHotbarSlot(slotIndex, null),
-      onCycleSlot: (direction) => this.cycleHotbarSlot(direction)
+      onGamepadStatusChange: (gp, connected, profile) => this.handleGamepadStatusChange(gp, connected, profile)
     });
 
-    // UI Manager
+    // Sistema de Inimigos (3 Tipos de Ratos a partir da Fase 2)
+    this.enemyManager = new window.EnemyManager(this);
+
+    // Sistema de Água Subindo (Filtro e Mecânica de Inundação na Primeira Fase)
+    this.waterSystem = new window.WaterSystem(this);
+    this.isGameOver = false;
+
+    // Gerenciador de Interface de Usuário
     this.ui = new window.UIManager(this);
 
-    // Ajuste de Redimensionamento de Tela
+    // Ajuste de Redimensionamento
     this._onResize = this._onResize.bind(this);
     window.addEventListener('resize', this._onResize);
     this._onResize();
 
-    // Inicializa os itens de lixo nas posições fixas (hardcoded) do Mapa 1 para preview
-    this._spawnFixedTrashForMap(this.currentMap);
+    // Carrega a Van Inicial como cenário de partida
+    this.loadStageByFlowIndex(0, false);
 
     // Controle de Tempo do Loop
     this.lastTimestamp = performance.now();
@@ -105,11 +125,14 @@ class Game {
   _onResize() {
     this.canvas.width = window.innerWidth;
     this.canvas.height = window.innerHeight;
-    this.camera.resize(this.canvas.width, this.canvas.height);
+    if (this.camera) {
+      this.camera.resize(this.canvas.width, this.canvas.height);
+    }
   }
 
   getCurrentStageMeta() {
-    return window.GameConfig.STAGE_FLOW[this.stageFlowIndex];
+    const list = window.GameConfig ? window.GameConfig.STAGE_FLOW : [];
+    return list[this.stageFlowIndex] || list[0];
   }
 
   getHudFocusPlayer() {
@@ -120,77 +143,165 @@ class Game {
   }
 
   /**
-   * Inicia / Retorna à partida a partir do Menu Principal carregando o Mapa 1.
-   * Mantém o registro global de lixos coletados (window.collectedTrashIds) para garantir
-   * persistência caso o jogador saia e volte para a fase.
+   * 1. Inicia o jogo na VAN INICIAL:
+   * Fluxo: Van Inicial -> Mapa 1 -> Van -> Mapa 2 -> Van -> Mapa 3 -> Van Final
    */
   startNewGame() {
+    this.isGameOver = false;
     this.p1.hp = this.p1.maxHp;
     this.p2.hp = this.p2.maxHp;
-    this.p1.selectedSlot = 0;
-    this.p2.selectedSlot = 0;
+    this.p1.isDrowning = false;
+    this.p2.isDrowning = false;
+    this.p1.drowningProgress = 0;
+    this.p2.drowningProgress = 0;
+    this.p1.damageAnimTimer = 0;
+    this.p2.damageAnimTimer = 0;
     this.activePlayerIndex = 0;
     this.floatingTexts = [];
+    this.stageElapsedTime = 0;
+    this.stageTrashCollectedInRun = 0;
+    this.stageEnemiesDefeated = 0;
+    this.isShowingStageStats = false;
+    this.isVictorySequence = false;
+    this.victoryConfetti = [];
 
-    this.loadStageByFlowIndex(0);
+    if (this.ui) {
+      this.ui.hideVictoryModal();
+      this.ui.hideGameOver();
+    }
+    if (this.waterSystem) this.waterSystem.reset();
+    if (this.enemyManager) this.enemyManager.reset();
+
+    // Carrega a Van Inicial (Index 0)
+    this.loadStageByFlowIndex(0, false);
     this.appState = 'PLAYING';
     this.ui.showGameplayHUD();
 
-    const C = window.Config.Controls;
-    const fmt = (k) => window.Config.formatKeyCode(k);
+    const C = window.GameConfig.Controls;
+    const fmt = (k) => window.GameConfig.formatKeyCode(k);
     const modeDesc =
       this.gameMode === 'singleplayer'
-        ? `Singleplayer (Ataque: Botão Direito do Mouse / [${fmt(C.P1_Attack)}])`
-        : `Multiplayer Local (Ataque P1: [${fmt(C.P1_Attack)}] • Ataque P2: [${fmt(C.P2_Attack)}])`;
+        ? `Singleplayer (Mira e Ataque: Botão Esquerdo do Mouse / [${fmt(C.P1_Attack)}])`
+        : `Multiplayer Local (P1: [${fmt(C.P1_Attack)}] • P2: [${fmt(C.P2_Attack)}])`;
 
-    this.ui.showToast(`Partida em andamento: ${modeDesc}`);
+    this.ui.showToast(`Expedição iniciada na Van! ${modeDesc}`, 2600);
   }
 
   /**
-   * Carrega um estado específico da máquina de estados de fases:
-   * 0: Mapa 1 -> 1: Van -> 2: Mapa 2 -> 3: Van -> 4: Mapa 3
+   * Carrega um estado específico na máquina de estados de fases.
+   * comingFromMap indica se os jogadores acabaram de chegar na Van vindos de uma fase concluída.
    */
-  loadStageByFlowIndex(flowIndex) {
+  loadStageByFlowIndex(flowIndex, comingFromMap = false) {
     const flowList = window.GameConfig.STAGE_FLOW;
     this.stageFlowIndex = ((flowIndex % flowList.length) + flowList.length) % flowList.length;
 
     const stageMeta = this.getCurrentStageMeta();
     this.currentMap = window.GameMaps[stageMeta.mapKey];
 
-    // Posiciona ambos os personagens nos pontos de spawn do mapa atual
+    // Posiciona os jogadores nos pontos de spawn do mapa
     this.p1.setPosition(this.currentMap.spawnP1.x, this.currentMap.spawnP1.y);
     this.p2.setPosition(this.currentMap.spawnP2.x, this.currentMap.spawnP2.y);
-
-    // Reseta o Timer da Fase (180s = 03:00) e carrega os Lixos Fixos ainda NÃO coletados
-    if (!stageMeta.isSafeRoom) {
-      this.stageTimeRemaining = window.GameConfig.STAGE_DURATION_SECONDS;
-      this._spawnFixedTrashForMap(this.currentMap);
-    } else {
-      this.trashItems = [];
-    }
+    this.p1.isDrowning = false;
+    this.p2.isDrowning = false;
+    this.p1.drowningProgress = 0;
+    this.p2.drowningProgress = 0;
+    this.p1.damageAnimTimer = 0;
+    this.p2.damageAnimTimer = 0;
 
     this.zoneHoldTimer = 0;
     this.input.clearAll();
+    this.isGameOver = false;
+    this.isVictorySequence = false;
+    this.victoryConfetti = [];
+    if (this.ui) {
+      this.ui.hideVictoryModal();
+      this.ui.hideGameOver();
+    }
 
-    // Posiciona a câmera imediatamente no foco inicial
+    // Gerencia o sistema de água subindo exclusivamente na primeira fase (MAP_1)
+    const hasWater = (stageMeta.stateId === 'MAP_1' && !stageMeta.isSafeRoom);
+    if (hasWater) {
+      if (this.waterSystem) this.waterSystem.activate();
+    } else {
+      if (this.waterSystem) this.waterSystem.deactivate();
+    }
+
+    // Configura os papéis no modo Singleplayer (P1/P2 ativo vs companheira IA)
+    if (this.gameMode === 'singleplayer') {
+      const activePlayer = this.players[this.activePlayerIndex];
+      const companion = this.players[this.activePlayerIndex === 0 ? 1 : 0];
+      activePlayer.isCompanion = false;
+      companion.isCompanion = true;
+      companion._isFollowing = false;
+      companion._stuckTimer = 0;
+      companion._lastPos = { x: companion.x, y: companion.y };
+    } else {
+      this.p1.isCompanion = false;
+      this.p2.isCompanion = false;
+    }
+
+    // Se for um Mapa de Expedição (não é Safe Room):
+    if (!stageMeta.isSafeRoom) {
+      this.stageTimeRemaining = window.GameConfig.STAGE_DURATION_SECONDS;
+      this.stageElapsedTime = 0;
+      this.stageTrashCollectedInRun = 0;
+      this.stageEnemiesDefeated = 0;
+
+      // Gerencia o estado da água no Mapa 1
+      if (this.currentMap && this.currentMap.id === 'map1') {
+        const fixedSpawns = window.GlobalState.getFixedTrashSpawns(this.currentMap);
+        const total = fixedSpawns.length || 16;
+        const alreadyCollected = fixedSpawns.filter(t => window.GlobalState.isTrashCollected(t.id)).length;
+        if (alreadyCollected >= Math.ceil(total / 2)) {
+          this._drainMap1Water(false);
+        } else {
+          this._restoreMap1Water();
+        }
+      }
+
+      this._spawnFixedTrashForMap(this.currentMap);
+      if (this.enemyManager) this.enemyManager.spawnEnemiesForMap(this.currentMap);
+    } else {
+      this.trashItems = [];
+      if (this.enemyManager) this.enemyManager.reset();
+    }
+
+    // Posiciona a câmera instantaneamente
     const camTarget = this._getCameraTargetPoint();
     this.camera.snapToTarget(camTarget.x, camTarget.y, this.currentMap);
 
     this.ui.updateHUD();
+
+    // Se entrou na Van vindo de um Mapa: pausa o jogo e exibe Tela de Estatísticas!
+    if (stageMeta.isSafeRoom && comingFromMap && this.lastCompletedStageStats) {
+      this.isShowingStageStats = true;
+      this.appState = 'PAUSED';
+      this.input.clearAll();
+      this.ui.showStageStats(this.lastCompletedStageStats);
+    }
   }
 
   /**
-   * Instancia os itens de Lixo/Sucata exclusivamente nas coordenadas fixas (hardcoded) do mapa,
-   * consultando o Estado Global (window.collectedTrashIds) para nunca respawnar itens já coletados.
+   * Fecha a Tela de Estatísticas e despausa a partida para liberar movimento na Van
+   */
+  dismissStageStatsAndResume() {
+    this.isShowingStageStats = false;
+    this.appState = 'PLAYING';
+    this.input.clearAll();
+    this.ui.showToast('Você está na Van! Visite a Loja de Armas ou leia o Mural de Avisos.', 2400);
+  }
+
+  /**
+   * Instancia os 16 itens de Lixo nas posições fixas do mapa (respeitando GlobalState de persistência)
    */
   _spawnFixedTrashForMap(map) {
     this.trashItems = [];
-    if (!map || map.isSafeRoom || !Array.isArray(map.trashSpawns)) return;
+    if (!map || map.isSafeRoom) return;
 
+    const fixedSpawns = window.GlobalState.getFixedTrashSpawns(map);
     const types = window.GameConfig.TRASH_TYPES;
 
-    map.trashSpawns.forEach((spawnDef, idx) => {
-      // Verifica no estado global se este lixo já foi coletado anteriormente
+    fixedSpawns.forEach((spawnDef, idx) => {
       if (window.GlobalState.isTrashCollected(spawnDef.id)) {
         return;
       }
@@ -210,58 +321,297 @@ class Game {
   }
 
   /**
-   * Reinicia a fase atual mantendo a persistência global dos lixos já coletados
+   * Mecânica da Fase 1: Drena a água do canal quando 50% dos lixos (8 lixos) são coletados
    */
-  restartCurrentStage() {
-    this.p1.hp = this.p1.maxHp;
-    this.p2.hp = this.p2.maxHp;
-    this.loadStageByFlowIndex(this.stageFlowIndex);
-    this.togglePause(false);
-    this.ui.showToast('Fase reiniciada! (Lixos já coletados permanecem salvos no Estado Global).');
+  _drainMap1Water(notify = true) {
+    const map = window.GameMaps ? window.GameMaps.map1 : null;
+    if (!map) return;
+    map.isWaterDrained = true;
+
+    // Atualiza a lista de obstáculos ativos removendo os blocos de colisão da água
+    if (Array.isArray(map.baseObstacles)) {
+      map.obstacles = map.baseObstacles.slice();
+    }
+
+    if (notify) {
+      if (this.waterSystem && this.waterSystem.audio) {
+        this.waterSystem.audio.playSurgeSound();
+      }
+      if (this.camera) {
+        this.camera.triggerShake(0.8, 5);
+      }
+      const activePlayer = this.getHudFocusPlayer();
+      this.floatingTexts.push(
+        new window.FloatingText(
+          activePlayer.x,
+          activePlayer.y - 45,
+          '🌊 O NÍVEL DA ÁGUA BAIXOU! CAMINHO LIVRE!',
+          '#38bdf8',
+          2.6
+        )
+      );
+      if (this.ui) {
+        this.ui.showToast('🌊 O nível da água baixou! O canal secou e agora você pode atravessar.');
+      }
+      console.log('🌊 [FASE 1] Metade do lixo coletada! Água drenada e fundo trocado para versão seca.');
+    }
   }
 
   /**
-   * Retorna ao Menu Principal
+   * Restaura os obstáculos de água do Mapa 1 caso seja reiniciado
    */
+  _restoreMap1Water() {
+    const map = window.GameMaps ? window.GameMaps.map1 : null;
+    if (!map) return;
+    map.isWaterDrained = false;
+    if (Array.isArray(map.baseObstacles) && Array.isArray(map.waterObstacles)) {
+      map.obstacles = map.baseObstacles.concat(map.waterObstacles);
+    }
+  }
+
+  /**
+   * Conclusão de uma fase nos Mapas (chamado ao atingir a Zona de Extração):
+   * Salva estatísticas, define lastCompletedStageIndex e viaja para a Van!
+   */
+  completeCurrentMapAndEnterVan() {
+    const stageMeta = this.getCurrentStageMeta();
+    if (stageMeta.isSafeRoom) return;
+
+    // Se for a Fase 3 com o chefe vivo e não for chamada pós-vitória, bloqueia a extração prematura
+    if (stageMeta.stateId === 'MAP_3' && this.enemyManager && this.enemyManager.boss && !this.enemyManager.boss.isDefeated && !this.isVictorySequence) {
+      if (this.ui) this.ui.showToast('⚠️ A Extração está bloqueada! Derrote o Rei Rato Radioativo em todos os 3 estágios!', 2500);
+      this.zoneHoldTimer = 0;
+      return;
+    }
+
+    const timeSpent = Math.max(1, Math.round(this.stageElapsedTime));
+    const rank = window.computePerformanceRank(timeSpent);
+    const trashTotal = (this.currentMap && this.currentMap.trashSpawns) ? Math.min(16, this.currentMap.trashSpawns.length) : 16;
+    const isMap1 = (stageMeta.stateId === 'MAP_1');
+
+    this.lastCompletedStageIndex = this.stageFlowIndex;
+    this.lastCompletedStageStats = {
+      stageName: this.currentMap.name,
+      trashCollected: this.stageTrashCollectedInRun,
+      trashTotal,
+      enemiesDefeated: this.stageEnemiesDefeated,
+      timeSpent,
+      rank,
+      isMap1
+    };
+
+    // Avança para o próximo estado que é a Safe Room da Van correspondente
+    const nextFlowIndex = (this.stageFlowIndex + 1) % window.GameConfig.STAGE_FLOW.length;
+    this.loadStageByFlowIndex(nextFlowIndex, true);
+  }
+
+  /**
+   * Sequência de Vitória da Fase 3 (Derrota definitiva do Rei Rato Radioativo após os 3 estágios)
+   * Exibe em destaque na tela a mensagem: "Obrigado por jogar!"
+   */
+  handleBossDefeated() {
+    if (this.isVictorySequence) return;
+    this.isVictorySequence = true;
+
+    // 1. Interrompe ataques do chefe e limpa lacaios/projéteis restantes
+    if (this.enemyManager) {
+      this.enemyManager.clearAllMinionsAndProjectiles();
+    }
+
+    // 2. Torna os operadores invulneráveis para não receberem dano durante a celebração
+    this.p1.invulnerableTimer = 9999;
+    this.p2.invulnerableTimer = 9999;
+
+    // 3. Efeito de tremor e impacto vitorioso na câmera
+    if (this.camera) {
+      this.camera.triggerShake(0.55, 12);
+    }
+
+    // 4. Dispara partículas festivas (confetes no Canvas)
+    this._spawnVictoryConfetti();
+
+    // 5. Exibe a tela de vitória destacando "Obrigado por jogar!"
+    const timeSpent = Math.max(1, Math.round(this.stageElapsedTime));
+    if (this.ui) {
+      this.ui.showVictoryModal({
+        timeSpent,
+        trashCollected: this.stageTrashCollectedInRun
+      });
+    }
+
+    console.log('🏆 [VITÓRIA FASE 3] Chefão final derrotado! Mensagem "Obrigado por jogar!" exibida com sucesso.');
+  }
+
+  /**
+   * Avança para a última van do jogo após a mensagem de vitória
+   */
+  advanceToFinalVanAfterVictory() {
+    this.isVictorySequence = false;
+    this.p1.invulnerableTimer = 0;
+    this.p2.invulnerableTimer = 0;
+    this.completeCurrentMapAndEnterVan();
+  }
+
+  _spawnVictoryConfetti() {
+    this.victoryConfetti = [];
+    const colors = ['#facc15', '#4ade80', '#38bdf8', '#f472b6', '#a855f7', '#fb923c'];
+    for (let i = 0; i < 65; i++) {
+      this.victoryConfetti.push({
+        x: Math.random() * this.canvas.width,
+        y: -10 - Math.random() * 50,
+        vx: (Math.random() - 0.5) * 110,
+        vy: 130 + Math.random() * 180,
+        size: 7 + Math.random() * 9,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        rotation: Math.random() * Math.PI,
+        rotationSpeed: (Math.random() - 0.5) * 6
+      });
+    }
+  }
+
+  _renderVictoryConfetti(ctx) {
+    if (!this.victoryConfetti || this.victoryConfetti.length === 0) return;
+    ctx.save();
+    for (const c of this.victoryConfetti) {
+      ctx.save();
+      ctx.translate(c.x, c.y);
+      ctx.rotate(c.rotation);
+      ctx.fillStyle = c.color;
+      ctx.fillRect(-c.size / 2, -c.size / 2, c.size, c.size * 0.6);
+      ctx.restore();
+
+      c.y += c.vy * 0.016;
+      c.x += c.vx * 0.016;
+      c.rotation += c.rotationSpeed * 0.016;
+      if (c.y > this.canvas.height + 20) {
+        c.y = -10;
+        c.x = Math.random() * this.canvas.width;
+      }
+    }
+    ctx.restore();
+  }
+
+  /**
+   * Lógica de Escolha na Van:
+   * Opção 1: Avançar para a próxima fase
+   */
+  confirmVanAdvanceToNext() {
+    const stageMeta = this.getCurrentStageMeta();
+    const nextMapIndex = stageMeta.nextMapIndex ?? (this.stageFlowIndex + 1);
+    this.loadStageByFlowIndex(nextMapIndex, false);
+    this.ui.showToast(`Expedição partindo para ${this.currentMap.name}!`);
+  }
+
+  /**
+   * Lógica de Escolha na Van:
+   * Opção 2: Voltar para a fase anterior (Replay/Farm)
+   */
+  confirmVanReplayPrevious() {
+    const replayIndex = this.lastCompletedStageIndex || 1;
+    this.loadStageByFlowIndex(replayIndex, false);
+    this.ui.showToast(`Retornando para Replay/Farm em ${this.currentMap.name}!`, 2400);
+  }
+
+  /**
+   * Reinicia a fase atual
+   */
+  restartCurrentStage() {
+    this.isGameOver = false;
+    this.isVictorySequence = false;
+    this.victoryConfetti = [];
+    this.appState = 'PLAYING';
+    if (this.waterSystem) this.waterSystem.reset();
+    if (this.ui) {
+      this.ui.hideGameOver();
+      this.ui.hideVictoryModal();
+    }
+    this.p1.hp = this.p1.maxHp;
+    this.p2.hp = this.p2.maxHp;
+    this.loadStageByFlowIndex(this.stageFlowIndex, false);
+    this.togglePause(false);
+    this.ui.showToast('Fase reiniciada!');
+  }
+
   returnToMainMenu() {
+    this.isGameOver = false;
+    this.isVictorySequence = false;
+    this.victoryConfetti = [];
     this.appState = 'MAIN_MENU';
+    if (this.waterSystem) this.waterSystem.reset();
+    if (this.ui) {
+      this.ui.hideGameOver();
+      this.ui.hideVictoryModal();
+    }
     this.input.clearAll();
     this.ui.showMainMenu();
   }
 
   /**
-   * Ataque via Botão Direito do Mouse (Exclusivo do Modo Singleplayer)
+   * Dispara a tela de Game Over quando a expedição falha (inundação, tempo ou vida)
    */
-  handleMouseRightAttack(sourceLabel) {
-    if (this.appState !== 'PLAYING') return;
-    if (this.gameMode !== 'singleplayer') return;
+  handleGameOver(reason = 'WATER_FLOOD') {
+    if (this.isGameOver) return;
+    this.isGameOver = true;
+    this.appState = 'GAMEOVER';
+    this.input.clearAll();
 
-    const activePlayer = this.players[this.activePlayerIndex];
-    this._executePlayerAttack(activePlayer, sourceLabel);
-  }
+    const timeSpent = Math.max(1, Math.round(this.stageElapsedTime));
+    const stats = {
+      reason,
+      timeSpent,
+      trashCollected: this.stageTrashCollectedInRun,
+      trashTotal: 16
+    };
 
-  /**
-   * Ataque via Teclado (Config.Controls.P1_Attack = 'KeyR' e Config.Controls.P2_Attack = 'Digit0')
-   */
-  handleKeyboardAttack(playerId, sourceLabel) {
-    if (this.appState !== 'PLAYING') return;
-
-    if (this.gameMode === 'singleplayer') {
-      // No Singleplayer, se o jogador pressionar a tecla de ataque remapeada de P1, o personagem ativo também ataca
-      if (playerId === 1) {
-        const activePlayer = this.players[this.activePlayerIndex];
-        this._executePlayerAttack(activePlayer, sourceLabel);
-      }
-    } else {
-      // No Multiplayer Local: P1 ataca com P1_Attack (R) e P2 ataca com P2_Attack (0)
-      const attacker = playerId === 2 ? this.p2 : this.p1;
-      this._executePlayerAttack(attacker, sourceLabel);
+    if (this.ui) {
+      this.ui.showGameOver(stats);
     }
   }
 
   /**
-   * Ataque via Botões de Face do Gamepad (X / Y)
+   * Ataque Singleplayer via Botão Esquerdo do Mouse direcionado para a mira
    */
+  handleMouseLeftAttack(clientX, clientY) {
+    if (this.appState !== 'PLAYING') return;
+    if (this.gameMode !== 'singleplayer') return;
+    if (this.waterSystem && this.waterSystem.isSurging) return;
+
+    const rect = this.canvas.getBoundingClientRect();
+    const screenX = clientX - rect.left;
+    const screenY = clientY - rect.top;
+
+    const { offsetX, offsetY } = this.camera.getRenderOffset();
+    const worldMouseX = screenX - offsetX;
+    const worldMouseY = screenY - offsetY;
+
+    const activePlayer = this.players[this.activePlayerIndex];
+    const dx = worldMouseX - activePlayer.x;
+    const dy = worldMouseY - activePlayer.y;
+    const attackAngle = Math.atan2(dy, dx);
+
+    this._executePlayerAttack(activePlayer, 'MouseLeft', attackAngle);
+  }
+
+  /**
+   * Ataque via Teclado:
+   * - Singleplayer: P1_Attack ('R') executa ataque na direção em que estiver virado
+   * - Multiplayer Local: P1 ('R') e P2 ('0')
+   */
+  handleKeyboardAttack(playerId, sourceLabel) {
+    if (this.appState !== 'PLAYING') return;
+    if (this.waterSystem && this.waterSystem.isSurging) return;
+
+    if (this.gameMode === 'singleplayer') {
+      if (playerId === 1) {
+        const activePlayer = this.players[this.activePlayerIndex];
+        this._executePlayerAttack(activePlayer, sourceLabel, null);
+      }
+    } else {
+      const attacker = playerId === 2 ? this.p2 : this.p1;
+      this._executePlayerAttack(attacker, sourceLabel, null);
+    }
+  }
+
   handleGamepadAttack(targetSlot, sourceLabel) {
     if (this.appState !== 'PLAYING') return;
 
@@ -272,12 +622,9 @@ class Game {
           ? this.p2
           : this.p1;
 
-    this._executePlayerAttack(attacker, sourceLabel);
+    this._executePlayerAttack(attacker, sourceLabel, null);
   }
 
-  /**
-   * Botões de Face Secundários do Gamepad (A / B): Interage se estiver em uma zona/estação, caso contrário ataca
-   */
   handleGamepadInteractOrAttack(targetSlot, sourceLabel) {
     if (this.appState !== 'PLAYING') return;
 
@@ -289,11 +636,11 @@ class Game {
   }
 
   /**
-   * Executa o evento de Atacar/Bater: ativa o arco/cone de colisão, gera log no console e verifica Fogo Amigo
+   * Executa o Ataque Melee com a arma equipada
    */
-  _executePlayerAttack(attacker, sourceLabel) {
+  _executePlayerAttack(attacker, sourceLabel, customAngle = null) {
     if (!attacker) return;
-    const triggered = attacker.triggerAttack(sourceLabel, this.gameMode);
+    const triggered = attacker.triggerAttack(sourceLabel, this.gameMode, customAngle);
     if (!triggered) return;
 
     const tipX = attacker.x + attacker.facingX * 36;
@@ -301,10 +648,19 @@ class Game {
     const color = attacker.id === 1 ? '#38bdf8' : '#fb923c';
 
     this.floatingTexts.push(
-      new window.FloatingText(tipX, tipY, `⚔️ ATAQUE P${attacker.id}`, color, 0.55)
+      new window.FloatingText(tipX, tipY, `⚔️ ATK P${attacker.id}`, color, 0.55)
     );
 
-    // Se Fogo Amigo (friendlyFireEnabled) estiver ativo nas configurações, verifica colisão do cone com o parceiro
+    // Ataque contra Inimigos (3 Tipos de Ratos a partir da Fase 2)
+    if (this.enemyManager) {
+      const hitEnemy = this.enemyManager.handlePlayerAttack(attacker);
+      if (hitEnemy) {
+        this.camera.triggerShake(0.12, 3);
+        this.ui.updateHUD();
+      }
+    }
+
+    // Verificação de Fogo Amigo (se ativo nas configurações)
     if (window.friendlyFireEnabled) {
       const partner = attacker.id === 1 ? this.p2 : this.p1;
       if (attacker.isPointInAttackCone(partner.x, partner.y, partner.size / 2)) {
@@ -313,35 +669,9 @@ class Game {
         this.floatingTexts.push(
           new window.FloatingText(partner.x, partner.y - 36, '-10 HP [FOGO AMIGO]', '#ef4444', 0.9)
         );
-        console.log(
-          `🔥 [FOGO AMIGO] ${attacker.name} atingiu ${partner.name} no cone de ataque! (-10 HP)`
-        );
         this.ui.updateHUD();
       }
     }
-  }
-
-  /**
-   * Bumpers L1 / R1 do Gamepad giram os itens do inventário
-   */
-  handleGamepadCycleSlot(targetSlot, direction, sourceLabel) {
-    if (this.appState !== 'PLAYING') return;
-
-    const player =
-      this.gameMode === 'singleplayer'
-        ? this.players[this.activePlayerIndex]
-        : targetSlot === 2
-          ? this.p2
-          : this.p1;
-
-    const len = player.inventory.length;
-    player.selectedSlot = (player.selectedSlot + direction + len) % len;
-    this.ui.renderHotbar();
-
-    const equipped = player.getEquippedItem();
-    console.log(
-      `🎒 [INVENTÁRIO GAMEPAD] ${player.name} girou para Slot ${player.selectedSlot + 1} (${equipped ? equipped.shortName : 'Vazio'}) via ${sourceLabel}`
-    );
   }
 
   handleGamepadStatusChange(gp, connected, profile) {
@@ -353,41 +683,48 @@ class Game {
     this.ui.updateGamepadStatusBanner();
   }
 
-  /**
-   * Alterna entre Personagem 1 e Personagem 2 (no Singleplayer)
-   */
   handleSwitchPlayer() {
     if (this.appState !== 'PLAYING') return;
 
-    if (this.gameMode !== 'singleplayer') {
-      this.ui.showToast('Modo Multiplayer Local ativo: ambos os jogadores já estão em controle simultâneo!');
-      return;
+    if (this.gameMode !== 'multiplayer') {
+      this.activePlayerIndex = this.activePlayerIndex === 0 ? 1 : 0;
+      const active = this.players[this.activePlayerIndex];
+      const companion = this.players[this.activePlayerIndex === 0 ? 1 : 0];
+
+      active.isCompanion = false;
+      companion.isCompanion = true;
+      companion._isFollowing = false;
+      companion._stuckTimer = 0;
+      companion._lastPos = { x: companion.x, y: companion.y };
+      companion._avoidAngle = 0;
+
+      this.floatingTexts.push(
+        new window.FloatingText(active.x, active.y - 42, `▼ CONTROLE ATIVO`, '#ffca3a')
+      );
+
+      this.ui.updateHUD();
+      this.ui.showToast(`Controle alternado para ${active.name}`, 1400);
     }
-
-    this.activePlayerIndex = this.activePlayerIndex === 0 ? 1 : 0;
-    const active = this.players[this.activePlayerIndex];
-
-    this.floatingTexts.push(
-      new window.FloatingText(active.x, active.y - 42, `▼ CONTROLE ATIVO`, '#ffca3a')
-    );
-
-    this.ui.renderHotbar();
-    this.ui.updateHUD();
-    this.ui.showToast(`Controle alternado para ${active.name}`, 1400);
   }
 
-  /**
-   * Pausa / Despausa a partida
-   */
   handlePauseShortcut() {
     if (this.ui.isSettingsModalOpen()) {
       this.ui.closeSettingsModal();
       return;
     }
 
-    if (this.appState === 'MAIN_MENU') {
+    if (this.isShowingStageStats) {
+      this.ui.hideStageStats();
+      this.dismissStageStatsAndResume();
       return;
     }
+
+    // Fecha modais do Hub se abertos
+    this.ui.hideShopModal();
+    this.ui.hideNoticeBoardModal();
+    this.ui.hideVanTransitionChoice();
+
+    if (this.appState === 'MAIN_MENU') return;
 
     if (this.appState === 'PLAYING') {
       this.togglePause(true);
@@ -409,160 +746,60 @@ class Game {
   }
 
   /**
-   * Interação com Estações da Safe Room (Lojinha / Crafting) ou Zona de Extração / Porta da Van
+   * Interações com Zonas da Van (Hub: Loja e Mural) e Porta de Transição
    */
   handleInteractShortcut() {
     if (this.appState !== 'PLAYING') return;
 
-    const touchedStation = this.getTouchedSafeRoomStation();
-    if (touchedStation) {
-      const centerX = touchedStation.x + touchedStation.w / 2;
-      const centerY = touchedStation.y + 10;
-      this.floatingTexts.push(
-        new window.FloatingText(centerX, centerY, touchedStation.promptText, touchedStation.strokeColor, 1.4)
-      );
-      this.ui.showToast(`${touchedStation.icon} ${touchedStation.promptText}`, 2000);
-      return;
-    }
+    const stageMeta = this.getCurrentStageMeta();
 
-    if (this.isAnyPlayerInTransitionZone()) {
-      this.advanceToNextStage('Interação na Zona de Saída');
+    // 1. Interações com as Estações da Van (Hub)
+    if (stageMeta.isSafeRoom) {
+      const touchedStation = this.getTouchedSafeRoomStation();
+      if (touchedStation) {
+        if (touchedStation.id === 'shop') {
+          this.ui.showShopModal();
+          return;
+        } else if (touchedStation.id === 'notice_board') {
+          this.ui.showNoticeBoardModal();
+          return;
+        }
+      }
+
+      // 2. Interação com a Porta da Van
+      if (this.isAnyPlayerInTransitionZone()) {
+        if (stageMeta.vanType === 'start') {
+          // Van Inicial: avança direto para o Mapa 1
+          this.loadStageByFlowIndex(1, false);
+          this.ui.showToast('Partindo da Van Inicial para o Mapa 1!');
+        } else {
+          // Van Intermediária ou Final: exibe as 2 opções na tela!
+          const nextMeta = window.GameConfig.STAGE_FLOW[stageMeta.nextMapIndex ?? (this.stageFlowIndex + 1)];
+          const replayMeta = window.GameConfig.STAGE_FLOW[this.lastCompletedStageIndex || 1];
+          this.ui.showVanTransitionChoice(nextMeta, replayMeta);
+        }
+        return;
+      }
     } else {
-      const zoneName = this.getCurrentStageMeta().isSafeRoom
-        ? 'a Porta da Van (ou das estações de Loja/Craft)'
-        : 'a Zona de Extração';
-      this.ui.showToast(`Aproxime-se d${zoneName} para interagir!`, 1600);
-    }
-  }
-
-  /**
-   * Atalho de Debug [H]: Causa -10 de dano no personagem ativo
-   */
-  handleDebugDamage() {
-    if (this.appState !== 'PLAYING' && this.appState !== 'PAUSED') return;
-
-    const target = this.getHudFocusPlayer();
-    target.takeDamage(10);
-    this.camera.triggerShake(0.16, 5);
-
-    this.floatingTexts.push(
-      new window.FloatingText(target.x, target.y - 36, '-10 HP [DEBUG]', '#ff4d4d')
-    );
-
-    this.ui.updateHUD();
-    if (this.appState === 'PAUSED') {
-      this.ui.updatePauseInventoryPanel();
-    }
-    this.ui.showToast(`[DEBUG] -10 HP em ${target.name} (${target.hp}/${target.maxHp} HP)`, 1600);
-  }
-
-  /**
-   * Atalho Extra de Debug [J]: Cura +20 HP no personagem ativo
-   */
-  handleDebugHeal() {
-    if (this.appState !== 'PLAYING' && this.appState !== 'PAUSED') return;
-
-    const target = this.getHudFocusPlayer();
-    target.heal(20);
-
-    this.floatingTexts.push(
-      new window.FloatingText(target.x, target.y - 36, '+20 HP [DEBUG]', '#4ade80')
-    );
-
-    this.ui.updateHUD();
-    if (this.appState === 'PAUSED') {
-      this.ui.updatePauseInventoryPanel();
-    }
-    this.ui.showToast(`[DEBUG] +20 HP em ${target.name} (${target.hp}/${target.maxHp} HP)`, 1600);
-  }
-
-  /**
-   * Atalho de Debug [N]: Força avanço imediato para o próximo estado de mapa
-   */
-  handleDebugNextStage() {
-    if (this.appState !== 'PLAYING') return;
-    this.advanceToNextStage('Atalho de Debug [N]');
-  }
-
-  /**
-   * Avança para o próximo estado na máquina de estados:
-   * Mapa 1 -> Safe Room (Van) -> Mapa 2 -> Safe Room (Van) -> Mapa 3
-   */
-  advanceToNextStage(reason = '') {
-    const totalStages = window.GameConfig.STAGE_FLOW.length;
-    const nextIndex = (this.stageFlowIndex + 1) % totalStages;
-    const wrappedCycle = this.stageFlowIndex === totalStages - 1;
-
-    this.loadStageByFlowIndex(nextIndex);
-    const meta = this.getCurrentStageMeta();
-
-    if (wrappedCycle) {
-      this.ui.showToast(`Ciclo concluído! Retornando ao ${meta.label} (Lixos coletados permanecem salvos)`);
-    } else {
-      this.ui.showToast(`Avançou (${reason}) → ${meta.label}`);
-    }
-  }
-
-  /**
-   * Seleção direta de Slot da Hotbar (1 a 5 ou clique)
-   */
-  selectHotbarSlot(slotIndex, targetPlayerId = null) {
-    if (this.appState !== 'PLAYING') return;
-
-    let player;
-    if (this.gameMode === 'multiplayer') {
-      player = targetPlayerId === 2 ? this.p2 : this.p1;
-    } else {
-      player = this.getHudFocusPlayer();
+      // Nos Mapas Normais: interação na Zona de Extração conclui a fase e entra na Van
+      if (this.isAnyPlayerInTransitionZone()) {
+        this.completeCurrentMapAndEnterVan();
+        return;
+      }
     }
 
-    if (slotIndex < 0 || slotIndex >= player.inventory.length) return;
-
-    player.selectedSlot = slotIndex;
-    this.ui.renderHotbar();
-  }
-
-  /**
-   * Gira o slot de inventário de um jogador específico via tecla remapeável de Inventário (Config.Controls.P1_Inventory / P2_Inventory)
-   */
-  cyclePlayerHotbarSlot(playerId, direction = 1) {
-    if (this.appState !== 'PLAYING') return;
-
-    const player =
-      this.gameMode === 'singleplayer'
-        ? this.getHudFocusPlayer()
-        : playerId === 2
-          ? this.p2
-          : this.p1;
-
-    const len = player.inventory.length;
-    player.selectedSlot = (player.selectedSlot + direction + len) % len;
-    this.ui.renderHotbar();
-  }
-
-  /**
-   * Alternância de Slot da Hotbar via Scroll do Mouse
-   */
-  cycleHotbarSlot(direction) {
-    if (this.appState !== 'PLAYING') return;
-
-    const player = this.gameMode === 'multiplayer'
-      ? this.p2
-      : this.getHudFocusPlayer();
-
-    const len = player.inventory.length;
-    player.selectedSlot = (player.selectedSlot + direction + len) % len;
-    this.ui.renderHotbar();
+    const zoneName = stageMeta.isSafeRoom ? 'uma estação (Loja, Mural) ou a Porta da Van' : 'a Zona de Extração';
+    this.ui.showToast(`Aproxime-se de ${zoneName} para interagir!`, 1600);
   }
 
   isAnyPlayerInTransitionZone() {
-    const zone = this.currentMap.transitionZone;
+    const zone = this.currentMap ? this.currentMap.transitionZone : null;
     if (!zone) return false;
     return this.p1.isTouchingZone(zone) || this.p2.isTouchingZone(zone);
   }
 
   getTouchedSafeRoomStation() {
-    const stations = this.currentMap.interactiveStations;
+    const stations = this.currentMap ? this.currentMap.interactiveStations : null;
     if (!stations || !stations.length) return null;
 
     for (const st of stations) {
@@ -584,73 +821,181 @@ class Game {
     };
   }
 
-  /**
-   * Loop Principal do Jogo (requestAnimationFrame)
-   */
   _gameLoop(timestamp) {
-    const dt = Math.min(0.05, (timestamp - this.lastTimestamp) / 1000);
-    this.lastTimestamp = timestamp;
-    this.elapsedTime += dt;
+    try {
+      const dt = Math.min(0.05, (timestamp - this.lastTimestamp) / 1000);
+      this.lastTimestamp = timestamp;
+      this.elapsedTime += dt;
 
-    // 1. Leitura nativa de Joysticks via navigator.getGamepads() dentro do requestAnimationFrame (Sprint 3)
-    this.input.pollGamepads(this.gameMode);
+      // Leitura de Joysticks
+      if (this.input && typeof this.input.pollGamepads === 'function') {
+        this.input.pollGamepads(this.gameMode);
+      }
 
-    if (this.appState === 'PLAYING') {
-      this._updateGameplay(dt);
-    } else if (this.ui.isSettingsModalOpen() && this.ui.activeSettingsTab === 'controls') {
-      this.ui.updateGamepadStatusBanner();
+      if (this.appState === 'PLAYING') {
+        this._updateGameplay(dt);
+      } else if (this.ui && typeof this.ui.isSettingsModalOpen === 'function' && this.ui.isSettingsModalOpen() && this.ui.activeSettingsTab === 'controls') {
+        this.ui.updateGamepadStatusBanner();
+      }
+
+      this._renderScene();
+    } catch (err) {
+      console.error('⚠️ [ERRO NO LOOP DO JOGO]', err);
+    } finally {
+      requestAnimationFrame((ts) => this._gameLoop(ts));
     }
-
-    this._renderScene();
-
-    requestAnimationFrame((ts) => this._gameLoop(ts));
   }
 
   _updateGameplay(dt) {
-    // 1. Movimentação dos Personagens consumindo o Dicionário Global (Config.Controls) + Gamepad API
+    const isWaterSurging = Boolean(this.waterSystem && this.waterSystem.isSurging);
+
     if (this.gameMode === 'singleplayer') {
-      const moveVec = this.input.getP1Vector();
+      const moveVec = isWaterSurging ? { dx: 0, dy: 0 } : this.input.getP1Vector();
       const activePlayer = this.players[this.activePlayerIndex];
-      const inactivePlayer = this.players[this.activePlayerIndex === 0 ? 1 : 0];
+      const companion = this.players[this.activePlayerIndex === 0 ? 1 : 0];
+
+      activePlayer.isCompanion = false;
+      companion.isCompanion = true;
 
       activePlayer.update(dt, moveVec, this.currentMap, null);
-      inactivePlayer.update(dt, { dx: 0, dy: 0 }, this.currentMap, null);
+      this._updateCompanionAI(dt, companion, activePlayer, this.currentMap);
 
       const camTarget = this._getCameraTargetPoint();
       this.camera.update(dt, camTarget.x, camTarget.y, this.currentMap, null);
     } else {
-      const p1Vec = this.input.getP1Vector();
-      const p2Vec = this.input.getP2Vector();
-
+      this.p1.isCompanion = false;
+      this.p2.isCompanion = false;
+      const p1Vec = isWaterSurging ? { dx: 0, dy: 0 } : this.input.getP1Vector();
+      const p2Vec = isWaterSurging ? { dx: 0, dy: 0 } : this.input.getP2Vector();
       this._updateMultiplayerWithViewportClamp(dt, p1Vec, p2Vec);
     }
 
-    // 2. Coleta e Persistência Global de Lixo / Sucata nas Coordenadas Fixas (Sprint 3)
-    this._checkTrashCollection();
+    // Verificação de segurança: Não permitir que o jogador toque na água enquanto ela estiver lá
+    if (this.currentMap && this.currentMap.id === 'map1' && !this.currentMap.isWaterDrained && Array.isArray(this.currentMap.waterObstacles)) {
+      for (const player of this.players) {
+        const pBox = player.getBoundingBox();
+        for (const wObs of this.currentMap.waterObstacles) {
+          if (player._aabbOverlap(pBox, wObs)) {
+            const pCenterX = player.x;
+            const pCenterY = player.y;
+            const wCenterX = wObs.x + wObs.w / 2;
+            const wCenterY = wObs.y + wObs.h / 2;
+            const dx = pCenterX - wCenterX;
+            const dy = pCenterY - wCenterY;
+            const dist = Math.hypot(dx, dy) || 1;
+            player.x += (dx / dist) * 14;
+            player.y += (dy / dist) * 14;
 
-    // 3. Cronômetro da Fase (Apenas nos 3 Mapas Grandes; pausado na Safe Room Van)
+            if (this.waterSystem && this.waterSystem.audio) {
+              this.waterSystem.audio.playBubbleSound();
+            }
+            if (!player.lastWaterWarningTime || (this.elapsedTime - player.lastWaterWarningTime > 2.0)) {
+              player.lastWaterWarningTime = this.elapsedTime;
+              this.floatingTexts.push(
+                new window.FloatingText(
+                  player.x,
+                  player.y - 25,
+                  '⚠️ Água profunda! Não toque na água!',
+                  '#38bdf8',
+                  1.2
+                )
+              );
+            }
+            break;
+          }
+        }
+      }
+    }
+
+    // 2. Coleta de Lixo
+    if (!isWaterSurging) {
+      this._checkTrashCollection();
+    }
+
+    // 3. Cronômetro da Fase (Apenas nos Mapas Grandes) e Mecânica de Água Subindo (Exclusiva Fase 1)
     const stageMeta = this.getCurrentStageMeta();
+    const hasWater = (stageMeta.stateId === 'MAP_1' && !stageMeta.isSafeRoom);
+
+    if (this.waterSystem) {
+      this.waterSystem.update(
+        dt,
+        this.stageTimeRemaining,
+        window.GameConfig.STAGE_DURATION_SECONDS,
+        hasWater
+      );
+    }
+
     if (!stageMeta.isSafeRoom) {
-      this.stageTimeRemaining = Math.max(0, this.stageTimeRemaining - dt);
+      this.stageElapsedTime += dt;
+
+      // Se a água estiver no processo de subida total ao zerar, timer congela em 0
+      if (this.waterSystem && this.waterSystem.isSurging) {
+        this.stageTimeRemaining = 0;
+        if (hasWater) {
+          const drownProgress = Math.min(1.0, this.waterSystem.surgeTimer / this.waterSystem.surgeDuration);
+          this.p1.isDrowning = true;
+          this.p2.isDrowning = true;
+          this.p1.drowningProgress = drownProgress;
+          this.p2.drowningProgress = drownProgress;
+        }
+      } else {
+        this.stageTimeRemaining = Math.max(0, this.stageTimeRemaining - dt);
+      }
+
       if (this.stageTimeRemaining <= 0) {
-        this.restartCurrentStage();
-        this.ui.showToast('Tempo esgotado! Fase reiniciada (Lixos coletados permanecem salvos).');
-        return;
+        if (hasWater && this.waterSystem && !this.waterSystem.isSurging && !this.isGameOver) {
+          this.p1.isDrowning = true;
+          this.p2.isDrowning = true;
+          this.p1.drowningProgress = 0;
+          this.p2.drowningProgress = 0;
+          this.waterSystem.triggerSurge(() => {
+            this.handleGameOver('WATER_FLOOD');
+          });
+        } else if (!hasWater && !this.isGameOver) {
+          this.handleGameOver('TIME_UP');
+          return;
+        }
+      }
+
+      // Auto-extração ao permanecer na zona de extração nos Mapas
+      const isBossAliveInMap3 = (stageMeta.stateId === 'MAP_3' && this.enemyManager && this.enemyManager.boss && !this.enemyManager.boss.isDefeated);
+      if (!isWaterSurging && this.isAnyPlayerInTransitionZone()) {
+        if (isBossAliveInMap3) {
+          this.zoneHoldTimer = 0;
+        } else {
+          this.zoneHoldTimer += dt;
+          if (this.zoneHoldTimer >= this.zoneHoldDuration) {
+            this.completeCurrentMapAndEnterVan();
+            return;
+          }
+        }
+      } else {
+        this.zoneHoldTimer = Math.max(0, this.zoneHoldTimer - dt * 2);
+      }
+
+      // 3.5. Atualização de Inimigos e Projéteis (a partir da Fase 2)
+      if (this.enemyManager) {
+        this.enemyManager.update(dt, this.players, this.currentMap);
+
+        // Verificação de derrota dos operadores por perda de vida (HP)
+        if (!this.isGameOver) {
+          if (this.gameMode === 'singleplayer') {
+            const activePlayer = this.players[this.activePlayerIndex];
+            if (activePlayer.hp <= 0) {
+              this.handleGameOver('DEFEATED');
+              return;
+            }
+          } else {
+            if (this.p1.hp <= 0 && this.p2.hp <= 0) {
+              this.handleGameOver('DEFEATED');
+              return;
+            }
+          }
+        }
       }
     }
 
-    // 4. Verificação da Zona de Extração / Porta da Van (Auto-embarque ao permanecer na zona)
-    if (this.isAnyPlayerInTransitionZone()) {
-      this.zoneHoldTimer += dt;
-      if (this.zoneHoldTimer >= this.zoneHoldDuration) {
-        this.advanceToNextStage('Zona de Transição concluída');
-        return;
-      }
-    } else {
-      this.zoneHoldTimer = Math.max(0, this.zoneHoldTimer - dt * 2);
-    }
-
-    // 5. Atualiza Textos Flutuantes de Debug
+    // 4. Atualiza Textos Flutuantes
     for (let i = this.floatingTexts.length - 1; i >= 0; i--) {
       this.floatingTexts[i].update(dt);
       if (this.floatingTexts[i].life <= 0) {
@@ -658,8 +1003,141 @@ class Game {
       }
     }
 
-    // 6. Atualiza a HUD
+    // 5. Atualiza a HUD (Exclusivamente Vida e Tempo)
     this.ui.updateHUD();
+  }
+
+  /**
+   * Atualização de IA da Personagem Secundária no Modo Singleplayer:
+   * Segue o personagem principal mantendo distância natural, sem sobreposição,
+   * contorna obstáculos e possui recuperação segura se ficar presa ou distante.
+   */
+  _updateCompanionAI(dt, companion, activePlayer, map) {
+    if (!companion || !activePlayer || !map) return;
+
+    const dx = activePlayer.x - companion.x;
+    const dy = activePlayer.y - companion.y;
+    const dist = Math.hypot(dx, dy);
+
+    if (companion._isFollowing === undefined) companion._isFollowing = false;
+    if (companion._stuckTimer === undefined) companion._stuckTimer = 0;
+    if (companion._lastPos === undefined) companion._lastPos = { x: companion.x, y: companion.y };
+    if (companion._avoidAngle === undefined) companion._avoidAngle = 0;
+
+    const STOP_DIST = 52;
+    const START_DIST = 75;
+    const TELEPORT_DIST = 480;
+
+    // Recuperação segura se a companheira ficar presa ou muito distante
+    if (dist > TELEPORT_DIST || (companion._stuckTimer > 2.2 && dist > 110)) {
+      this._teleportCompanionNearPlayer(companion, activePlayer, map);
+      companion._stuckTimer = 0;
+      companion._avoidAngle = 0;
+      companion._isFollowing = false;
+      companion._lastPos = { x: companion.x, y: companion.y };
+      return;
+    }
+
+    // Histerese de parada para evitar trepidações
+    if (companion._isFollowing) {
+      if (dist <= STOP_DIST) {
+        companion._isFollowing = false;
+      }
+    } else {
+      if (dist >= START_DIST) {
+        companion._isFollowing = true;
+      }
+    }
+
+    if (!companion._isFollowing) {
+      companion.update(dt, { dx: 0, dy: 0 }, map, null);
+      if (dist > 15) {
+        companion.facingX = dx / dist;
+        companion.facingY = dy / dist;
+        if (Math.abs(companion.facingX) > 0.35 && companion.facingY > 0.35) {
+          companion.facingDirection = companion.facingX > 0 ? 'down-right' : 'down-left';
+        } else if (Math.abs(companion.facingY) >= Math.abs(companion.facingX)) {
+          companion.facingDirection = companion.facingY > 0 ? 'down' : 'up';
+        } else {
+          companion.facingDirection = companion.facingX > 0 ? 'right' : 'left';
+        }
+      }
+      companion._stuckTimer = 0;
+      companion._avoidAngle = 0;
+      companion._lastPos = { x: companion.x, y: companion.y };
+      return;
+    }
+
+    let currentSpeed = activePlayer.speed;
+    if (dist > 280) {
+      currentSpeed = activePlayer.speed * 1.35;
+    } else if (dist > 150) {
+      currentSpeed = activePlayer.speed * 1.15;
+    }
+    companion.speed = currentSpeed;
+
+    let moveAngle = Math.atan2(dy, dx);
+
+    const moved = Math.hypot(companion.x - companion._lastPos.x, companion.y - companion._lastPos.y);
+    const expectedMove = (companion.speed * dt) * 0.25;
+
+    if (moved < expectedMove && dist > STOP_DIST) {
+      companion._stuckTimer += dt;
+    } else {
+      companion._stuckTimer = Math.max(0, companion._stuckTimer - dt * 1.5);
+    }
+    companion._lastPos = { x: companion.x, y: companion.y };
+
+    if (companion._stuckTimer > 0.2) {
+      if (companion._avoidAngle === 0) {
+        companion._avoidAngle = (Math.sin(companion.x * 0.1 + companion.y * 0.1) >= 0 ? 1 : -1) * (Math.PI * 0.42);
+      }
+      moveAngle += companion._avoidAngle;
+    } else {
+      companion._avoidAngle = 0;
+    }
+
+    const moveVec = {
+      dx: Math.cos(moveAngle),
+      dy: Math.sin(moveAngle)
+    };
+
+    companion.update(dt, moveVec, map, null);
+  }
+
+  _teleportCompanionNearPlayer(companion, activePlayer, map) {
+    const half = companion.size / 2;
+    const offsets = [
+      { x: -activePlayer.facingX * 55, y: -activePlayer.facingY * 55 },
+      { x: -activePlayer.facingY * 55, y: activePlayer.facingX * 55 },
+      { x: activePlayer.facingY * 55, y: -activePlayer.facingX * 55 },
+      { x: 0, y: 0 }
+    ];
+
+    let chosenPos = { x: activePlayer.x, y: activePlayer.y };
+
+    for (const off of offsets) {
+      const px = Math.max(half, Math.min(map.width - half, activePlayer.x + off.x));
+      const py = Math.max(half, Math.min(map.height - half, activePlayer.y + off.y));
+      const testBox = companion.getBoundingBox(px, py);
+
+      let collided = false;
+      for (const obs of map.obstacles) {
+        if (companion._aabbOverlap(testBox, obs)) {
+          collided = true;
+          break;
+        }
+      }
+
+      if (!collided) {
+        chosenPos = { x: px, y: py };
+        break;
+      }
+    }
+
+    companion.setPosition(chosenPos.x, chosenPos.y);
+    companion.vx = 0;
+    companion.vy = 0;
   }
 
   _updateMultiplayerWithViewportClamp(dt, p1Vec, p2Vec) {
@@ -725,10 +1203,6 @@ class Game {
     }
   }
 
-  /**
-   * Verifica se algum jogador encostou em um objeto "Lixo",
-   * registrando seu ID único no Estado Global (window.collectedTrashIds) para que nunca reapareça.
-   */
   _checkTrashCollection() {
     if (!this.trashItems || this.trashItems.length === 0) return;
 
@@ -740,18 +1214,31 @@ class Game {
       const collectedByP2 = !collectedByP1 && this.p2.isTouchingZone(trashBox);
 
       if (collectedByP1 || collectedByP2) {
+        const collector = collectedByP1 ? this.p1 : this.p2;
+        if (collector && typeof collector.triggerPickup === 'function') {
+          collector.triggerPickup();
+        }
+
         this.trashItems.splice(i, 1);
+        this.stageTrashCollectedInRun++;
         window.GlobalState.markTrashCollected(trash.id);
 
-        console.log(
-          `♻️ [PERSISTÊNCIA DE LIXO] Item "${trash.id}" (${trash.typeInfo.name}) coletado em (${trash.x}, ${trash.y}). Total Global Salvo: ${window.scrapCollected}`
-        );
+        // Verificação de Drenagem da Água da Fase 1 (ao atingir 50% dos lixos = 8 lixos)
+        if (this.currentMap && this.currentMap.id === 'map1' && !this.currentMap.isWaterDrained) {
+          const fixedSpawns = window.GlobalState.getFixedTrashSpawns(this.currentMap);
+          const totalSpawns = fixedSpawns.length || 16;
+          const collectedTotal = fixedSpawns.filter(t => window.GlobalState.isTrashCollected(t.id)).length;
+          const halfTrash = Math.ceil(totalSpawns / 2);
+          if (collectedTotal >= halfTrash) {
+            this._drainMap1Water(true);
+          }
+        }
 
         this.floatingTexts.push(
           new window.FloatingText(
             trash.x,
             trash.y - 18,
-            `+1 ${trash.typeInfo.name} [Salvo: ${window.scrapCollected}]`,
+            `+1 ${trash.typeInfo.name}`,
             '#bef264',
             1.15
           )
@@ -768,41 +1255,47 @@ class Game {
     ctx.fillStyle = '#090d14';
     ctx.fillRect(0, 0, viewW, viewH);
 
+    if (!map) return;
+
     ctx.save();
     const { offsetX, offsetY } = this.camera.getRenderOffset();
     ctx.translate(offsetX, offsetY);
 
-    // 1. Piso Base do Mapa
-    ctx.fillStyle = map.palette.bg;
-    ctx.fillRect(0, 0, map.width, map.height);
-
-    // 2. Grid de Referência no Chão
-    this._drawDebugGrid(ctx, map);
-
-    // 3. Zonas de Referência / Trilhas no Chão
-    this._drawFloorZones(ctx, map);
-
-    // 4. Áreas Demarcadas das Estações da Safe Room (Lojinha e Mesa de Craft)
-    this._drawSafeRoomStationsZones(ctx, map);
-
-    // 5. Marcadores de Spawn P1 e P2
-    this._drawSpawnMarkers(ctx, map);
-
-    // 6. Zona de Extração / Porta da Van
-    this._drawTransitionZone(ctx, map);
-
-    // 7. Entidades Coletáveis de "Lixo / Sucata" nas Posições Fixas
-    this._drawTrashItems(ctx);
-
-    // 8. Caixas de Colisão Visíveis para Paredes, Estruturas e Estações da Van
-    this._drawObstacles(ctx, map);
-
-    // 9. Linha de Ponto Médio no Multiplayer Local
-    if (this.gameMode === 'multiplayer') {
-      this._drawMultiplayerMidpointDebug(ctx);
+    // 1. Piso Base do Mapa (Imagem do cenário ou cor padrão de fundo)
+    let mapImg = null;
+    if (map.id === 'map1' && map.isWaterDrained && this.mapImages.has('map1_dry')) {
+      mapImg = this.mapImages.get('map1_dry');
+    } else if (map.imageAsset && this.mapImages.has(map.id)) {
+      mapImg = this.mapImages.get(map.id);
     }
 
-    // 10. Personagens 1 e 2 (Ordenados por Y + Cone de Colisão de Ataque)
+    if (mapImg && mapImg.complete && mapImg.naturalWidth > 0) {
+      ctx.drawImage(mapImg, 0, 0, map.width, map.height);
+    } else {
+      ctx.fillStyle = (map.palette && map.palette.bg) || '#14171f';
+      ctx.fillRect(0, 0, map.width, map.height);
+    }
+
+    // 2. Trilhas / Zonas no Chão (apenas em mapas conceituais sem imagem)
+    if (!map.imageAsset) {
+      this._drawFloorZones(ctx, map);
+    }
+
+    // 3. Áreas Demarcadas das Estações da Van (Loja de Armas, Mural de Avisos)
+    this._drawSafeRoomStationsZones(ctx, map);
+
+    // 4. Zona de Extração / Porta da Van
+    this._drawTransitionZone(ctx, map);
+
+    // 5. Entidades de Lixo / Sucata
+    this._drawTrashItems(ctx);
+
+    // 6. Obstáculos (apenas em mapas conceituais sem imagem)
+    if (!map.imageAsset) {
+      this._drawObstacles(ctx, map);
+    }
+
+    // 7. Personagens P1 e P2
     const sortedPlayers = [...this.players].sort((a, b) => a.y - b.y);
     for (const player of sortedPlayers) {
       const isControlled =
@@ -811,80 +1304,104 @@ class Game {
       player.draw(ctx, isControlled, this.gameMode, this.elapsedTime);
     }
 
-    // 11. Balão/Texto Flutuante de Interação nas Estações da Safe Room
+    // 8. Inimigos e Projéteis (3 Tipos de Ratos a partir da Fase 2)
+    if (this.enemyManager) {
+      this.enemyManager.render(ctx, this.elapsedTime);
+    }
+
+    // 9. Camada Superior / Parallax de Estruturas Elevadas (Passarelas sobre o Personagem)
+    this._drawElevatedParallaxStructures(ctx, map);
+
+    // 10. Balão Flutuante de Interação nas Estações da Van
     this._drawSafeRoomStationFloatingNotice(ctx, map);
 
-    // 12. Textos Flutuantes de Debug
+    // 11. Textos Flutuantes
     for (const ft of this.floatingTexts) {
       ft.draw(ctx);
     }
 
     ctx.restore();
 
-    // 13. Indicadores de Tela Fixa no Canvas (Bússola de Extração + Minimapa Debug)
+    // 12. Filtro e Efeito de Água Subindo (Sobreposto à cena do jogo na tela)
+    if (this.waterSystem) {
+      this.waterSystem.render(ctx, viewW, viewH);
+    }
+
+    // 13. Bússola Orientadora para a Saída
     if (this.appState === 'PLAYING' || this.appState === 'PAUSED') {
       this._drawExtractionCompass(ctx);
-      this._drawDebugMinimap(ctx);
+    }
+
+    // 14. Confetes e Efeito Festivo de Vitória
+    if (this.isVictorySequence) {
+      this._renderVictoryConfetti(ctx);
     }
   }
 
-  _drawDebugGrid(ctx, map) {
-    const tile = window.GameConfig.TILE_SIZE;
-    const major = window.GameConfig.MAJOR_GRID_STEP;
-
-    const startX = Math.max(0, Math.floor(this.camera.x / tile) * tile);
-    const endX = Math.min(map.width, Math.ceil((this.camera.x + this.canvas.width) / tile) * tile);
-    const startY = Math.max(0, Math.floor(this.camera.y / tile) * tile);
-    const endY = Math.min(map.height, Math.ceil((this.camera.y + this.canvas.height) / tile) * tile);
-
-    ctx.beginPath();
-    ctx.strokeStyle = map.palette.gridMinor;
-    ctx.lineWidth = 1;
-    for (let x = startX; x <= endX; x += tile) {
-      ctx.moveTo(x, startY);
-      ctx.lineTo(x, endY);
-    }
-    for (let y = startY; y <= endY; y += tile) {
-      ctx.moveTo(startX, y);
-      ctx.lineTo(endX, y);
-    }
-    ctx.stroke();
-
-    const majorStartX = Math.max(0, Math.floor(this.camera.x / major) * major);
-    const majorStartY = Math.max(0, Math.floor(this.camera.y / major) * major);
-
-    ctx.beginPath();
-    ctx.strokeStyle = map.palette.gridMajor;
-    ctx.lineWidth = 1.5;
-    for (let x = majorStartX; x <= endX; x += major) {
-      ctx.moveTo(x, startY);
-      ctx.lineTo(x, endY);
-    }
-    for (let y = majorStartY; y <= endY; y += major) {
-      ctx.moveTo(startX, y);
-      ctx.lineTo(endX, y);
-    }
-    ctx.stroke();
-
-    ctx.fillStyle = map.palette.coordText;
-    ctx.font = '10px Consolas, monospace';
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'top';
-    for (let x = majorStartX; x < endX; x += major) {
-      for (let y = majorStartY; y < endY; y += major) {
-        if (x > 0 && y > 0) {
-          ctx.fillText(`${x},${y}`, x + 4, y + 4);
+  _preloadMapImages() {
+    if (typeof Image === 'undefined') return;
+    if (window.GameMaps) {
+      for (const mapKey of Object.keys(window.GameMaps)) {
+        const m = window.GameMaps[mapKey];
+        if (m && m.imageAsset) {
+          const img = new Image();
+          img.src = m.imageAsset;
+          this.mapImages.set(m.id, img);
+        }
+        if (m && m.imageAssetDry) {
+          const imgDry = new Image();
+          imgDry.src = m.imageAssetDry;
+          this.mapImages.set(m.id + '_dry', imgDry);
         }
       }
     }
+  }
+
+  _drawElevatedParallaxStructures(ctx, map) {
+    if (!map.elevatedStructures || map.elevatedStructures.length === 0) return;
+    const mapImg = this.mapImages.get(map.id);
+    if (!mapImg || !mapImg.complete || mapImg.naturalWidth <= 0) return;
+
+    const camX = this.camera ? this.camera.x : 0;
+    const camY = this.camera ? this.camera.y : 0;
+    const viewCenterX = camX + this.canvas.width / 2;
+    const viewCenterY = camY + this.canvas.height / 2;
+
+    ctx.save();
+    for (const struct of map.elevatedStructures) {
+      const structCenterX = struct.x + struct.w / 2;
+      const structCenterY = struct.y + struct.h / 2;
+
+      const depth = struct.depth || 0.05;
+      const parallaxOffsetX = (structCenterX - viewCenterX) * depth;
+      const parallaxOffsetY = (structCenterY - viewCenterY) * depth;
+
+      // Sombra suave no chão projetada pela ponte elevada
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.42)';
+      ctx.fillRect(struct.x + 8, struct.y + 16, struct.w, struct.h);
+
+      // Desenha a estrutura elevada recortada da imagem do cenário
+      ctx.drawImage(
+        mapImg,
+        struct.srcX,
+        struct.srcY,
+        struct.srcW,
+        struct.srcH,
+        struct.x + parallaxOffsetX,
+        struct.y + parallaxOffsetY,
+        struct.w,
+        struct.h
+      );
+    }
+    ctx.restore();
   }
 
   _drawFloorZones(ctx, map) {
     if (!map.floorZones) return;
     ctx.save();
     for (const z of map.floorZones) {
-      ctx.fillStyle = map.palette.pathFill;
-      ctx.strokeStyle = map.palette.pathStroke;
+      ctx.fillStyle = (map.palette && map.palette.pathFill) || 'rgba(56, 189, 248, 0.10)';
+      ctx.strokeStyle = (map.palette && map.palette.pathStroke) || 'rgba(56, 189, 248, 0.32)';
       ctx.lineWidth = 1.5;
       ctx.setLineDash([8, 6]);
       ctx.fillRect(z.x, z.y, z.w, z.h);
@@ -892,7 +1409,7 @@ class Game {
       ctx.setLineDash([]);
 
       if (z.label) {
-        ctx.fillStyle = map.palette.coordText;
+        ctx.fillStyle = 'rgba(241, 245, 249, 0.7)';
         ctx.font = 'bold 11px Consolas, monospace';
         ctx.textAlign = 'center';
         ctx.fillText(z.label, z.x + z.w / 2, z.y + z.h / 2 + 4);
@@ -917,7 +1434,7 @@ class Game {
       ctx.strokeRect(st.x, st.y, st.w, st.h);
       ctx.setLineDash([]);
 
-      const labelY = st.id === 'shop' ? st.y + st.h - 14 : st.y + 20;
+      const labelY = st.y + st.h - 14;
       ctx.fillStyle = st.strokeColor;
       ctx.font = 'bold 11px Consolas, monospace';
       ctx.textAlign = 'center';
@@ -942,7 +1459,7 @@ class Game {
       const boxW = ctx.measureText(text).width + padX * 2;
       const boxH = 30;
       const centerX = st.x + st.w / 2;
-      const centerY = (st.id === 'shop' ? st.y + st.h + 26 : st.y - 26) + floatOffset;
+      const centerY = st.y + st.h + 24 + floatOffset;
 
       ctx.fillStyle = 'rgba(15, 23, 42, 0.94)';
       ctx.strokeStyle = st.strokeColor;
@@ -965,30 +1482,6 @@ class Game {
     for (const trash of this.trashItems) {
       trash.draw(ctx, this.elapsedTime);
     }
-  }
-
-  _drawSpawnMarkers(ctx, map) {
-    const spawns = [
-      { pos: map.spawnP1, label: 'SPAWN P1', color: '#38bdf8' },
-      { pos: map.spawnP2, label: 'SPAWN P2', color: '#fb923c' }
-    ];
-
-    ctx.save();
-    for (const sp of spawns) {
-      ctx.strokeStyle = sp.color;
-      ctx.lineWidth = 1.5;
-      ctx.setLineDash([4, 4]);
-      ctx.beginPath();
-      ctx.arc(sp.pos.x, sp.pos.y, 26, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.setLineDash([]);
-
-      ctx.fillStyle = sp.color;
-      ctx.font = 'bold 10px Consolas, monospace';
-      ctx.textAlign = 'center';
-      ctx.fillText(sp.label, sp.pos.x, sp.pos.y + 38);
-    }
-    ctx.restore();
   }
 
   _drawTransitionZone(ctx, map) {
@@ -1016,16 +1509,19 @@ class Game {
     const centerX = z.x + z.w / 2;
     const centerY = z.y + z.h / 2;
 
-    ctx.fillStyle = '#ffffff';
+    const isBossAliveInMap3 = (this.getCurrentStageMeta().stateId === 'MAP_3' && this.enemyManager && this.enemyManager.boss && !this.enemyManager.boss.isDefeated);
+
+    ctx.fillStyle = isBossAliveInMap3 ? '#ef4444' : '#ffffff';
     ctx.font = 'bold 13px Consolas, monospace';
     ctx.textAlign = 'center';
-    ctx.fillText(z.label, centerX, centerY - 12);
+    ctx.fillText(isBossAliveInMap3 ? '🔒 EXTRAÇÃO BLOQUEADA' : z.label, centerX, centerY - 12);
 
-    ctx.fillStyle = '#e2e8f0';
+    ctx.fillStyle = isBossAliveInMap3 ? '#fca5a5' : '#e2e8f0';
     ctx.font = '11px Consolas, monospace';
-    ctx.fillText(z.subLabel, centerX, centerY + 8);
+    ctx.fillText(isBossAliveInMap3 ? 'Derrote o Chefe para Liberar' : z.subLabel, centerX, centerY + 8);
 
-    if (this.zoneHoldTimer > 0) {
+    // Barra de progresso ao permanecer na zona (apenas nos mapas normais)
+    if (!this.getCurrentStageMeta().isSafeRoom && this.zoneHoldTimer > 0) {
       const pct = Math.min(1, this.zoneHoldTimer / this.zoneHoldDuration);
       const barW = z.w - 40;
       const barH = 10;
@@ -1047,73 +1543,31 @@ class Game {
   _drawObstacles(ctx, map) {
     ctx.save();
     for (const obs of map.obstacles) {
-      ctx.fillStyle = obs.customFill || map.palette.wallFill;
+      ctx.fillStyle = obs.customFill || ((map.palette && map.palette.wallFill) || 'rgba(30, 41, 59, 0.94)');
       ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
 
-      ctx.strokeStyle = obs.customStroke || map.palette.wallStroke;
+      ctx.strokeStyle = obs.customStroke || ((map.palette && map.palette.wallStroke) || '#38bdf8');
       ctx.lineWidth = obs.customStroke ? 2.5 : 2;
       ctx.strokeRect(obs.x, obs.y, obs.w, obs.h);
 
-      ctx.beginPath();
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
-      ctx.lineWidth = 1;
-      ctx.moveTo(obs.x, obs.y);
-      ctx.lineTo(obs.x + obs.w, obs.y + obs.h);
-      ctx.moveTo(obs.x + obs.w, obs.y);
-      ctx.lineTo(obs.x, obs.y + obs.h);
-      ctx.stroke();
-
-      if (obs.w >= 120 && obs.h >= 70) {
+      if (obs.w >= 120 && obs.h >= 65) {
         ctx.fillStyle = '#f8fafc';
         ctx.font = 'bold 11px Consolas, monospace';
         ctx.textAlign = 'center';
-        ctx.fillText(obs.label || 'COLISÃO', obs.x + obs.w / 2, obs.y + obs.h / 2 - 4);
+        ctx.fillText(obs.label || 'ESTRUTURA', obs.x + obs.w / 2, obs.y + obs.h / 2 - 4);
 
-        ctx.fillStyle = obs.customStroke || 'rgba(226, 232, 240, 0.65)';
-        ctx.font = '10px Consolas, monospace';
-        ctx.fillText(
-          obs.subTag || `[${obs.w}x${obs.h}px]`,
-          obs.x + obs.w / 2,
-          obs.y + obs.h / 2 + 12
-        );
+        if (obs.subTag) {
+          ctx.fillStyle = obs.customStroke || 'rgba(226, 232, 240, 0.65)';
+          ctx.font = '10px Consolas, monospace';
+          ctx.fillText(obs.subTag, obs.x + obs.w / 2, obs.y + obs.h / 2 + 12);
+        }
       }
     }
     ctx.restore();
   }
 
-  _drawMultiplayerMidpointDebug(ctx) {
-    const midX = (this.p1.x + this.p2.x) / 2;
-    const midY = (this.p1.y + this.p2.y) / 2;
-
-    ctx.save();
-    ctx.beginPath();
-    ctx.setLineDash([6, 6]);
-    ctx.strokeStyle = 'rgba(255, 202, 58, 0.45)';
-    ctx.lineWidth = 1.5;
-    ctx.moveTo(this.p1.x, this.p1.y);
-    ctx.lineTo(this.p2.x, this.p2.y);
-    ctx.stroke();
-    ctx.setLineDash([]);
-
-    ctx.strokeStyle = '#ffca3a';
-    ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    ctx.arc(midX, midY, 8, 0, Math.PI * 2);
-    ctx.moveTo(midX - 13, midY);
-    ctx.lineTo(midX + 13, midY);
-    ctx.moveTo(midX, midY - 13);
-    ctx.lineTo(midX, midY + 13);
-    ctx.stroke();
-
-    ctx.fillStyle = '#ffca3a';
-    ctx.font = '10px Consolas, monospace';
-    ctx.textAlign = 'center';
-    ctx.fillText('CAM MIDPOINT', midX, midY - 14);
-    ctx.restore();
-  }
-
   _drawExtractionCompass(ctx) {
-    const zone = this.currentMap.transitionZone;
+    const zone = this.currentMap ? this.currentMap.transitionZone : null;
     if (!zone) return;
 
     const focus = this._getCameraTargetPoint();
@@ -1160,75 +1614,6 @@ class Game {
     ctx.textBaseline = 'middle';
     const labelPrefix = this.getCurrentStageMeta().isSafeRoom ? 'PORTA DA VAN' : 'ZONA DE EXTRAÇÃO';
     ctx.fillText(`${labelPrefix}: ${Math.round(dist)}px`, 12, 0);
-
-    ctx.restore();
-  }
-
-  _drawDebugMinimap(ctx) {
-    const map = this.currentMap;
-    const maxMiniSize = 150;
-    const scale = Math.min(maxMiniSize / map.width, maxMiniSize / map.height);
-    const miniW = map.width * scale;
-    const miniH = map.height * scale;
-
-    const margin = 20;
-    const originX = this.canvas.width - miniW - margin;
-    const originY = this.canvas.height - miniH - margin;
-
-    ctx.save();
-    ctx.fillStyle = 'rgba(15, 23, 42, 0.88)';
-    ctx.strokeStyle = '#38bdf8';
-    ctx.lineWidth = 2;
-    ctx.fillRect(originX - 6, originY - 22, miniW + 12, miniH + 28);
-    ctx.strokeRect(originX - 6, originY - 22, miniW + 12, miniH + 28);
-
-    ctx.fillStyle = '#22d3ee';
-    ctx.font = 'bold 10px Consolas, monospace';
-    ctx.textAlign = 'left';
-    ctx.fillText(`MINIMAPA [${map.width}x${map.height}]`, originX - 2, originY - 9);
-
-    ctx.translate(originX, originY);
-
-    ctx.fillStyle = map.palette.bg;
-    ctx.fillRect(0, 0, miniW, miniH);
-
-    ctx.fillStyle = map.palette.wallStroke;
-    ctx.globalAlpha = 0.45;
-    for (const obs of map.obstacles) {
-      ctx.fillRect(obs.x * scale, obs.y * scale, obs.w * scale, obs.h * scale);
-    }
-    ctx.globalAlpha = 1;
-
-    if (this.trashItems && this.trashItems.length > 0) {
-      ctx.fillStyle = '#bef264';
-      for (const trash of this.trashItems) {
-        ctx.fillRect(trash.x * scale - 1.5, trash.y * scale - 1.5, 3, 3);
-      }
-    }
-
-    if (map.transitionZone) {
-      const tz = map.transitionZone;
-      ctx.fillStyle = '#4ade80';
-      ctx.fillRect(tz.x * scale, tz.y * scale, Math.max(6, tz.w * scale), Math.max(6, tz.h * scale));
-    }
-
-    ctx.fillStyle = '#38bdf8';
-    ctx.beginPath();
-    ctx.arc(this.p1.x * scale, this.p1.y * scale, 4, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.fillStyle = '#fb923c';
-    ctx.beginPath();
-    ctx.arc(this.p2.x * scale, this.p2.y * scale, 4, 0, Math.PI * 2);
-    ctx.fill();
-
-    const camX = Math.max(0, this.camera.x * scale);
-    const camY = Math.max(0, this.camera.y * scale);
-    const camW = Math.min(miniW - camX, this.canvas.width * scale);
-    const camH = Math.min(miniH - camY, this.canvas.height * scale);
-    ctx.strokeStyle = '#ffca3a';
-    ctx.lineWidth = 1.2;
-    ctx.strokeRect(camX, camY, camW, camH);
 
     ctx.restore();
   }

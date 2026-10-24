@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Protótipo 2D Top-Down [Sprint 3 • Controles, Gamepads &amp; Persistência]</title>
+  <title>ScienceEco Girls - Protótipo 2D Top-Down</title>
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
@@ -12,9 +12,9 @@
 
   <!-- ==================== HUD IN-GAME ==================== -->
   <div id="hud-layer" class="hud-layer hidden">
-    <!-- Canto Superior Esquerdo: Barra de Vida P1 (e P2 no Singleplayer) -->
+    <!-- Canto Superior Esquerdo: Exclusivamente Vida (Health) de P1 e P2 -->
     <div class="hud-top-left">
-      <!-- Card Personagem 1 -->
+      <!-- Card Personagem 1 (Vida) -->
       <div id="hud-p1-card" class="player-hp-card active-player-card">
         <div class="player-avatar p1-avatar">
           <span>P1</span>
@@ -27,11 +27,10 @@
           <div class="hp-bar-outer">
             <div id="hud-p1-hp-bar" class="hp-bar-inner" style="width: 100%;"></div>
           </div>
-          <div class="player-controls-hint" id="hud-p1-keys">Mover: W,A,S,D • Atacar: Botão Dir. Mouse / R</div>
         </div>
       </div>
 
-      <!-- Card Personagem 2 (No Multiplayer Local vai automaticamente para o Canto Superior Direito) -->
+      <!-- Card Personagem 2 (Vida) -->
       <div id="hud-p2-card" class="player-hp-card">
         <div class="player-avatar p2-avatar">
           <span>P2</span>
@@ -44,116 +43,34 @@
           <div class="hp-bar-outer">
             <div id="hud-p2-hp-bar" class="hp-bar-inner" style="width: 100%;"></div>
           </div>
-          <div class="player-controls-hint" id="hud-p2-keys">Alternar: [TAB]</div>
         </div>
       </div>
     </div>
 
-    <!-- Topo Central: Timer da Fase, Estado do Mapa e Contador Discreto de Sucata/Lixo Persistente -->
+    <!-- Topo Central: Exclusivamente Tempo (Time) e Barra do Chefe -->
     <div class="hud-top-center">
       <div class="phase-header-box">
-        <div class="stage-flow-Steps" id="hud-stage-stepper">
-          <span class="step-dot active" data-step="0">M1</span>
-          <span class="step-line"></span>
-          <span class="step-dot" data-step="1">VAN</span>
-          <span class="step-line"></span>
-          <span class="step-dot" data-step="2">M2</span>
-          <span class="step-line"></span>
-          <span class="step-dot" data-step="3">VAN</span>
-          <span class="step-line"></span>
-          <span class="step-dot" data-step="4">M3</span>
+        <div id="hud-timer-box" class="timer-display">
+          <span class="timer-label">TEMPO</span>
+          <span id="hud-timer-value" class="timer-digits">03:00</span>
         </div>
-        <div id="hud-map-title" class="map-title">MAPA 1: FLORESTA ARREDORES [DEBUG]</div>
 
-        <div class="hud-status-row">
-          <div id="hud-timer-box" class="timer-display">
-            <span class="timer-label">TEMPO</span>
-            <span id="hud-timer-value" class="timer-digits">03:00</span>
+        <!-- Barra de Vida do Chefe da Fase 3 (Exibida dinamicamente no combate) -->
+        <div id="hud-boss-container" class="boss-health-card hidden">
+          <div class="boss-header-row">
+            <div class="boss-title-wrap">
+              <span class="boss-crown-icon">👑</span>
+              <strong id="hud-boss-name" class="boss-name">REI RATO RADIOATIVO</strong>
+              <span id="hud-boss-stage-badge" class="boss-stage-badge stage-1">ESTÁGIO 1</span>
+            </div>
+            <span id="hud-boss-hp-text" class="boss-hp-numbers">600 / 600 HP</span>
           </div>
-          <div id="hud-saferoom-badge" class="saferoom-badge hidden">
-            ZONA SEGURA (VAN) — CRONÔMETRO PAUSADO
-          </div>
-
-          <!-- Contador Global Persistente de Sucata / Lixo Coletado (Sprint 3) -->
-          <div id="hud-scrap-box" class="scrap-counter-pill" title="Contador Global Persistente de Lixo Coletado">
-            <span class="scrap-icon">♻</span>
-            <span class="scrap-label">Lixo Coletado:</span>
-            <strong id="hud-scrap-count" class="scrap-value">0</strong>
-            <small id="hud-map-trash-remaining" class="scrap-remaining-tag">(Restam: 16)</small>
+          <div class="boss-hp-bar-outer">
+            <div id="hud-boss-hp-bar" class="boss-hp-bar-inner stage-1-bar" style="width: 100%;"></div>
+            <div class="boss-stage-marker" style="left: 33.33%;"></div>
+            <div class="boss-stage-marker" style="left: 66.66%;"></div>
           </div>
         </div>
-      </div>
-
-      <!-- Aviso Contextual de Interação (Zona de Extração / Porta da Van / Lojinha / Crafting) -->
-      <div id="hud-interaction-prompt" class="interaction-prompt hidden">
-        Pressione <kbd>E</kbd> ou <kbd>Espaço</kbd> para avançar!
-      </div>
-    </div>
-
-    <!-- Painel de Atalhos de Desenvolvedor (Debug Keys) & Telemetria -->
-    <div class="hud-top-right" id="hud-debug-container">
-      <div class="debug-panel">
-        <div class="debug-panel-title">
-          <span class="debug-dot"></span> SPRINT 3 • TELEMETRIA &amp; ATALHOS
-        </div>
-        <ul class="debug-shortcuts-list">
-          <li><kbd>Botão Dir.</kbd> / <kbd id="dbg-key-p1-atk">R</kbd> <span>Atacar P1 (Cone + Log)</span></li>
-          <li><kbd id="dbg-key-p2-atk">0</kbd> <span>Atacar P2 (Multiplayer)</span></li>
-          <li><kbd>Gamepad</kbd> <span>Stick/D-Pad, L1/R1, X/Y</span></li>
-          <li><kbd>H</kbd> / <kbd>J</kbd> <span>Debug: -10 HP / +20 HP</span></li>
-          <li><kbd>N</kbd> <span>Avançar estado de mapa (Skip)</span></li>
-          <li id="debug-tab-hint"><kbd id="dbg-key-switch">Tab</kbd> <span>Alternar P1 / P2 (Single)</span></li>
-          <li><kbd id="dbg-key-interact">E</kbd> / <kbd>Espaço</kbd> <span>Interagir (Saída / Estações)</span></li>
-          <li><kbd>Esc</kbd> / <kbd>P</kbd> <span>Pausa &amp; Remapear Controles</span></li>
-        </ul>
-        <div class="debug-telemetry" id="debug-telemetry">
-          <div>Modo: <strong id="dbg-mode">Singleplayer</strong></div>
-          <div>Estado: <strong id="dbg-state">MAP_1</strong></div>
-          <div>P1 Pos: <span id="dbg-p1-pos">0, 0</span></div>
-          <div>P2 Pos: <span id="dbg-p2-pos">0, 0</span></div>
-          <div>Lixo Global: <strong id="dbg-scrap-count">0</strong></div>
-          <div>Joystick: <strong id="dbg-gamepad-state">0 Conectado(s)</strong></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- HOTBAR SINGLEPLAYER (Base Central Horizontal) -->
-    <div id="hud-single-hotbar-wrapper" class="hud-bottom-center">
-      <div id="hud-selected-item-label" class="selected-item-tooltip">
-        Slot 1: Pistola [Debug]
-      </div>
-      <div id="hud-hotbar" class="stardew-hotbar">
-        <!-- 5 Slots gerados dinamicamente via ui.js -->
-      </div>
-      <div class="hotbar-hint" id="hud-single-hotbar-hint">
-        Teclas <kbd>1</kbd>-<kbd>5</kbd>, <kbd id="hud-hint-inv-key">Q</kbd>, <strong>Scroll</strong> ou <strong>L1/R1 (Gamepad)</strong> alternam o slot • <strong>Botão Direito Mouse</strong> ataca
-      </div>
-    </div>
-
-    <!-- HOTBARS MULTIPLAYER LOCAL (Alinhadas Verticalmente no Centro-Esquerdo e Centro-Direito) -->
-    <!-- Centro-Esquerdo (Encostado na Borda): Inventário do Jogador 1 -->
-    <div id="hud-multi-hotbar-p1" class="hud-side-hotbar hud-side-left hidden">
-      <div class="side-hotbar-header p1-header-tag">
-        <strong>P1</strong> <span id="hud-multi-p1-hotbar-tag">Teclas <kbd>1</kbd>-<kbd>5</kbd> / <kbd>Q</kbd></span>
-      </div>
-      <div id="hud-hotbar-p1-slots" class="stardew-hotbar vertical-hotbar">
-        <!-- 5 Slots verticais de P1 -->
-      </div>
-      <div id="hud-p1-selected-label" class="side-selected-label">
-        Pistola
-      </div>
-    </div>
-
-    <!-- Centro-Direito (Encostado na Borda): Inventário do Jogador 2 -->
-    <div id="hud-multi-hotbar-p2" class="hud-side-hotbar hud-side-right hidden">
-      <div class="side-hotbar-header p2-header-tag">
-        <strong>P2</strong> <span id="hud-multi-p2-hotbar-tag"><kbd>Scroll</kbd> / <kbd>O</kbd></span>
-      </div>
-      <div id="hud-hotbar-p2-slots" class="stardew-hotbar vertical-hotbar">
-        <!-- 5 Slots verticais de P2 -->
-      </div>
-      <div id="hud-p2-selected-label" class="side-selected-label">
-        SMG
       </div>
     </div>
   </div>
@@ -161,13 +78,13 @@
   <!-- ==================== MENU PRINCIPAL ==================== -->
   <div id="main-menu-overlay" class="menu-overlay">
     <div class="stardew-panel main-menu-card">
-      <div class="dev-ribbon">SPRINT 3 • CONTROLES MODULARES, GAMEPAD API &amp; PERSISTÊNCIA</div>
+      <div class="dev-ribbon">SCIENCEECO GIRLS • PROTÓTIPO TOP-DOWN</div>
       <h1 class="game-title">PROJETO EXPEDIÇÃO 2D</h1>
-      <p class="game-subtitle">Protótipo Top-Down • Lixo com Persistência Global, Ataque em Cone, Suporte a Joysticks &amp; Keybinding</p>
+      <p class="game-subtitle">O jogo inicia na Van de Operações e progride pelas áreas de coleta ecológica</p>
 
       <!-- Seletor de Modo de Jogo -->
       <div class="mode-selector-section">
-        <h2 class="section-label">Selecione o Modo de Operação</h2>
+        <h2 class="section-label">Selecione o Modo de Jogo</h2>
         <div class="mode-cards-grid">
           <button type="button" id="btn-mode-single" class="mode-option-card selected" data-mode="singleplayer">
             <div class="mode-card-header">
@@ -176,7 +93,7 @@
             </div>
             <p class="mode-card-desc">
               Controle 1 personagem por vez (<kbd>Tab</kbd> alterna P1/P2).
-              Ataque no <strong>Botão Direito do Mouse</strong> (ou tecla remapeada / Gamepad <kbd>X</kbd>/<kbd>Y</kbd>).
+              Ataque com o <strong>Botão Esquerdo do Mouse</strong> direcionado para o cursor.
             </p>
           </button>
 
@@ -186,33 +103,37 @@
               <strong>Modo Multiplayer Local</strong>
             </div>
             <p class="mode-card-desc">
-              <strong>P1</strong> ataca com <kbd>R</kbd> e <strong>P2</strong> ataca com <kbd>0</kbd>.
-              Suporte simultâneo a Teclado e Joysticks (Padrão, Bluetooth e Switch).
+              Controle simultâneo: <strong>P1</strong> ataca com <kbd>R</kbd> e <strong>P2</strong> ataca com <kbd>0</kbd> (dígito zero).
+              Suporte a Teclado e Gamepads.
             </p>
           </button>
         </div>
       </div>
 
-      <!-- Resumo da Máquina de Estados -->
+      <!-- Resumo da Nova Ordem de Fases -->
       <div class="flow-preview-box">
-        <span class="flow-label">Fluxo de Fases (Lixos c/ Posição Fixa &amp; Persistência):</span>
+        <span class="flow-label">Novo Fluxo de Fases:</span>
         <div class="flow-pills">
-          <span class="pill">Mapa 1 (16 Lixos Fixos)</span>
+          <span class="pill van">Van Inicial</span>
           <span class="arrow">→</span>
-          <span class="pill van">Safe Room (Van)</span>
+          <span class="pill">Mapa 1</span>
           <span class="arrow">→</span>
-          <span class="pill">Mapa 2 (16 Lixos Fixos)</span>
+          <span class="pill van">Van (Hub)</span>
           <span class="arrow">→</span>
-          <span class="pill van">Safe Room (Van)</span>
+          <span class="pill">Mapa 2</span>
           <span class="arrow">→</span>
-          <span class="pill">Mapa 3 (16 Lixos Fixos)</span>
+          <span class="pill van">Van (Hub)</span>
+          <span class="arrow">→</span>
+          <span class="pill">Mapa 3</span>
+          <span class="arrow">→</span>
+          <span class="pill van">Van Final</span>
         </div>
       </div>
 
       <!-- Botões de Ação do Menu Principal -->
       <div class="menu-actions">
         <button type="button" id="btn-start-game" class="stardew-btn btn-primary">
-          ▶ Iniciar / Retornar à Partida
+          ▶ Iniciar na Van de Operações
         </button>
         <button type="button" id="btn-open-settings" class="stardew-btn btn-secondary">
           ⚙ Configurações &amp; Controles
@@ -221,31 +142,30 @@
     </div>
   </div>
 
-  <!-- ==================== MENU DE PAUSA / INVENTÁRIO (ESC ou P) ==================== -->
+  <!-- ==================== MENU DE PAUSA (ESC ou P) ==================== -->
   <div id="pause-menu-overlay" class="menu-overlay hidden">
     <div class="stardew-panel pause-inventory-card">
       <div class="pause-header">
         <div>
           <span class="pause-badge">JOGO PAUSADO</span>
-          <h2 class="pause-title">Inventário &amp; Status da Equipe</h2>
+          <h2 class="pause-title">Status da Equipe</h2>
         </div>
         <div class="pause-stage-info">
-          <div id="pause-map-name">Mapa 1</div>
-          <div id="pause-timer-status">Tempo Restante: 03:00</div>
-          <div id="pause-scrap-status" class="pause-scrap-line">♻ Lixo Coletado (Global): 0</div>
+          <div id="pause-map-name">Van de Operações</div>
+          <div id="pause-timer-status">Cronômetro Pausado</div>
         </div>
       </div>
 
-      <!-- Painel Duplo de Status de Vida (HP) e Grade de Itens dos 2 Personagens -->
+      <!-- Painel Duplo de HP dos Jogadores -->
       <div class="pause-characters-grid">
-        <!-- Coluna Personagem 1 -->
+        <!-- Coluna P1 -->
         <div class="char-inventory-box" id="pause-p1-box">
           <div class="char-box-header">
             <div class="player-avatar p1-avatar">P1</div>
             <div class="char-meta">
-              <h3>Jogador 1 <span id="pause-p1-role" class="role-tag">Batedor • Slots [1-5]</span></h3>
+              <h3>Jogador 1</h3>
               <div class="pause-hp-row">
-                <span>Status de Vida (HP):</span>
+                <span>Status de Vida:</span>
                 <strong id="pause-p1-hp-label">100 / 100 HP</strong>
               </div>
               <div class="hp-bar-outer pause-hp-bar">
@@ -253,30 +173,22 @@
               </div>
             </div>
           </div>
-          <div class="inventory-grid-title">Inventário Carregado (5 Slots):</div>
-          <div id="pause-p1-items-grid" class="inventory-slots-grid">
-            <!-- Preenchido via ui.js -->
-          </div>
         </div>
 
-        <!-- Coluna Personagem 2 -->
+        <!-- Coluna P2 -->
         <div class="char-inventory-box" id="pause-p2-box">
           <div class="char-box-header">
             <div class="player-avatar p2-avatar">P2</div>
             <div class="char-meta">
-              <h3>Jogador 2 <span id="pause-p2-role" class="role-tag">Suporte • Slots [Scroll]</span></h3>
+              <h3>Jogador 2</h3>
               <div class="pause-hp-row">
-                <span>Status de Vida (HP):</span>
+                <span>Status de Vida:</span>
                 <strong id="pause-p2-hp-label">100 / 100 HP</strong>
               </div>
               <div class="hp-bar-outer pause-hp-bar">
                 <div id="pause-p2-hp-fill" class="hp-bar-inner" style="width: 100%;"></div>
               </div>
             </div>
-          </div>
-          <div class="inventory-grid-title">Inventário Carregado (5 Slots):</div>
-          <div id="pause-p2-items-grid" class="inventory-slots-grid">
-            <!-- Preenchido via ui.js -->
           </div>
         </div>
       </div>
@@ -299,28 +211,45 @@
     </div>
   </div>
 
-  <!-- ==================== MODAL DE CONFIGURAÇÕES COM ABA DE CONTROLES (SPRINT 3) ==================== -->
+  <!-- ==================== MODAL DE CONFIGURAÇÕES COM MODO DALTÔNICO ==================== -->
   <div id="settings-modal-overlay" class="menu-overlay settings-overlay hidden">
     <div class="stardew-panel modal-card settings-modal-wide">
       <h2 class="modal-title">⚙ Configurações do Jogo</h2>
       <p class="settings-subtitle">
-        Ajuste preferências de exibição, áudio, regras de combate e remapeamento de teclas (<code>Config.Controls</code>):
+        Ajuste preferências de acessibilidade, áudio, combate e controles:
       </p>
 
-      <!-- Barra de Abas do Menu de Configurações (Sprint 3) -->
+      <!-- Barra de Abas -->
       <div class="settings-tabs-bar" role="tablist">
         <button type="button" id="tab-btn-general" class="settings-tab-btn active" data-tab="general">
-          ⚙ Geral &amp; Áudio
+          ⚙ Geral &amp; Acessibilidade
         </button>
         <button type="button" id="tab-btn-controls" class="settings-tab-btn" data-tab="controls">
           🎮 Controles (Keybinding &amp; Gamepad)
         </button>
       </div>
 
-      <!-- ABA 1: GERAL & ÁUDIO -->
+      <!-- ABA 1: GERAL & ACESSIBILIDADE -->
       <div id="settings-tab-general" class="settings-tab-pane">
         <div class="settings-options-list">
-          <!-- Opção 1: Tela Cheia (Fullscreen) -->
+          <!-- Opção 1: Modo Daltônico (Colorblind Mode) -->
+          <label class="setting-option-row" for="toggle-colorblind">
+            <div class="setting-option-info">
+              <div class="setting-option-title">
+                👁️ Modo Daltônico (<code>colorblindMode</code>)
+                <span id="badge-colorblind-state" class="setting-state-badge state-off">OFF</span>
+              </div>
+              <p class="setting-option-desc">
+                Aplica filtro de alto contraste e realce visual no Canvas para facilitar a distinção entre inimigos, jogadores e lixos.
+              </p>
+            </div>
+            <div class="setting-control">
+              <input type="checkbox" id="toggle-colorblind" class="stardew-checkbox" />
+              <span class="custom-toggle-slider"></span>
+            </div>
+          </label>
+
+          <!-- Opção 2: Tela Cheia (Fullscreen) -->
           <label class="setting-option-row" for="toggle-fullscreen">
             <div class="setting-option-info">
               <div class="setting-option-title">
@@ -337,7 +266,7 @@
             </div>
           </label>
 
-          <!-- Opção 2: Muta / Desmuta Áudio (isMuted) -->
+          <!-- Opção 3: Mutar Áudio -->
           <label class="setting-option-row" for="toggle-mute">
             <div class="setting-option-info">
               <div class="setting-option-title">
@@ -345,7 +274,7 @@
                 <span id="badge-mute-state" class="setting-state-badge state-off">OFF</span>
               </div>
               <p class="setting-option-desc">
-                Ativa/desativa a variável global booleana <code>window.isMuted</code> para o sistema de som.
+                Ativa/desativa os efeitos sonoros e trilhas do jogo.
               </p>
             </div>
             <div class="setting-control">
@@ -354,7 +283,7 @@
             </div>
           </label>
 
-          <!-- Opção 3: Fogo Amigo (friendlyFireEnabled) -->
+          <!-- Opção 4: Fogo Amigo -->
           <label class="setting-option-row" for="toggle-friendly-fire">
             <div class="setting-option-info">
               <div class="setting-option-title">
@@ -362,7 +291,7 @@
                 <span id="badge-friendly-fire-state" class="setting-state-badge state-off">OFF</span>
               </div>
               <p class="setting-option-desc">
-                Quando ativo, o cone de ataque de um jogador pode atingir o parceiro causando dano!
+                Quando ativo, o cone de ataque de um jogador pode atingir o parceiro!
               </p>
             </div>
             <div class="setting-control">
@@ -373,29 +302,26 @@
         </div>
       </div>
 
-      <!-- ABA 2: CONTROLES (REMAPEAMENTO / KEYBINDING & GAMEPAD API - SPRINT 3) -->
+      <!-- ABA 2: CONTROLES & GAMEPAD -->
       <div id="settings-tab-controls" class="settings-tab-pane hidden">
-        <!-- Status ao vivo de Gamepads conectados -->
         <div class="gamepad-info-banner" id="settings-gamepad-banner">
           <div class="gamepad-banner-title">
-            🕹️ <strong>Suporte Nativo a Gamepad API:</strong>
-            <span id="settings-gamepad-status" class="gamepad-status-pill">Pressione qualquer botão no Joystick para detectar</span>
+            🕹️ <strong>Suporte a Gamepad:</strong>
+            <span id="settings-gamepad-status" class="gamepad-status-pill">Pressione qualquer botão no Joystick</span>
           </div>
           <div class="gamepad-banner-details">
-            <span><strong>Movimento:</strong> Analógico Esq. (Axes 0/1) ou D-Pad</span> •
-            <span><strong>Inventário:</strong> Bumpers <kbd>L1</kbd> / <kbd>R1</kbd></span> •
-            <span><strong>Atacar:</strong> Botões de Face (<kbd>X</kbd> / <kbd>Y</kbd>)</span> •
-            <span>Compatível c/ Genéricos/Bluetooth e modo <strong>Nintendo Switch</strong></span>
+            <span><strong>Movimento:</strong> Analógico Esq. / D-Pad</span> •
+            <span><strong>Inventário:</strong> Bumpers <kbd>L1</kbd>/<kbd>R1</kbd></span> •
+            <span><strong>Atacar:</strong> Botões de Face (<kbd>X</kbd>/<kbd>Y</kbd>)</span>
           </div>
         </div>
 
         <p class="keybind-instructions">
-          Clique com o mouse em qualquer ação abaixo e pressione a <strong>nova tecla desejada</strong> para atualizar o Dicionário Global (<code>Config.Controls</code>):
+          Clique em qualquer ação abaixo e pressione a <strong>nova tecla desejada</strong>:
         </p>
 
-        <!-- Lista de Ações para Remapeamento (Keybinding) -->
         <div id="keybinding-list" class="keybinding-list">
-          <!-- Preenchido e atualizado dinamicamente via ui.js -->
+          <!-- Preenchido via ui.js -->
         </div>
 
         <div class="controls-tab-footer">
@@ -413,15 +339,245 @@
     </div>
   </div>
 
-  <!-- Notificação Toast de Transição / Debug -->
-  <div id="debug-toast" class="debug-toast hidden"></div>
+  <!-- ==================== 2. TELA DE ESTATÍSTICAS DA FASE (FIM DE FASE NA VAN) ==================== -->
+  <div id="stage-stats-modal-overlay" class="menu-overlay hidden">
+    <div class="stardew-panel stats-modal-card">
+      <div class="dev-ribbon">SAFE ROOM • RELATÓRIO DA FASE CONCLUÍDA</div>
+      <h2 class="modal-title" id="stats-stage-title">Estatísticas da Fase</h2>
+      <p class="stats-stage-subtitle" id="stats-stage-subtitle">Desempenho da expedição no setor completado:</p>
+
+      <div class="stats-content-grid">
+        <!-- 1. Lixos Coletados (X / Y) -->
+        <div class="stat-card">
+          <span class="stat-icon">♻</span>
+          <div class="stat-details">
+            <span class="stat-label">Lixos Coletados</span>
+            <strong class="stat-value" id="stats-trash-value">0 / 0</strong>
+          </div>
+        </div>
+
+        <!-- 2. Inimigos Derrotados (Oculto no Mapa 1) -->
+        <div class="stat-card" id="stats-enemies-card">
+          <span class="stat-icon">⚔️</span>
+          <div class="stat-details">
+            <span class="stat-label">Inimigos Derrotados</span>
+            <strong class="stat-value" id="stats-enemies-value">0 Abates</strong>
+          </div>
+        </div>
+
+        <!-- 3. Tempo de Conclusão -->
+        <div class="stat-card">
+          <span class="stat-icon">⏱</span>
+          <div class="stat-details">
+            <span class="stat-label">Tempo Gasto</span>
+            <strong class="stat-value" id="stats-time-value">00:00</strong>
+          </div>
+        </div>
+
+        <!-- 4. Nota de Desempenho (Rank: S+, S, A ou B) -->
+        <div class="stat-card stat-card-rank">
+          <span class="stat-icon">🏆</span>
+          <div class="stat-details">
+            <span class="stat-label">Nota de Desempenho (Rank)</span>
+            <div class="rank-badge-container">
+              <span class="rank-badge rank-s-plus" id="stats-rank-badge">S+</span>
+              <span class="rank-desc" id="stats-rank-desc">Velocidade Excepcional!</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="menu-actions" style="margin-top: 24px;">
+        <button type="button" id="btn-close-stats" class="stardew-btn btn-primary">
+          ✓ Fechar / Continuar na Van
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 1. MODAL DE TRANSIÇÃO / ESCOLHA DA VAN ==================== -->
+  <div id="van-transition-modal-overlay" class="menu-overlay hidden">
+    <div class="stardew-panel van-transition-card">
+      <div class="dev-ribbon">PORTA DA VAN • ESCOLHA DE ROTA</div>
+      <h2 class="modal-title">Seguir Viagem na Expedição</h2>
+      <p class="settings-subtitle">
+        A equipe está na saída da Van. Escolha o próximo destino:
+      </p>
+
+      <div class="van-routes-grid">
+        <!-- Opção 1: Avançar para a próxima fase -->
+        <button type="button" id="btn-van-next-stage" class="route-option-card next-route">
+          <div class="route-card-icon">🚀</div>
+          <div class="route-card-content">
+            <h3 class="route-card-title">Avançar para a próxima fase</h3>
+            <p class="route-card-desc" id="van-next-stage-desc">
+              Carrega o próximo mapa inédito da expedição.
+            </p>
+          </div>
+        </button>
+
+        <!-- Opção 2: Voltar para a fase anterior (Replay/Farm) -->
+        <button type="button" id="btn-van-replay-stage" class="route-option-card replay-route">
+          <div class="route-card-icon">↺</div>
+          <div class="route-card-content">
+            <h3 class="route-card-title">Voltar para a fase anterior (Replay/Farm)</h3>
+            <p class="route-card-desc" id="van-replay-stage-desc">
+              Reinicia o mapa que acabaram de concluir.
+            </p>
+          </div>
+        </button>
+      </div>
+
+      <div class="menu-actions" style="margin-top: 18px;">
+        <button type="button" id="btn-van-stay" class="stardew-btn btn-secondary">
+          Permanecer na Van
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 3. ZONAS DE INTERAÇÃO DA VAN (HUB): LOJA DE ARMAS MELEE ==================== -->
+  <div id="shop-modal-overlay" class="menu-overlay hidden">
+    <div class="stardew-panel hub-station-card shop-modal-card">
+      <div class="dev-ribbon">ARSENAL DE COMBATE • FORNECEDOR DA EXPEDIÇÃO</div>
+      <h2 class="modal-title">⚔️ Loja de Armas de Curta Distância</h2>
+      <div class="shop-balance-tag">
+        <span>Lixo / Sucata Disponível:</span>
+        <strong id="shop-scrap-balance">0</strong> ♻
+      </div>
+      <p class="settings-subtitle">Equipe ou compre armas brancas para enfrentar os ratos mutantes:</p>
+
+      <div class="shop-items-list" id="shop-weapons-grid">
+        <!-- Preenchido dinamicamente via ui.js com as 3 armas melee: Bastão, Barra de Ferro, Katana -->
+      </div>
+
+      <div class="menu-actions" style="margin-top: 20px;">
+        <button type="button" id="btn-close-shop" class="stardew-btn btn-primary">
+          ✓ Fechar Loja
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 3. ZONAS DE INTERAÇÃO DA VAN (HUB): MURAL DE AVISOS ==================== -->
+  <div id="notice-board-modal-overlay" class="menu-overlay hidden">
+    <div class="stardew-panel notice-board-card">
+      <div class="dev-ribbon">MURAL TÁTICO DA EQUIPE</div>
+      <h2 class="modal-title">📋 Mural de Avisos</h2>
+      <div class="notice-board-message-box">
+        <p class="notice-main-text">
+          Avisos da Equipe: Colete todos os lixos para restaurar o ecossistema e use a Loja na Van para aprimorar suas armas!
+        </p>
+        <hr class="notice-divider" />
+        <p class="notice-meta-text">
+          📌 Dicas de navegação e relatórios de campo das operadoras da ScienceEco Girls.
+        </p>
+      </div>
+      <div class="menu-actions">
+        <button type="button" id="btn-close-notice-board" class="stardew-btn btn-primary">
+          ✓ Fechar Mural
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL DE GAME OVER ==================== -->
+  <div id="gameover-modal-overlay" class="menu-overlay hidden">
+    <div class="stardew-panel gameover-card">
+      <div class="dev-ribbon ribbon-danger">EXPEDIÇÃO FALHOU</div>
+      <h2 class="modal-title gameover-title">GAME OVER!</h2>
+      <p class="gameover-subtitle" id="gameover-desc">
+        A expedição não resistiu aos perigos do setor!
+      </p>
+
+      <div class="stats-content-grid" style="margin-top: 18px;">
+        <!-- 1. Tempo Sobrevivido -->
+        <div class="stat-card">
+          <span class="stat-icon">⏱</span>
+          <div class="stat-details">
+            <span class="stat-label">Tempo Sobrevivido</span>
+            <strong class="stat-value" id="gameover-time-value">03:00</strong>
+          </div>
+        </div>
+
+        <!-- 2. Lixos Coletados -->
+        <div class="stat-card">
+          <span class="stat-icon">♻</span>
+          <div class="stat-details">
+            <span class="stat-label">Lixos Coletados</span>
+            <strong class="stat-value" id="gameover-trash-value">0 / 0</strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="menu-actions" style="margin-top: 24px;">
+        <button type="button" id="btn-gameover-restart" class="stardew-btn btn-warning">
+          ↺ Reiniciar Fase Atual
+        </button>
+        <button type="button" id="btn-gameover-menu" class="stardew-btn btn-danger">
+          ⌂ Menu Principal
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL DE VITÓRIA DEFINITIVA (CHEFE DERROTADO) ==================== -->
+  <div id="victory-modal-overlay" class="menu-overlay hidden">
+    <div class="stardew-panel victory-card">
+      <div class="dev-ribbon ribbon-victory">EXPEDIÇÃO CONCLUÍDA • VITÓRIA DEFINITIVA</div>
+      <div class="victory-sparkles-wrap">
+        <span class="victory-big-icon">🏆</span>
+      </div>
+      <h1 class="victory-big-title">Obrigado por jogar!</h1>
+      <h2 class="victory-subtitle">CHEFÃO FINAL DERROTADO COM SUCESSO!</h2>
+      <p class="victory-desc">
+        Você limpou a cidade, eliminou os perigos tóxicos e concluiu todas as missões ecológicas da equipe ScienceEco Girls!
+      </p>
+
+      <div class="stats-content-grid" style="margin-top: 18px;">
+        <div class="stat-card">
+          <span class="stat-icon">⚔️</span>
+          <div class="stat-details">
+            <span class="stat-label">Combate Concluído</span>
+            <strong class="stat-value">Rei Rato Derrotado</strong>
+          </div>
+        </div>
+        <div class="stat-card">
+          <span class="stat-icon">⏱</span>
+          <div class="stat-details">
+            <span class="stat-label">Tempo de Batalha</span>
+            <strong class="stat-value" id="victory-time-value">00:00</strong>
+          </div>
+        </div>
+        <div class="stat-card">
+          <span class="stat-icon">♻</span>
+          <div class="stat-details">
+            <span class="stat-label">Lixo Coletado (Global)</span>
+            <strong class="stat-value" id="victory-trash-value">0</strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="menu-actions" style="margin-top: 26px;">
+        <button type="button" id="btn-victory-advance" class="stardew-btn btn-primary btn-victory">
+          🚀 Seguir para a Van Final
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notificação Toast de Transição / Feedback -->
+  <div id="game-toast" class="game-toast hidden"></div>
 
   <!-- Scripts Modulares do Jogo -->
   <script src="js/config.js"></script>
+  <script src="js/sprites.js"></script>
   <script src="js/maps.js"></script>
   <script src="js/input.js"></script>
   <script src="js/entities.js"></script>
   <script src="js/camera.js"></script>
+  <script src="js/water.js"></script>
+  <script src="js/enemies.js"></script>
   <script src="js/ui.js"></script>
   <script src="js/main.js"></script>
 </body>
