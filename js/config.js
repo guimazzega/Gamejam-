@@ -242,8 +242,37 @@ window.GameConfig = {
     return map[code] || code;
   },
 
+<<<<<<< Updated upstream
   // Configurações de Coleta de Lixo / Sucata
   TRASH_COUNT_PER_MAP: 16,
+=======
+  // Configurações de Grid e Escala
+  TILE_SIZE: 64,
+  MAJOR_GRID_STEP: 320, // A cada 5 tiles (320px), linha de referência forte com coordenadas
+
+  // Tempo padrão de cada fase (em segundos) -> 03:00
+  STAGE_DURATION_SECONDS: 180,
+
+  // Configurações dos Jogadores
+  PLAYER_SPEED: 290, // pixels por segundo (fluido estilo Stardew Valley)
+  PLAYER_SIZE: 40,   // hitbox quadrada 40x40px
+  PLAYER_SPRITE_SCALE: 0.82, // Escala balanceada dos sprites em relação aos mapas, casas e van
+  PLAYER_MAX_HP: 100,
+
+  // Configurações de Ataque Placeholder (Sprint 3)
+  ATTACK_DURATION: 0.28,            // segundos que o arco/cone fica visível
+  ATTACK_COOLDOWN: 0.16,            // tempo mínimo entre ataques
+  ATTACK_RANGE: 76,                 // raio do cone de colisão em pixels
+  ATTACK_ARC_ANGLE: Math.PI * 0.52, // abertura angular do cone (~93 graus)
+
+  // Configurações de Gamepad (Sprint 3)
+  GAMEPAD_DEADZONE: 0.22,
+
+  // Suavização da câmera (Lerp factor)
+  CAMERA_LERP: 7.5,
+
+  // Configurações de Coleta de Lixo / Sucata (Sprints 2 & 3)
+>>>>>>> Stashed changes
   TRASH_SIZE: 26,
   TRASH_TYPES: [
     { id: 'scrap_metal', name: 'Sucata Metálica', shortLabel: 'LIXO: SUCATA', icon: '🔩', color: '#94a3b8', stroke: '#e2e8f0', shape: 'gear' },
@@ -357,40 +386,47 @@ window.GameConfig = {
   ],
 
   // Sequência oficial da Máquina de Estados do Mundo:
-  // Mapa 1 -> Safe Room (Van) -> Mapa 2 -> Safe Room (Van) -> Mapa 3
+  // Van (Base Inicial) -> Mapa 1 -> Van -> Mapa 2 -> Van -> Mapa 3
   STAGE_FLOW: [
+    {
+      stateId: 'VAN_START',
+      mapKey: 'van',
+      stepIndex: 0,
+      label: 'Safe Room: Interior da Van [Base de Operações]',
+      isSafeRoom: true
+    },
     {
       stateId: 'MAP_1',
       mapKey: 'map1',
-      stepIndex: 0,
-      label: 'Mapa 1: Arredores Florestais [Setor Alpha]',
+      stepIndex: 1,
+      label: 'Mapa 1: Cidade Pós-Apocalíptica [Fase 01]',
       isSafeRoom: false
     },
     {
       stateId: 'VAN_1',
       mapKey: 'van',
-      stepIndex: 1,
-      label: 'Safe Room: Interior / Arredores da Van (Transição 1→2)',
+      stepIndex: 2,
+      label: 'Safe Room: Interior da Van (Retorno da Missão 1)',
       isSafeRoom: true
     },
     {
       stateId: 'MAP_2',
       mapKey: 'map2',
-      stepIndex: 2,
+      stepIndex: 3,
       label: 'Mapa 2: Distrito Industrial [Setor Beta]',
       isSafeRoom: false
     },
     {
       stateId: 'VAN_2',
       mapKey: 'van',
-      stepIndex: 3,
-      label: 'Safe Room: Interior / Arredores da Van (Transição 2→3)',
+      stepIndex: 4,
+      label: 'Safe Room: Interior da Van (Retorno da Missão 2)',
       isSafeRoom: true
     },
     {
       stateId: 'MAP_3',
       mapKey: 'map3',
-      stepIndex: 4,
+      stepIndex: 5,
       label: 'Mapa 3: Complexo Subterrâneo [Setor Gamma]',
       isSafeRoom: false
     }

@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 /**
  * js/main.js
  * Motor Principal do Protótipo 2D Top-Down (Sprints 2, 3 e 4).
@@ -8,6 +9,8 @@
  * e Interfaces Interativas da Safe Room na Van (Mesa de Crafting 8x4 e Lojinha Shop).
  */
 
+=======
+>>>>>>> Stashed changes
 class Game {
   constructor() {
     this.canvas = document.getElementById('game-canvas');
@@ -81,7 +84,16 @@ class Game {
     // Câmera 2D
     this.camera = new window.Camera2D(window.innerWidth, window.innerHeight);
 
+<<<<<<< Updated upstream
     // Input Manager (Teclado Remapeável + Mouse Direito + Gamepad API)
+=======
+    // Identificação visual de colisões (Casas, Rio, Obstáculos) e carregamento de imagens de mapa
+    this.showColliders = true;
+    this.mapImages = {};
+    this._loadMapImages();
+
+    // Input Manager (Teclado via Config.Controls + Mouse Right Click + Gamepad API)
+>>>>>>> Stashed changes
     this.input = new window.InputManager({
       onSwitchPlayer: () => this.handleSwitchPlayer(),
       onTogglePause: () => this.handlePauseShortcut(),
@@ -91,12 +103,17 @@ class Game {
       onDebugNextStage: () => this.handleDebugNextStage(),
       onSelectSlot: (slotIndex) => this.selectHotbarSlot(slotIndex, null),
       onCycleSlot: (direction) => this.cycleHotbarSlot(direction),
+<<<<<<< Updated upstream
       onCycleInventoryKey: (direction) => this.cycleHotbarSlot(direction),
       onSingleplayerRightClickAttack: (mousePos) => this.handleSingleplayerRightClickAttack(mousePos),
       onAttackP1Key: (keyCode) => this.handleMultiplayerKeyAttack(1, keyCode),
       onAttackP2Key: (keyCode) => this.handleMultiplayerKeyAttack(2, keyCode),
       onGamepadAttack: (padSlot, padName) => this.handleGamepadAttack(padSlot, padName),
       onGamepadCycleSlot: (padSlot, direction) => this.handleGamepadCycleSlot(padSlot, direction)
+=======
+      onToggleColliders: () => this.toggleColliders(),
+      onZoomChange: (delta) => this.handleZoomChange(delta)
+>>>>>>> Stashed changes
     });
 
     // UI Manager
@@ -123,6 +140,49 @@ class Game {
     this.canvas.width = window.innerWidth;
     this.canvas.height = window.innerHeight;
     this.camera.resize(this.canvas.width, this.canvas.height);
+  }
+
+  _loadMapImages() {
+    for (const [key, mapDef] of Object.entries(window.GameMaps)) {
+      if (mapDef.imageSrc) {
+        const img = new Image();
+        img.src = mapDef.imageSrc;
+        img.onerror = () => {
+          if (mapDef.imageFallbackSrc && img.src !== mapDef.imageFallbackSrc) {
+            console.warn(`Imagem ${img.src} falhou, tentando fallback ${mapDef.imageFallbackSrc}`);
+            img.src = mapDef.imageFallbackSrc;
+          }
+        };
+        img.onload = () => {
+          console.log(`🗺️ Mapa carregado com sucesso: ${mapDef.name} (${img.naturalWidth}x${img.naturalHeight}px)`);
+        };
+        this.mapImages[mapDef.id] = img;
+      }
+    }
+  }
+
+  toggleColliders() {
+    this.showColliders = !this.showColliders;
+    const msg = this.showColliders
+      ? 'Hitboxes visíveis: Áreas de colisão identificadas (Casas, Rio, Obstáculos)'
+      : 'Hitboxes ocultas: Modo imersivo puro';
+    this.ui.showToast(msg, 2000);
+    const active = this.players[this.activePlayerIndex] || this.p1;
+    this.floatingTexts.push(
+      new window.FloatingText(
+        active.x,
+        active.y - 42,
+        this.showColliders ? '👁️ COLISÕES IDENTIFICADAS' : '👁️ MODO IMERSIVO',
+        this.showColliders ? '#38bdf8' : '#e2e8f0',
+        0.9
+      )
+    );
+  }
+
+  handleZoomChange(delta) {
+    this.camera.setZoom(this.camera.zoom + delta);
+    const pct = Math.round(this.camera.zoom * 100);
+    this.ui.showToast(`Zoom da Câmera: ${pct}%`, 1100);
   }
 
   getCurrentStageMeta() {
@@ -813,8 +873,10 @@ class Game {
     const map = this.currentMap;
     const pad = this.p1.size / 2 + 4;
 
-    const maxSpanX = Math.max(80, Math.min(map.width, this.camera.viewportWidth) - pad * 2);
-    const maxSpanY = Math.max(80, Math.min(map.height, this.camera.viewportHeight) - pad * 2);
+    const visW = this.camera.getVisibleWidth();
+    const visH = this.camera.getVisibleHeight();
+    const maxSpanX = Math.max(80, Math.min(map.width, visW) - pad * 2);
+    const maxSpanY = Math.max(80, Math.min(map.height, visH) - pad * 2);
 
     const p1InwardX = (this.p1.x < this.p2.x && p1Vec.dx > 0) || (this.p1.x > this.p2.x && p1Vec.dx < 0);
     const p2InwardX = (this.p2.x < this.p1.x && p2Vec.dx > 0) || (this.p2.x > this.p1.x && p2Vec.dx < 0);
@@ -829,19 +891,19 @@ class Game {
       return {
         minX: Math.max(
           otherPlayer.x - maxSpanX,
-          map.width > this.camera.viewportWidth ? viewBounds.minX + pad - 12 : pad
+          map.width > visW ? viewBounds.minX + pad - 12 : pad
         ),
         maxX: Math.min(
           otherPlayer.x + maxSpanX,
-          map.width > this.camera.viewportWidth ? viewBounds.maxX - pad + 12 : map.width - pad
+          map.width > visW ? viewBounds.maxX - pad + 12 : map.width - pad
         ),
         minY: Math.max(
           otherPlayer.y - maxSpanY,
-          map.height > this.camera.viewportHeight ? viewBounds.minY + pad - 12 : pad
+          map.height > visH ? viewBounds.minY + pad - 12 : pad
         ),
         maxY: Math.min(
           otherPlayer.y + maxSpanY,
-          map.height > this.camera.viewportHeight ? viewBounds.maxY - pad + 12 : map.height - pad
+          map.height > visH ? viewBounds.maxY - pad + 12 : map.height - pad
         )
       };
     };
@@ -916,6 +978,11 @@ class Game {
         }
         window.scrapCollected = (window.scrapCollected || 0) + 1;
 
+        const collector = collectedByP1 ? this.p1 : this.p2;
+        if (collector && collector.triggerPickup) {
+          collector.triggerPickup();
+        }
+
         console.log(
           `♻ [Lixo Coletado] ID="${trash.id}" (${trash.typeInfo.name}) em (${trash.x}, ${trash.y}) | Total Global: ${window.scrapCollected}`
         );
@@ -943,13 +1010,13 @@ class Game {
     ctx.fillRect(0, 0, viewW, viewH);
 
     ctx.save();
-    const { offsetX, offsetY } = this.camera.getRenderOffset();
-    ctx.translate(offsetX, offsetY);
+    // Aplica o zoom e o deslocamento suave da câmera com foco no jogador
+    this.camera.applyTransform(ctx);
 
-    // 1. Piso Base do Mapa
-    ctx.fillStyle = map.palette.bg;
-    ctx.fillRect(0, 0, map.width, map.height);
+    // 1. Imagem de Fundo da Fase ou Piso Base
+    this._drawMapBackground(ctx, map);
 
+<<<<<<< Updated upstream
     // 2. Grid de Referência no Chão
     if (!hideDebug) {
       this._drawDebugGrid(ctx, map);
@@ -957,6 +1024,17 @@ class Game {
 
     // 3. Trilhas / Zonas de Piso
     this._drawFloorZones(ctx, map);
+=======
+    // 2. Grid de Referência no Chão (oculto quando há imagem de fundo, exceto se solicitado)
+    if (!map.imageSrc || this.showColliders) {
+      this._drawDebugGrid(ctx, map);
+    }
+
+    // 3. Zonas de Referência / Trilhas no Chão (apenas em mapas sem imagem de arte)
+    if (!map.imageSrc) {
+      this._drawFloorZones(ctx, map);
+    }
+>>>>>>> Stashed changes
 
     // 4. Áreas Demarcadas das Estações da Safe Room (Lojinha e Mesa de Craft)
     this._drawSafeRoomStationsZones(ctx, map);
@@ -1017,14 +1095,30 @@ class Game {
     }
   }
 
+  _drawMapBackground(ctx, map) {
+    const img = this.mapImages[map.id];
+    if (img && img.complete && img.naturalWidth > 0) {
+      ctx.imageSmoothingEnabled = false; // Preserva o pixel art com máxima nitidez
+      ctx.drawImage(img, 0, 0, map.width, map.height);
+    } else {
+      ctx.fillStyle = map.palette.bg;
+      ctx.fillRect(0, 0, map.width, map.height);
+    }
+  }
+
   _drawDebugGrid(ctx, map) {
+    // Se o mapa tem imagem de fundo e o usuário não ligou o modo de hitboxes, poupa visual
+    if (map.imageSrc && !this.showColliders) return;
+
     const tile = window.GameConfig.TILE_SIZE;
     const major = window.GameConfig.MAJOR_GRID_STEP;
+    const visW = this.camera.getVisibleWidth();
+    const visH = this.camera.getVisibleHeight();
 
     const startX = Math.max(0, Math.floor(this.camera.x / tile) * tile);
-    const endX = Math.min(map.width, Math.ceil((this.camera.x + this.canvas.width) / tile) * tile);
+    const endX = Math.min(map.width, Math.ceil((this.camera.x + visW) / tile) * tile);
     const startY = Math.max(0, Math.floor(this.camera.y / tile) * tile);
-    const endY = Math.min(map.height, Math.ceil((this.camera.y + this.canvas.height) / tile) * tile);
+    const endY = Math.min(map.height, Math.ceil((this.camera.y + visH) / tile) * tile);
 
     ctx.beginPath();
     ctx.strokeStyle = map.palette.gridMinor;
@@ -1243,6 +1337,7 @@ class Game {
     ctx.restore();
   }
 
+<<<<<<< Updated upstream
   _drawObstacles(ctx, map, hideDebug = false) {
     ctx.save();
     for (const obs of map.obstacles) {
@@ -1289,6 +1384,89 @@ class Game {
             obs.y + obs.h / 2 + 12
           );
         }
+=======
+  _drawObstacles(ctx, map) {
+    // Se o usuário desativou a exibição de hitboxes e o mapa possui imagem de fundo, mantém o visual imersivo
+    if (!this.showColliders && map.imageSrc) return;
+
+    ctx.save();
+    for (const obs of map.obstacles) {
+      // 1. Preenchimento semitransparente (permite ver a imagem do cenário por baixo)
+      ctx.fillStyle = obs.customFill || map.palette.wallFill;
+      ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
+
+      // 2. Borda elegante com estilo tático
+      const strokeColor = obs.customStroke || map.palette.wallStroke;
+      ctx.strokeStyle = strokeColor;
+      ctx.lineWidth = obs.customStroke ? 2 : 1.5;
+      ctx.strokeRect(obs.x, obs.y, obs.w, obs.h);
+
+      // 3. Cantoneiras nos 4 vértices do obstáculo (estilo visor tático)
+      const cornerLen = Math.min(14, Math.min(obs.w, obs.h) / 3);
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      // Top-Left
+      ctx.moveTo(obs.x, obs.y + cornerLen);
+      ctx.lineTo(obs.x, obs.y);
+      ctx.lineTo(obs.x + cornerLen, obs.y);
+      // Top-Right
+      ctx.moveTo(obs.x + obs.w - cornerLen, obs.y);
+      ctx.lineTo(obs.x + obs.w, obs.y);
+      ctx.lineTo(obs.x + obs.w, obs.y + cornerLen);
+      // Bottom-Left
+      ctx.moveTo(obs.x, obs.y + obs.h - cornerLen);
+      ctx.lineTo(obs.x, obs.y + obs.h);
+      ctx.lineTo(obs.x + cornerLen, obs.y + obs.h);
+      // Bottom-Right
+      ctx.moveTo(obs.x + obs.w - cornerLen, obs.y + obs.h);
+      ctx.lineTo(obs.x + obs.w, obs.y + obs.h);
+      ctx.lineTo(obs.x + obs.w, obs.y + obs.h - cornerLen);
+      ctx.stroke();
+
+      // 4. Se for água (o rio ou a tubulação), desenha ondas discretas
+      if (obs.category === 'water' && obs.w >= 80 && obs.h >= 60) {
+        ctx.strokeStyle = 'rgba(56, 189, 248, 0.40)';
+        ctx.lineWidth = 1.2;
+        const waveStep = 60;
+        const wavePhase = Math.sin(this.elapsedTime * 3) * 6;
+        ctx.beginPath();
+        for (let wy = obs.y + 30; wy < obs.y + obs.h - 15; wy += 45) {
+          for (let wx = obs.x + 20; wx < obs.x + obs.w - 30; wx += waveStep) {
+            ctx.moveTo(wx + wavePhase, wy);
+            ctx.quadraticCurveTo(wx + 15 + wavePhase, wy - 6, wx + 30 + wavePhase, wy);
+          }
+        }
+        ctx.stroke();
+      }
+
+      // 5. Etiqueta descritiva identificando o local não caminhável
+      if (obs.w >= 90 && obs.h >= 50 && obs.label) {
+        let icon = '🚫';
+        if (obs.category === 'water') icon = '🌊';
+        else if (obs.category === 'building') icon = '🏠';
+        else if (obs.category === 'vehicle') icon = '🚗';
+
+        const displayLabel = `${icon} ${obs.label}`;
+        ctx.font = 'bold 11px Consolas, monospace';
+        const textW = ctx.measureText(displayLabel).width;
+        const badgeW = textW + 16;
+        const badgeH = 22;
+        const badgeX = obs.x + obs.w / 2 - badgeW / 2;
+        const badgeY = obs.y + obs.h / 2 - badgeH / 2;
+
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.90)';
+        ctx.strokeStyle = strokeColor;
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.roundRect(badgeX, badgeY, badgeW, badgeH, 4);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = strokeColor;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(displayLabel, obs.x + obs.w / 2, obs.y + obs.h / 2);
+>>>>>>> Stashed changes
       }
     }
     ctx.restore();
@@ -1402,11 +1580,16 @@ class Game {
 
     ctx.translate(originX, originY);
 
-    ctx.fillStyle = map.palette.bg;
-    ctx.fillRect(0, 0, miniW, miniH);
+    const img = this.mapImages[map.id];
+    if (img && img.complete && img.naturalWidth > 0) {
+      ctx.drawImage(img, 0, 0, miniW, miniH);
+    } else {
+      ctx.fillStyle = map.palette.bg;
+      ctx.fillRect(0, 0, miniW, miniH);
+    }
 
     ctx.fillStyle = map.palette.wallStroke;
-    ctx.globalAlpha = 0.45;
+    ctx.globalAlpha = 0.40;
     for (const obs of map.obstacles) {
       ctx.fillRect(obs.x * scale, obs.y * scale, obs.w * scale, obs.h * scale);
     }
@@ -1437,10 +1620,10 @@ class Game {
 
     const camX = Math.max(0, this.camera.x * scale);
     const camY = Math.max(0, this.camera.y * scale);
-    const camW = Math.min(miniW - camX, this.canvas.width * scale);
-    const camH = Math.min(miniH - camY, this.canvas.height * scale);
+    const camW = Math.min(miniW - camX, this.camera.getVisibleWidth() * scale);
+    const camH = Math.min(miniH - camY, this.camera.getVisibleHeight() * scale);
     ctx.strokeStyle = '#ffca3a';
-    ctx.lineWidth = 1.2;
+    ctx.lineWidth = 1.4;
     ctx.strokeRect(camX, camY, camW, camH);
 
     ctx.restore();

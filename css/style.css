@@ -148,28 +148,55 @@ code {
 }
 
 .player-avatar {
-  width: 44px;
-  height: 44px;
+  width: 48px;
+  height: 48px;
   border-radius: 8px;
   display: flex;
-  align-items: center;
-  justify-content: center;
+  align-items: flex-end;
+  justify-content: flex-end;
   font-weight: 900;
-  font-size: 1.05rem;
+  font-size: 0.75rem;
   font-family: var(--font-mono);
   color: #0f172a;
   border: 2px solid rgba(255, 255, 255, 0.7);
   flex-shrink: 0;
+  position: relative;
+  overflow: hidden;
+  box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.4);
+}
+
+.player-avatar span {
+  position: absolute;
+  bottom: 1px;
+  right: 2px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: rgba(15, 23, 42, 0.85);
+  color: #f8fafc;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  z-index: 2;
 }
 
 .p1-avatar {
-  background: linear-gradient(135deg, #7dd3fc, #0284c7);
-  color: #fff;
+  background-color: #1e293b;
+  background-image: url('../assets/sprites/personagem01/01_baixo_frente/baixo_01.png');
+  background-size: 58px;
+  background-position: center 2px;
+  background-repeat: no-repeat;
+  border-color: #38bdf8;
+  image-rendering: pixelated;
 }
 
 .p2-avatar {
-  background: linear-gradient(135deg, #fdba74, #ea580c);
-  color: #fff;
+  background-color: #1e293b;
+  background-image: url('../assets/sprites/personagem02/bottom/bottom_01.png');
+  background-size: 56px;
+  background-position: center 2px;
+  background-repeat: no-repeat;
+  border-color: #fb923c;
+  image-rendering: pixelated;
 }
 
 .player-hp-info {

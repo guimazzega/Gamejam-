@@ -187,12 +187,21 @@ window.InputManager = class InputManager {
       if (this.callbacks.onSelectSlot) this.callbacks.onSelectSlot(3);
     } else if (this._matchesControl(code, C.slot5)) {
       if (this.callbacks.onSelectSlot) this.callbacks.onSelectSlot(4);
+<<<<<<< Updated upstream
     } else if (code === 'KeyH') {
       if (this.callbacks.onDebugDamage) this.callbacks.onDebugDamage(e);
     } else if (code === 'KeyJ') {
       if (this.callbacks.onDebugHeal) this.callbacks.onDebugHeal(e);
     } else if (code === 'KeyN') {
       if (this.callbacks.onDebugNextStage) this.callbacks.onDebugNextStage();
+=======
+    } else if (code === 'KeyB') {
+      if (this.callbacks.onToggleColliders) this.callbacks.onToggleColliders();
+    } else if (code === 'Equal' || code === 'NumpadAdd') {
+      if (this.callbacks.onZoomChange) this.callbacks.onZoomChange(0.15);
+    } else if (code === 'Minus' || code === 'NumpadSubtract') {
+      if (this.callbacks.onZoomChange) this.callbacks.onZoomChange(-0.15);
+>>>>>>> Stashed changes
     }
   }
 

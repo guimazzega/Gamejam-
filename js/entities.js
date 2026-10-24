@@ -202,7 +202,19 @@ window.Player = class Player {
     this.hitFlashTimer = 0;
     this.clampedByViewport = false;
 
+<<<<<<< Updated upstream
     // Estado de Ataque / Combate (Sprint 3 & 4)
+=======
+    // Gerenciador e Animador de Sprites Pixel Art
+    this.spriteAnimator = window.PlayerSpriteManager
+      ? window.PlayerSpriteManager.createAnimator(this.id)
+      : null;
+    this.pickupTimer = 0;
+    this.idleTimer = 0;
+    this.lastDirection = 'down';
+
+    // Estado de Ataque / Bater (Placeholder Sprint 3)
+>>>>>>> Stashed changes
     this.attackTimer = 0;
     this.attackCooldown = 0;
     this.attackDuration = window.GameConfig.PLAYER_ATTACK_DURATION || 0.24;
@@ -217,6 +229,8 @@ window.Player = class Player {
     this.vy = 0;
     this.clampedByViewport = false;
     this.attackTimer = 0;
+    this.pickupTimer = 0;
+    this.idleTimer = 0;
   }
 
   /**
@@ -298,6 +312,61 @@ window.Player = class Player {
     return this.inventory[this.selectedSlot] || null;
   }
 
+<<<<<<< Updated upstream
+=======
+  /**
+   * Aciona a animação de agachamento/coleta de itens do chão
+   */
+  triggerPickup(duration = 0.35) {
+    this.pickupTimer = duration;
+    this.idleTimer = 0;
+  }
+
+  /**
+   * Aciona o ataque temporário (Arco/Cone de colisão na frente do personagem + log no console)
+   */
+  triggerAttack(sourceLabel = 'Input', gameMode = 'singleplayer') {
+    if (this.attackCooldown > 0) return false;
+
+    this.attackDuration = window.GameConfig.ATTACK_DURATION || 0.28;
+    this.attackRange = window.GameConfig.ATTACK_RANGE || 76;
+    this.attackArcAngle = window.GameConfig.ATTACK_ARC_ANGLE || Math.PI * 0.52;
+
+    this.attackTimer = this.attackDuration;
+    this.attackCooldown = window.GameConfig.ATTACK_COOLDOWN || 0.16;
+    this.attackAngle = Math.atan2(this.facingY, this.facingX);
+    this.attackSourceLabel = sourceLabel;
+
+    const item = this.getEquippedItem();
+    const itemName = item ? item.shortName : 'Desarmado';
+    const deg = Math.round((this.attackAngle * 180) / Math.PI);
+
+    console.log(
+      `⚔️ [ATAQUE / COMBATE] ${this.name} (P${this.id}) executou ATACAR/BATER! | Modo: ${gameMode} | Input: ${sourceLabel} | Item: ${itemName} | Pos: (${Math.round(this.x)}, ${Math.round(this.y)}) | Direção: ${deg}°`
+    );
+
+    return true;
+  }
+
+  /**
+   * Verifica se um ponto (px, py) com raio opcional está dentro do cone de ataque atual
+   */
+  isPointInAttackCone(px, py, targetRadius = 18) {
+    if (this.attackTimer <= 0) return false;
+    const dx = px - this.x;
+    const dy = py - this.y;
+    const dist = Math.hypot(dx, dy);
+    if (dist > this.attackRange + targetRadius) return false;
+
+    const angleToTarget = Math.atan2(dy, dx);
+    let diff = angleToTarget - this.attackAngle;
+    while (diff > Math.PI) diff -= Math.PI * 2;
+    while (diff < -Math.PI) diff += Math.PI * 2;
+
+    return Math.abs(diff) <= this.attackArcAngle / 2 + 0.12;
+  }
+
+>>>>>>> Stashed changes
   getBoundingBox(cx = this.x, cy = this.y) {
     const half = this.size / 2;
     return {
@@ -321,6 +390,9 @@ window.Player = class Player {
     if (this.attackCooldown > 0) {
       this.attackCooldown = Math.max(0, this.attackCooldown - dt);
     }
+    if (this.pickupTimer > 0) {
+      this.pickupTimer = Math.max(0, this.pickupTimer - dt);
+    }
 
     this.clampedByViewport = false;
 
@@ -330,13 +402,37 @@ window.Player = class Player {
 
     // Atualiza direção do olhar pela caminhada quando não estiver no meio do frame de ataque direcionado
     if (dx !== 0 || dy !== 0) {
+<<<<<<< Updated upstream
       if (this.attackTimer <= 0) {
         this.facingX = dx;
         this.facingY = dy;
+=======
+      const len = Math.hypot(dx, dy) || 1;
+      this.facingX = dx / len;
+      this.facingY = dy / len;
+      this.walkCycle += dt * 12;
+      this.idleTimer = 0;
+      // Atualiza o ângulo do cone se estiver atacando enquanto caminha
+      if (this.attackTimer > 0) {
+        this.attackAngle = Math.atan2(this.facingY, this.facingX);
+>>>>>>> Stashed changes
       }
       this.walkCycle += dt * 12;
     } else {
       this.walkCycle = 0;
+      if (this.attackTimer <= 0 && this.pickupTimer <= 0) {
+        this.idleTimer += dt;
+      } else {
+        this.idleTimer = 0;
+      }
+    }
+
+    // Inicializa o animador caso ainda não esteja instanciado
+    if (!this.spriteAnimator && window.PlayerSpriteManager) {
+      this.spriteAnimator = window.PlayerSpriteManager.createAnimator(this.id);
+    }
+    if (this.spriteAnimator) {
+      this.spriteAnimator.update(dt, this);
     }
 
     const half = this.size / 2;
@@ -415,13 +511,86 @@ window.Player = class Player {
   }
 
   /**
+<<<<<<< Updated upstream
    * Renderiza o personagem no Canvas com estética Top-Down limpa + Cone/Caixa de Ataque + indicadores de Debug
+=======
+   * Renderiza o Arco / Cone de Colisão Temporário de Ataque na frente do personagem (Sprint 3)
+   */
+  _drawAttackCone(ctx) {
+    if (this.attackTimer <= 0) return;
+
+    const progress = 1 - this.attackTimer / this.attackDuration;
+    const alpha = Math.max(0.15, 1 - progress * 0.75);
+    const radius = this.attackRange * (0.88 + 0.12 * Math.sin(progress * Math.PI));
+    const halfArc = this.attackArcAngle / 2;
+    const startAngle = this.attackAngle - halfArc;
+    const endAngle = this.attackAngle + halfArc;
+
+    const fillColor = this.id === 1
+      ? `rgba(56, 189, 248, ${(0.38 * alpha).toFixed(2)})`
+      : `rgba(251, 146, 60, ${(0.42 * alpha).toFixed(2)})`;
+    const strokeColor = this.id === 1 ? '#facc15' : '#f87171';
+
+    ctx.save();
+
+    // 1. Preenchimento do Cone de Colisão
+    ctx.beginPath();
+    ctx.moveTo(this.x, this.y);
+    ctx.arc(this.x, this.y, radius, startAngle, endAngle);
+    ctx.closePath();
+    ctx.fillStyle = fillColor;
+    ctx.fill();
+
+    // 2. Borda Externa Brilhante do Cone
+    ctx.lineWidth = 2.5;
+    ctx.strokeStyle = strokeColor;
+    ctx.stroke();
+
+    // 3. Arco interno tracejado de Debug Hitbox
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, radius * 0.62, startAngle, endAngle);
+    ctx.setLineDash([4, 4]);
+    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.75)';
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // 4. Linha de varredura animada (slash effect dentro do cone)
+    const sweepAngle = startAngle + (endAngle - startAngle) * progress;
+    ctx.beginPath();
+    ctx.moveTo(this.x, this.y);
+    ctx.lineTo(
+      this.x + Math.cos(sweepAngle) * radius,
+      this.y + Math.sin(sweepAngle) * radius
+    );
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = '#ffffff';
+    ctx.stroke();
+
+    // 5. Label de Debug na ponta do cone
+    const tipX = this.x + Math.cos(this.attackAngle) * (radius + 14);
+    const tipY = this.y + Math.sin(this.attackAngle) * (radius + 14);
+    ctx.font = 'bold 10px Consolas, monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#fef08a';
+    ctx.fillText(`⚔️ ATK P${this.id}`, tipX, tipY);
+
+    ctx.restore();
+  }
+
+  /**
+   * Renderiza o personagem no Canvas com Sprite Pixel Art Animado em 8 direções + indicadores
+>>>>>>> Stashed changes
    */
   draw(ctx, isControlled, gameMode, timeSeconds) {
     const half = this.size / 2;
     const isMoving = this.vx !== 0 || this.vy !== 0;
+<<<<<<< Updated upstream
     const bobOffset = isMoving ? Math.sin(this.walkCycle) * 2.5 : 0;
     const hideDebug = Boolean(window.hideDebugOverlays);
+=======
+>>>>>>> Stashed changes
 
     ctx.save();
 
@@ -435,7 +604,7 @@ window.Player = class Player {
       const pulse = 1 + Math.sin(timeSeconds * 6) * 0.08;
       ctx.save();
       ctx.beginPath();
-      ctx.ellipse(this.x, this.y + half - 2, (half + 9) * pulse, (half * 0.55) * pulse, 0, 0, Math.PI * 2);
+      ctx.ellipse(this.x, this.y + 16, (half + 10) * pulse, (half * 0.52) * pulse, 0, 0, Math.PI * 2);
       ctx.fillStyle = gameMode === 'singleplayer'
         ? 'rgba(255, 202, 58, 0.25)'
         : 'rgba(56, 189, 248, 0.20)';
@@ -446,14 +615,20 @@ window.Player = class Player {
       ctx.restore();
     }
 
-    // 2. Sombra de projeção top-down
+    // 2. Sombra de projeção suave no chão (sob os pés do personagem)
     ctx.beginPath();
-    ctx.ellipse(this.x, this.y + half - 3, half * 0.8, half * 0.4, 0, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+    ctx.ellipse(this.x, this.y + 16, 20, 8, 0, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.42)';
     ctx.fill();
 
+<<<<<<< Updated upstream
     // 3. Caixa de Colisão (Hitbox Debug) no chão
     if (!hideDebug) {
+=======
+    // 3. Caixa de Colisão (Hitbox Debug 40x40) - Visível quando modo de colisão/debug está ativo ou travado na câmera
+    const showHitbox = (window.gameInstance && window.gameInstance.showColliders) || this.clampedByViewport;
+    if (showHitbox) {
+>>>>>>> Stashed changes
       ctx.strokeStyle = this.clampedByViewport
         ? '#ef4444'
         : isControlled
@@ -463,6 +638,7 @@ window.Player = class Player {
       ctx.setLineDash([4, 3]);
       ctx.strokeRect(this.x - half, this.y - half, this.size, this.size);
       ctx.setLineDash([]);
+<<<<<<< Updated upstream
     }
 
     // 4. Corpo do Personagem: Sprite Customizado (se definido) ou Procedural Top-Down
@@ -543,34 +719,63 @@ window.Player = class Player {
 
     // 6. Vetor de Velocidade (Linha de Debug ao caminhar)
     if (!hideDebug && isMoving) {
+=======
+    }
+
+    // 4. Renderização do Sprite Pixel Art Animado
+    let spriteRendered = false;
+    if (!this.spriteAnimator && window.PlayerSpriteManager) {
+      this.spriteAnimator = window.PlayerSpriteManager.createAnimator(this.id);
+    }
+    if (this.spriteAnimator) {
+      spriteRendered = this.spriteAnimator.draw(ctx, this);
+    }
+
+    // Fallback geométrico elegante caso o sprite ainda esteja sendo baixado
+    if (!spriteRendered) {
+      this._drawFallbackGeometry(ctx);
+    }
+
+    // 5. Linha de Vetor de Velocidade (Linha de Debug ao caminhar com colisores ativados)
+    if (isMoving && window.gameInstance && window.gameInstance.showColliders) {
+>>>>>>> Stashed changes
       ctx.beginPath();
-      ctx.moveTo(this.x, this.y);
-      ctx.lineTo(this.x + this.facingX * 32, this.y + this.facingY * 32);
+      ctx.moveTo(this.x, this.y + 12);
+      ctx.lineTo(this.x + this.facingX * 36, this.y + 12 + this.facingY * 36);
       ctx.strokeStyle = '#22d3ee';
       ctx.lineWidth = 2;
       ctx.stroke();
     }
 
+<<<<<<< Updated upstream
     // 7. Tag do Personagem + Indicador Visual Sobre a Cabeça
     const labelY = drawY - 30;
     const C = (window.Config && window.Config.Controls) || {};
     const fmt = (k) => (window.Config && window.Config.formatKeyCode ? window.Config.formatKeyCode(k) : (k || ''));
+=======
+    // 6. Tag do Personagem + Indicador Visual Sobre a Cabeça (Seta Animada no Ativo)
+    const labelY = this.y - 78;
+    const cfg = window.GameConfig || window.Config || {};
+    const controls = cfg.Controls || {};
+    const fmt = (k) => (cfg.formatKeyCode ? cfg.formatKeyCode(k) : k || '---');
+>>>>>>> Stashed changes
 
     if (gameMode === 'singleplayer' && isControlled) {
-      const arrowBounce = Math.sin(timeSeconds * 8) * 4;
-      const arrowY = labelY - 16 + arrowBounce;
+      const arrowBounce = Math.sin(timeSeconds * 8) * 3;
+      const arrowY = labelY - 14 + arrowBounce;
 
       ctx.fillStyle = '#ffca3a';
       ctx.strokeStyle = '#3b2313';
       ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.moveTo(this.x, arrowY + 9);
-      ctx.lineTo(this.x - 8, arrowY);
-      ctx.lineTo(this.x + 8, arrowY);
+      ctx.moveTo(this.x, arrowY + 8);
+      ctx.lineTo(this.x - 7, arrowY);
+      ctx.lineTo(this.x + 7, arrowY);
       ctx.closePath();
       ctx.fill();
       ctx.stroke();
 
+<<<<<<< Updated upstream
       if (!hideDebug) {
         this._drawOverheadTag(ctx, this.x, labelY - 2, `P${this.id} • ATIVO`, '#ffca3a', '#1e1306');
       }
@@ -589,11 +794,23 @@ window.Player = class Player {
       const tagText = this.clampedByViewport
         ? `P${this.id} [LIMITE CÂMERA]`
         : `P${this.id} [ATK: ${atkKey}]`;
+=======
+      this._drawOverheadTag(ctx, this.x, labelY - 2, `P${this.id} • ATIVO`, '#ffca3a', '#1e1306');
+    } else if (gameMode === 'singleplayer' && !isControlled) {
+      this._drawOverheadTag(ctx, this.x, labelY, `P${this.id} [${fmt(controls.SwitchPlayer)}]`, 'rgba(30, 41, 59, 0.85)', '#cbd5e1');
+    } else {
+      const tagText = this.clampedByViewport
+        ? `P${this.id} [LIMITE CÂMERA]`
+        : this.id === 1
+          ? `P1 [ATK: ${fmt(controls.P1_Attack)}]`
+          : `P2 [ATK: ${fmt(controls.P2_Attack)}]`;
+>>>>>>> Stashed changes
       const tagBg = this.clampedByViewport ? '#ef4444' : this.primaryColor;
       const tagFg = this.clampedByViewport ? '#ffffff' : '#0f172a';
       this._drawOverheadTag(ctx, this.x, labelY, tagText, tagBg, tagFg);
     }
 
+<<<<<<< Updated upstream
     // 8. Coordenadas de Debug sob os pés
     if (!hideDebug) {
       ctx.font = '10px Consolas, monospace';
@@ -643,8 +860,34 @@ window.Player = class Player {
     ctx.textAlign = 'center';
     ctx.fillStyle = '#fef08a';
     ctx.fillText(`ATK P${this.id} (${hb.angleDeg}°)`, hb.centerX, hb.y - 5);
+=======
+    // 7. Coordenadas de Debug sob os pés (Apenas se colisores/debug estiver ativo)
+    if (window.gameInstance && window.gameInstance.showColliders) {
+      ctx.font = '10px Consolas, monospace';
+      ctx.textAlign = 'center';
+      ctx.fillStyle = 'rgba(226, 232, 240, 0.75)';
+      ctx.fillText(`(${Math.round(this.x)}, ${Math.round(this.y)})`, this.x, this.y + half + 14);
+    }
+>>>>>>> Stashed changes
 
     ctx.restore();
+  }
+
+  _drawFallbackGeometry(ctx) {
+    const half = this.size / 2;
+    ctx.fillStyle = this.hitFlashTimer > 0 ? '#ef4444' : this.secondaryColor;
+    ctx.strokeStyle = '#0f172a';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.roundRect(this.x - 15, this.y - 25, 30, 36, 6);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = this.hitFlashTimer > 0 ? '#fca5a5' : this.primaryColor;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y - 32, 12, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
   }
 
   _drawOverheadTag(ctx, x, y, text, bgColor, textColor) {

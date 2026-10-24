@@ -53,15 +53,17 @@
     <div class="hud-top-center">
       <div class="phase-header-box">
         <div class="stage-flow-Steps" id="hud-stage-stepper">
-          <span class="step-dot active" data-step="0">M1</span>
+          <span class="step-dot active" data-step="0">VAN</span>
           <span class="step-line"></span>
-          <span class="step-dot" data-step="1">VAN</span>
+          <span class="step-dot" data-step="1">M1</span>
           <span class="step-line"></span>
-          <span class="step-dot" data-step="2">M2</span>
+          <span class="step-dot" data-step="2">VAN</span>
           <span class="step-line"></span>
-          <span class="step-dot" data-step="3">VAN</span>
+          <span class="step-dot" data-step="3">M2</span>
           <span class="step-line"></span>
-          <span class="step-dot" data-step="4">M3</span>
+          <span class="step-dot" data-step="4">VAN</span>
+          <span class="step-line"></span>
+          <span class="step-dot" data-step="5">M3</span>
         </div>
         <div id="hud-map-title" class="map-title">MAPA 1: FLORESTA ARREDORES [DEBUG]</div>
 
@@ -101,9 +103,17 @@
           <li><kbd id="dbg-key-p1-atk">R</kbd> / <kbd id="dbg-key-p2-atk">0</kbd> <span>Atacar P1 / P2 (Multiplayer)</span></li>
           <li><kbd>H</kbd> / <kbd>J</kbd> <span>Dano <strong>-10 HP</strong> / Cura <strong>+20 HP</strong></span></li>
           <li><kbd>N</kbd> <span>Avançar estado de mapa (Skip)</span></li>
+<<<<<<< Updated upstream
           <li id="debug-tab-hint"><kbd id="dbg-key-switch">Tab</kbd> <span>Alternar P1 / P2 (Singleplayer)</span></li>
           <li><kbd id="dbg-key-interact">E</kbd> / <kbd>Espaço</kbd> <span>Interagir (Van / Loja / Craft)</span></li>
           <li><kbd>Esc</kbd> / <kbd>P</kbd> <span>Menu de Pausa &amp; Controles</span></li>
+=======
+          <li id="debug-tab-hint"><kbd id="dbg-key-switch">Tab</kbd> <span>Alternar P1 / P2 (Single)</span></li>
+          <li><kbd id="dbg-key-interact">E</kbd> / <kbd>Espaço</kbd> <span>Interagir (Saída / Estações)</span></li>
+          <li><kbd>B</kbd> <span>Alternar Hitboxes (Colisões)</span></li>
+          <li><kbd>+</kbd> / <kbd>-</kbd> <span>Zoom Câmera (Perto/Longe)</span></li>
+          <li><kbd>Esc</kbd> / <kbd>P</kbd> <span>Pausa &amp; Remapear Controles</span></li>
+>>>>>>> Stashed changes
         </ul>
         <div class="debug-telemetry" id="debug-telemetry">
           <div>Modo: <strong id="dbg-mode">Singleplayer</strong></div>
@@ -563,6 +573,7 @@
   <script src="js/config.js"></script>
   <script src="js/maps.js"></script>
   <script src="js/input.js"></script>
+  <script src="js/sprites.js"></script>
   <script src="js/entities.js"></script>
   <script src="js/camera.js"></script>
   <script src="js/ui.js"></script>
