@@ -1,0 +1,358 @@
+﻿{
+    "id":  "map3",
+    "name":  "MAPA 3: COMPLEXO SUBTERRÃ‚NEO [SETOR GAMMA]",
+    "subtitle":  "Fase Final â€¢ Colete os 16 lixos e derrote o Rei Rato Radioativo!",
+    "width":  2500,
+    "height":  2500,
+    "isSafeRoom":  false,
+    "stageNumber":  3,
+    "palette":  {
+                    "bg":  "#1c1018",
+                    "wallFill":  "rgba(76, 29, 49, 0.92)",
+                    "wallStroke":  "#fb7185",
+                    "pathFill":  "rgba(244, 63, 94, 0.14)",
+                    "pathStroke":  "rgba(251, 113, 133, 0.30)"
+                },
+    "spawnP1":  {
+                    "x":  1210,
+                    "y":  320
+                },
+    "spawnP2":  {
+                    "x":  1290,
+                    "y":  320
+                },
+    "trashSpawns":  [
+                        {
+                            "id":  "map3_trash_01",
+                            "x":  1250,
+                            "y":  460,
+                            "typeIndex":  4,
+                            "rotation":  0.15
+                        },
+                        {
+                            "id":  "map3_trash_02",
+                            "x":  1250,
+                            "y":  640,
+                            "typeIndex":  3,
+                            "rotation":  -0.2
+                        },
+                        {
+                            "id":  "map3_trash_03",
+                            "x":  1250,
+                            "y":  800,
+                            "typeIndex":  0,
+                            "rotation":  0.1
+                        },
+                        {
+                            "id":  "map3_trash_04",
+                            "x":  1120,
+                            "y":  980,
+                            "typeIndex":  1,
+                            "rotation":  -0.14
+                        },
+                        {
+                            "id":  "map3_trash_05",
+                            "x":  1020,
+                            "y":  1080,
+                            "typeIndex":  2,
+                            "rotation":  0.22
+                        },
+                        {
+                            "id":  "map3_trash_06",
+                            "x":  820,
+                            "y":  1080,
+                            "typeIndex":  3,
+                            "rotation":  -0.18
+                        },
+                        {
+                            "id":  "map3_trash_07",
+                            "x":  660,
+                            "y":  1080,
+                            "typeIndex":  4,
+                            "rotation":  0.12
+                        },
+                        {
+                            "id":  "map3_trash_08",
+                            "x":  1380,
+                            "y":  980,
+                            "typeIndex":  0,
+                            "rotation":  -0.24
+                        },
+                        {
+                            "id":  "map3_trash_09",
+                            "x":  1480,
+                            "y":  1080,
+                            "typeIndex":  1,
+                            "rotation":  0.16
+                        },
+                        {
+                            "id":  "map3_trash_10",
+                            "x":  1680,
+                            "y":  1080,
+                            "typeIndex":  2,
+                            "rotation":  -0.11
+                        },
+                        {
+                            "id":  "map3_trash_11",
+                            "x":  1840,
+                            "y":  1080,
+                            "typeIndex":  3,
+                            "rotation":  0.19
+                        },
+                        {
+                            "id":  "map3_trash_12",
+                            "x":  1250,
+                            "y":  1260,
+                            "typeIndex":  4,
+                            "rotation":  -0.15
+                        },
+                        {
+                            "id":  "map3_trash_13",
+                            "x":  1250,
+                            "y":  1460,
+                            "typeIndex":  0,
+                            "rotation":  0.21
+                        },
+                        {
+                            "id":  "map3_trash_14",
+                            "x":  1250,
+                            "y":  1660,
+                            "typeIndex":  1,
+                            "rotation":  -0.17
+                        },
+                        {
+                            "id":  "map3_trash_15",
+                            "x":  1020,
+                            "y":  1820,
+                            "typeIndex":  2,
+                            "rotation":  0.14
+                        },
+                        {
+                            "id":  "map3_trash_16",
+                            "x":  1480,
+                            "y":  1820,
+                            "typeIndex":  3,
+                            "rotation":  -0.22
+                        }
+                    ],
+    "enemySpawns":  [
+                        {
+                            "id":  "boss_alpha",
+                            "type":  "boss_alpha",
+                            "x":  1250,
+                            "y":  1080
+                        }
+                    ],
+    "floorZones":  [
+                       {
+                           "x":  1100,
+                           "y":  180,
+                           "w":  300,
+                           "h":  220,
+                           "label":  "ELEVADOR DE CARGA [GAMMA]"
+                       },
+                       {
+                           "x":  1160,
+                           "y":  400,
+                           "w":  180,
+                           "h":  620,
+                           "label":  "CORREDOR NORTE"
+                       },
+                       {
+                           "x":  620,
+                           "y":  960,
+                           "w":  1260,
+                           "h":  240,
+                           "label":  "ARENA CENTRAL DO REATOR"
+                       },
+                       {
+                           "x":  1160,
+                           "y":  1200,
+                           "w":  180,
+                           "h":  840,
+                           "label":  "EIXO DE EXTRAÃ‡ÃƒO SUL"
+                       }
+                   ],
+    "transitionZone":  {
+                           "x":  1120,
+                           "y":  2040,
+                           "w":  260,
+                           "h":  220,
+                           "label":  "EXTRAÃ‡ÃƒO FINAL DA EXPEDIÃ‡ÃƒO",
+                           "subLabel":  "Pressione [E] ou [EspaÃ§o] para concluir",
+                           "strokeColor":  "#fb7185",
+                           "fillColor":  "rgba(244, 63, 94, 0.26)"
+                       },
+    "obstacles":  [
+                      {
+                          "x":  0,
+                          "y":  0,
+                          "w":  2500,
+                          "h":  40,
+                          "label":  "LIMITE NORTE"
+                      },
+                      {
+                          "x":  0,
+                          "y":  2460,
+                          "w":  2500,
+                          "h":  40,
+                          "label":  "LIMITE SUL"
+                      },
+                      {
+                          "x":  0,
+                          "y":  40,
+                          "w":  40,
+                          "h":  2420,
+                          "label":  "LIMITE OESTE"
+                      },
+                      {
+                          "x":  2460,
+                          "y":  40,
+                          "w":  40,
+                          "h":  2420,
+                          "label":  "LIMITE LESTE"
+                      },
+                      {
+                          "x":  680,
+                          "y":  420,
+                          "w":  360,
+                          "h":  420,
+                          "label":  "CÃ‚MARA DE CRIOGENIA OESTE"
+                      },
+                      {
+                          "x":  1460,
+                          "y":  420,
+                          "w":  360,
+                          "h":  420,
+                          "label":  "CÃ‚MARA DE CRIOGENIA LESTE"
+                      },
+                      {
+                          "x":  320,
+                          "y":  960,
+                          "w":  260,
+                          "h":  520,
+                          "label":  "GERADOR AUXILIAR A"
+                      },
+                      {
+                          "x":  1920,
+                          "y":  960,
+                          "w":  260,
+                          "h":  520,
+                          "label":  "GERADOR AUXILIAR B"
+                      },
+                      {
+                          "x":  740,
+                          "y":  1300,
+                          "w":  320,
+                          "h":  440,
+                          "label":  "PILAR DE CONTENÃ‡ÃƒO 01"
+                      },
+                      {
+                          "x":  1440,
+                          "y":  1300,
+                          "w":  320,
+                          "h":  440,
+                          "label":  "PILAR DE CONTENÃ‡ÃƒO 02"
+                      },
+                      {
+                          "x":  520,
+                          "y":  1940,
+                          "w":  460,
+                          "h":  240,
+                          "label":  "BLOCO DE SEGURANÃ‡A OESTE"
+                      },
+                      {
+                          "x":  1520,
+                          "y":  1940,
+                          "w":  460,
+                          "h":  240,
+                          "label":  "BLOCO DE SEGURANÃ‡A LESTE"
+                      }
+                  ],
+    "collisionBounds":  [
+                            {
+                                "x":  0,
+                                "y":  0,
+                                "w":  2500,
+                                "h":  40,
+                                "label":  "LIMITE NORTE"
+                            },
+                            {
+                                "x":  0,
+                                "y":  2460,
+                                "w":  2500,
+                                "h":  40,
+                                "label":  "LIMITE SUL"
+                            },
+                            {
+                                "x":  0,
+                                "y":  40,
+                                "w":  40,
+                                "h":  2420,
+                                "label":  "LIMITE OESTE"
+                            },
+                            {
+                                "x":  2460,
+                                "y":  40,
+                                "w":  40,
+                                "h":  2420,
+                                "label":  "LIMITE LESTE"
+                            },
+                            {
+                                "x":  680,
+                                "y":  420,
+                                "w":  360,
+                                "h":  420,
+                                "label":  "CÃ‚MARA DE CRIOGENIA OESTE"
+                            },
+                            {
+                                "x":  1460,
+                                "y":  420,
+                                "w":  360,
+                                "h":  420,
+                                "label":  "CÃ‚MARA DE CRIOGENIA LESTE"
+                            },
+                            {
+                                "x":  320,
+                                "y":  960,
+                                "w":  260,
+                                "h":  520,
+                                "label":  "GERADOR AUXILIAR A"
+                            },
+                            {
+                                "x":  1920,
+                                "y":  960,
+                                "w":  260,
+                                "h":  520,
+                                "label":  "GERADOR AUXILIAR B"
+                            },
+                            {
+                                "x":  740,
+                                "y":  1300,
+                                "w":  320,
+                                "h":  440,
+                                "label":  "PILAR DE CONTENÃ‡ÃƒO 01"
+                            },
+                            {
+                                "x":  1440,
+                                "y":  1300,
+                                "w":  320,
+                                "h":  440,
+                                "label":  "PILAR DE CONTENÃ‡ÃƒO 02"
+                            },
+                            {
+                                "x":  520,
+                                "y":  1940,
+                                "w":  460,
+                                "h":  240,
+                                "label":  "BLOCO DE SEGURANÃ‡A OESTE"
+                            },
+                            {
+                                "x":  1520,
+                                "y":  1940,
+                                "w":  460,
+                                "h":  240,
+                                "label":  "BLOCO DE SEGURANÃ‡A LESTE"
+                            }
+                        ]
+}

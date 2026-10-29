@@ -1749,6 +1749,7 @@ window.UIEditor = class UIEditor {
 
     switch (actionKey.trim().toUpperCase()) {
       case 'START_GAME':
+        console.log("Transi\u00e7\u00e3o para o jogo iniciada...");
         this.close();
         game.startNewGame();
         game.ui.showToast('🚀 Ação Disparada: START_GAME (Iniciando Partida)', 2200);

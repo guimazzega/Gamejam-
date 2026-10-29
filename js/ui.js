@@ -32,6 +32,8 @@ window.UIManager = class UIManager {
     // Referências de Camadas / Overlays
     this.hudLayer = document.getElementById('hud-layer');
     this.mainMenuOverlay = document.getElementById('main-menu-overlay');
+    this.loadingOverlay = document.getElementById('loading-overlay');
+    this.loadingStatusText = document.getElementById('loading-status-text');
     this.settingsModalOverlay = document.getElementById('settings-modal-overlay');
     this.pauseMenuOverlay = document.getElementById('pause-menu-overlay');
     this.gameToast = document.getElementById('game-toast') || document.getElementById('debug-toast');
@@ -156,9 +158,9 @@ window.UIManager = class UIManager {
     });
 
     this.btnStartGame.addEventListener('click', () => {
+      console.log("Transi\u00e7\u00e3o para o jogo iniciada...");
       this.game.startNewGame();
     });
-
     this.btnOpenSettings.addEventListener('click', () => {
       this.openSettingsModal();
     });
@@ -739,7 +741,21 @@ window.UIManager = class UIManager {
     this.hudLayer.classList.add('hidden');
   }
 
+  showLoading(show = true, message = 'Carregando dados das cenas...') {
+    if (this.loadingOverlay) {
+      if (show) {
+        this.loadingOverlay.classList.remove('hidden');
+        if (this.loadingStatusText) {
+          this.loadingStatusText.textContent = message;
+        }
+      } else {
+        this.loadingOverlay.classList.add('hidden');
+      }
+    }
+  }
+
   showGameplayHUD() {
+    this.showLoading(false);
     this.mainMenuOverlay.classList.add('hidden');
     this.settingsModalOverlay.classList.add('hidden');
     this.pauseMenuOverlay.classList.add('hidden');

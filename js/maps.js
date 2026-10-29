@@ -1,4 +1,4 @@
-/**
+﻿/**
  * js/maps.js
  * Definições dos 3 Mapas (Fase 1, Fase 2, Fase 3) e da Safe Room (A Van).
  * - Todas as caixas de colisão revisadas com precisão máxima e amplo espaço de circulação.
@@ -5878,8 +5878,8 @@ window.GameMaps = {
 
   van: {
     id: 'van',
-    name: 'SAFE ROOM: A VAN DE OPERAÇÕES (LABORATÓRIO TÁTICO)',
-    subtitle: 'Base Móvel • Consulte o Mural de Pesquisas, equipe-se na Máquina de Suprimentos ou avance pela Porta',
+    name: 'SAFE ROOM: A VAN DE OPERA\u00C7\u00D5ES (LABORAT\u00D3RIO T\u00C1TICO)',
+    subtitle: 'Base M\u00F3vel \u2022 Consulte o Mural de Pesquisas, equipe-se na M\u00E1quina de Suprimentos ou avance pela Porta',
     imageAsset: 'assets/van_interior.jpg',
     width: 1536,
     height: 857,
@@ -5896,2163 +5896,4052 @@ window.GameMaps = {
     trashSpawns: [],
     enemySpawns: [],
     floorZones: [
-      { x: 140, y: 440, w: 1250, h: 260, label: 'PÁTIO TÁTICO DA VAN' }
+      { x: 140, y: 440, w: 1250, h: 260, label: 'P\u00C1TIO T\u00C1TICO DA VAN' }
     ],
-    // Zonas de Interação da Van (Mural de Pesquisas e Dispensador de Armas)
-        // Zonas de Interação da Van (Mural de Pesquisas e Dispensador de Armas)
-        // Zonas de Interação da Van (Mural de Pesquisas e Dispensador de Armas)
     interactiveStations: [
-          {
-                "id": "notice_board",
-                "name": "Mural de Avisos & Pesquisas",
-                "icon": "📋",
-                "x": 224,
-                "y": 224,
-                "w": 416,
-                "h": 288,
-                "zoneLabel": "MURAL DE PESQUISAS",
-                "promptText": "Pressione [E] para Abrir o Mural",
-                "strokeColor": "#38bdf8",
-                "fillColor": "transparent",
-                "hideFloorZone": true
-          },
-          {
-                "id": "shop",
-                "name": "Dispensador de Armas (Loja)",
-                "icon": "⚔️",
-                "x": 704,
-                "y": 368,
-                "w": 240,
-                "h": 112,
-                "zoneLabel": "DISPENSADOR DE ARMAS (LOJA)",
-                "promptText": "Pressione [E] para Abrir a Loja de Armas",
-                "strokeColor": "#facc15",
-                "fillColor": "transparent",
-                "hideFloorZone": true
-          }
+      {
+        id: "notice_board",
+        name: "Mural de Avisos & Pesquisas",
+        icon: "\uD83D\uDCCB",
+        x: 224,
+        y: 224,
+        w: 416,
+        h: 288,
+        zoneLabel: "MURAL DE PESQUISAS",
+        promptText: "Pressione [E] para abrir o mural",
+        strokeColor: "#38bdf8",
+        fillColor: "transparent",
+        hideFloorZone: true
+      },
+      {
+        id: "shop",
+        name: "Dispensador de Armas (Loja)",
+        icon: "\u2694\uFE0F",
+        x: 704,
+        y: 368,
+        w: 240,
+        h: 112,
+        zoneLabel: "DISPENSADOR DE ARMAS (LOJA)",
+        promptText: "Pressione [E] para abrir a loja",
+        strokeColor: "#facc15",
+        fillColor: "transparent",
+        hideFloorZone: true
+      }
     ],
     transitionZone: {
-          "id": "trigger_jfqd",
-          "x": 1328,
-          "y": 432,
-          "w": 96,
-          "h": 144,
-          "label": "PORTA DA VAN → SEGUIR VIAGEM",
-          "subLabel": "Toque para avançar",
-          "strokeColor": "#38bdf8",
-          "fillColor": "transparent",
-          "hideBox": true
+      id: "trigger_jfqd",
+      x: 1328,
+      y: 432,
+      w: 96,
+      h: 144,
+      label: "PORTA DA VAN \u2192 SEGUIR VIAGEM",
+      subLabel: "Toque para avan\u00E7ar",
+      strokeColor: "#38bdf8",
+      fillColor: "transparent",
+      hideBox: true
     },
     overheadZones: [
-          {
-                "id": "poly_obs_mvtkxp7w_t9j",
-                "x": 336,
-                "y": 592,
-                "w": 96,
-                "h": 64,
-                "polygon": [
-                      {
-                            "x": 336,
-                            "y": 608
-                      },
-                      {
-                            "x": 336,
-                            "y": 624
-                      },
-                      {
-                            "x": 336,
-                            "y": 656
-                      },
-                      {
-                            "x": 352,
-                            "y": 656
-                      },
-                      {
-                            "x": 416,
-                            "y": 640
-                      },
-                      {
-                            "x": 432,
-                            "y": 624
-                      },
-                      {
-                            "x": 432,
-                            "y": 608
-                      },
-                      {
-                            "x": 416,
-                            "y": 608
-                      },
-                      {
-                            "x": 400,
-                            "y": 608
-                      },
-                      {
-                            "x": 384,
-                            "y": 608
-                      },
-                      {
-                            "x": 384,
-                            "y": 592
-                      },
-                      {
-                            "x": 368,
-                            "y": 592
-                      },
-                      {
-                            "x": 352,
-                            "y": 592
-                      },
-                      {
-                            "x": 352,
-                            "y": 608
-                      },
-                      {
-                            "x": 352,
-                            "y": 608
-                      }
-                ],
-                "label": "POLÍGONO POR CIMA"
-          },
-          {
-                "id": "poly_obs_mvtkzgp2_725",
-                "x": 672,
-                "y": 592,
-                "w": 64,
-                "h": 32,
-                "polygon": [
-                      {
-                            "x": 672,
-                            "y": 624
-                      },
-                      {
-                            "x": 688,
-                            "y": 608
-                      },
-                      {
-                            "x": 672,
-                            "y": 592
-                      },
-                      {
-                            "x": 688,
-                            "y": 592
-                      },
-                      {
-                            "x": 704,
-                            "y": 608
-                      },
-                      {
-                            "x": 704,
-                            "y": 592
-                      },
-                      {
-                            "x": 720,
-                            "y": 592
-                      },
-                      {
-                            "x": 720,
-                            "y": 608
-                      },
-                      {
-                            "x": 736,
-                            "y": 608
-                      },
-                      {
-                            "x": 736,
-                            "y": 608
-                      },
-                      {
-                            "x": 720,
-                            "y": 624
-                      }
-                ],
-                "label": "POLÍGONO POR CIMA"
-          },
-          {
-                "id": "poly_obs_mvtkzzzq_23c",
-                "x": 784,
-                "y": 560,
-                "w": 64,
-                "h": 64,
-                "polygon": [
-                      {
-                            "x": 784,
-                            "y": 624
-                      },
-                      {
-                            "x": 800,
-                            "y": 592
-                      },
-                      {
-                            "x": 784,
-                            "y": 576
-                      },
-                      {
-                            "x": 800,
-                            "y": 560
-                      },
-                      {
-                            "x": 816,
-                            "y": 592
-                      },
-                      {
-                            "x": 832,
-                            "y": 592
-                      },
-                      {
-                            "x": 832,
-                            "y": 608
-                      },
-                      {
-                            "x": 848,
-                            "y": 624
-                      }
-                ],
-                "label": "POLÍGONO POR CIMA"
-          },
-          {
-                "id": "poly_obs_mvtl076n_wxi",
-                "x": 896,
-                "y": 592,
-                "w": 32,
-                "h": 32,
-                "polygon": [
-                      {
-                            "x": 896,
-                            "y": 624
-                      },
-                      {
-                            "x": 896,
-                            "y": 624
-                      },
-                      {
-                            "x": 896,
-                            "y": 608
-                      },
-                      {
-                            "x": 912,
-                            "y": 608
-                      },
-                      {
-                            "x": 912,
-                            "y": 592
-                      },
-                      {
-                            "x": 912,
-                            "y": 592
-                      },
-                      {
-                            "x": 912,
-                            "y": 608
-                      },
-                      {
-                            "x": 928,
-                            "y": 624
-                      },
-                      {
-                            "x": 912,
-                            "y": 624
-                      }
-                ],
-                "label": "POLÍGONO POR CIMA"
-          },
-          {
-                "id": "poly_obs_mvtl0omn_btc",
-                "x": 960,
-                "y": 608,
-                "w": 16,
-                "h": 16,
-                "polygon": [
-                      {
-                            "x": 960,
-                            "y": 624
-                      },
-                      {
-                            "x": 960,
-                            "y": 608
-                      },
-                      {
-                            "x": 976,
-                            "y": 608
-                      },
-                      {
-                            "x": 976,
-                            "y": 608
-                      },
-                      {
-                            "x": 976,
-                            "y": 624
-                      }
-                ],
-                "label": "POLÍGONO POR CIMA"
-          },
-          {
-                "id": "poly_obs_mvtl1rls_n4d",
-                "x": 992,
-                "y": 576,
-                "w": 128,
-                "h": 48,
-                "polygon": [
-                      {
-                            "x": 992,
-                            "y": 624
-                      },
-                      {
-                            "x": 992,
-                            "y": 592
-                      },
-                      {
-                            "x": 1008,
-                            "y": 576
-                      },
-                      {
-                            "x": 1024,
-                            "y": 592
-                      },
-                      {
-                            "x": 1088,
-                            "y": 576
-                      },
-                      {
-                            "x": 1120,
-                            "y": 608
-                      },
-                      {
-                            "x": 1120,
-                            "y": 624
-                      }
-                ],
-                "label": "POLÍGONO POR CIMA"
-          }
-    ],
+    {
+        "id":  "poly_obs_mvtx9cmq_y0s",
+        "x":  330,
+        "y":  589,
+        "w":  98,
+        "h":  64,
+        "polygon":  [
+                        {
+                            "x":  363,
+                            "y":  590
+                        },
+                        {
+                            "x":  356,
+                            "y":  589
+                        },
+                        {
+                            "x":  352,
+                            "y":  595
+                        },
+                        {
+                            "x":  349,
+                            "y":  600
+                        },
+                        {
+                            "x":  348,
+                            "y":  603
+                        },
+                        {
+                            "x":  348,
+                            "y":  607
+                        },
+                        {
+                            "x":  345,
+                            "y":  606
+                        },
+                        {
+                            "x":  339,
+                            "y":  606
+                        },
+                        {
+                            "x":  337,
+                            "y":  602
+                        },
+                        {
+                            "x":  335,
+                            "y":  605
+                        },
+                        {
+                            "x":  334,
+                            "y":  617
+                        },
+                        {
+                            "x":  330,
+                            "y":  617
+                        },
+                        {
+                            "x":  331,
+                            "y":  624
+                        },
+                        {
+                            "x":  335,
+                            "y":  627
+                        },
+                        {
+                            "x":  335,
+                            "y":  652
+                        },
+                        {
+                            "x":  338,
+                            "y":  653
+                        },
+                        {
+                            "x":  339,
+                            "y":  650
+                        },
+                        {
+                            "x":  341,
+                            "y":  649
+                        },
+                        {
+                            "x":  341,
+                            "y":  625
+                        },
+                        {
+                            "x":  343,
+                            "y":  629
+                        },
+                        {
+                            "x":  348,
+                            "y":  630
+                        },
+                        {
+                            "x":  351,
+                            "y":  633
+                        },
+                        {
+                            "x":  354,
+                            "y":  635
+                        },
+                        {
+                            "x":  362,
+                            "y":  635
+                        },
+                        {
+                            "x":  363,
+                            "y":  643
+                        },
+                        {
+                            "x":  366,
+                            "y":  643
+                        },
+                        {
+                            "x":  369,
+                            "y":  647
+                        },
+                        {
+                            "x":  373,
+                            "y":  646
+                        },
+                        {
+                            "x":  375,
+                            "y":  649
+                        },
+                        {
+                            "x":  402,
+                            "y":  649
+                        },
+                        {
+                            "x":  404,
+                            "y":  646
+                        },
+                        {
+                            "x":  407,
+                            "y":  646
+                        },
+                        {
+                            "x":  409,
+                            "y":  642
+                        },
+                        {
+                            "x":  413,
+                            "y":  640
+                        },
+                        {
+                            "x":  414,
+                            "y":  636
+                        },
+                        {
+                            "x":  415,
+                            "y":  632
+                        },
+                        {
+                            "x":  428,
+                            "y":  632
+                        },
+                        {
+                            "x":  428,
+                            "y":  609
+                        },
+                        {
+                            "x":  411,
+                            "y":  610
+                        },
+                        {
+                            "x":  411,
+                            "y":  602
+                        },
+                        {
+                            "x":  388,
+                            "y":  602
+                        },
+                        {
+                            "x":  386,
+                            "y":  597
+                        },
+                        {
+                            "x":  384,
+                            "y":  595
+                        },
+                        {
+                            "x":  381,
+                            "y":  589
+                        }
+                    ],
+        "label":  "POLÍGONO POR CIMA"
+    },
+    {
+        "id":  "poly_obs_mvtxavb7_vnn",
+        "x":  667,
+        "y":  589,
+        "w":  72,
+        "h":  34,
+        "polygon":  [
+                        {
+                            "x":  690,
+                            "y":  611
+                        },
+                        {
+                            "x":  682,
+                            "y":  610
+                        },
+                        {
+                            "x":  676,
+                            "y":  614
+                        },
+                        {
+                            "x":  671,
+                            "y":  618
+                        },
+                        {
+                            "x":  667,
+                            "y":  623
+                        },
+                        {
+                            "x":  674,
+                            "y":  623
+                        },
+                        {
+                            "x":  734,
+                            "y":  623
+                        },
+                        {
+                            "x":  728,
+                            "y":  619
+                        },
+                        {
+                            "x":  729,
+                            "y":  615
+                        },
+                        {
+                            "x":  733,
+                            "y":  618
+                        },
+                        {
+                            "x":  735,
+                            "y":  617
+                        },
+                        {
+                            "x":  734,
+                            "y":  611
+                        },
+                        {
+                            "x":  726,
+                            "y":  610
+                        },
+                        {
+                            "x":  732,
+                            "y":  608
+                        },
+                        {
+                            "x":  739,
+                            "y":  605
+                        },
+                        {
+                            "x":  737,
+                            "y":  602
+                        },
+                        {
+                            "x":  725,
+                            "y":  602
+                        },
+                        {
+                            "x":  727,
+                            "y":  598
+                        },
+                        {
+                            "x":  727,
+                            "y":  595
+                        },
+                        {
+                            "x":  725,
+                            "y":  593
+                        },
+                        {
+                            "x":  717,
+                            "y":  592
+                        },
+                        {
+                            "x":  715,
+                            "y":  593
+                        },
+                        {
+                            "x":  715,
+                            "y":  590
+                        },
+                        {
+                            "x":  712,
+                            "y":  589
+                        },
+                        {
+                            "x":  709,
+                            "y":  594
+                        },
+                        {
+                            "x":  707,
+                            "y":  596
+                        },
+                        {
+                            "x":  703,
+                            "y":  600
+                        },
+                        {
+                            "x":  702,
+                            "y":  601
+                        },
+                        {
+                            "x":  697,
+                            "y":  600
+                        },
+                        {
+                            "x":  694,
+                            "y":  598
+                        },
+                        {
+                            "x":  689,
+                            "y":  595
+                        },
+                        {
+                            "x":  682,
+                            "y":  593
+                        },
+                        {
+                            "x":  680,
+                            "y":  596
+                        },
+                        {
+                            "x":  680,
+                            "y":  599
+                        },
+                        {
+                            "x":  682,
+                            "y":  602
+                        },
+                        {
+                            "x":  683,
+                            "y":  605
+                        }
+                    ],
+        "label":  "POLÍGONO POR CIMA"
+    },
+    {
+        "id":  "poly_obs_mvtxd37k_58p",
+        "x":  777,
+        "y":  566,
+        "w":  71,
+        "h":  60,
+        "polygon":  [
+                        {
+                            "x":  777,
+                            "y":  623
+                        },
+                        {
+                            "x":  783,
+                            "y":  609
+                        },
+                        {
+                            "x":  797,
+                            "y":  602
+                        },
+                        {
+                            "x":  798,
+                            "y":  597
+                        },
+                        {
+                            "x":  781,
+                            "y":  581
+                        },
+                        {
+                            "x":  781,
+                            "y":  577
+                        },
+                        {
+                            "x":  792,
+                            "y":  566
+                        },
+                        {
+                            "x":  799,
+                            "y":  569
+                        },
+                        {
+                            "x":  799,
+                            "y":  575
+                        },
+                        {
+                            "x":  835,
+                            "y":  607
+                        },
+                        {
+                            "x":  838,
+                            "y":  615
+                        },
+                        {
+                            "x":  841,
+                            "y":  619
+                        },
+                        {
+                            "x":  846,
+                            "y":  621
+                        },
+                        {
+                            "x":  848,
+                            "y":  626
+                        }
+                    ],
+        "label":  "POLÍGONO POR CIMA"
+    },
+    {
+        "id":  "poly_obs_mvtxdz72_zz3",
+        "x":  898,
+        "y":  597,
+        "w":  23,
+        "h":  27,
+        "polygon":  [
+                        {
+                            "x":  898,
+                            "y":  623
+                        },
+                        {
+                            "x":  903,
+                            "y":  621
+                        },
+                        {
+                            "x":  904,
+                            "y":  609
+                        },
+                        {
+                            "x":  899,
+                            "y":  607
+                        },
+                        {
+                            "x":  899,
+                            "y":  600
+                        },
+                        {
+                            "x":  903,
+                            "y":  601
+                        },
+                        {
+                            "x":  904,
+                            "y":  597
+                        },
+                        {
+                            "x":  915,
+                            "y":  597
+                        },
+                        {
+                            "x":  916,
+                            "y":  600
+                        },
+                        {
+                            "x":  919,
+                            "y":  602
+                        },
+                        {
+                            "x":  920,
+                            "y":  609
+                        },
+                        {
+                            "x":  916,
+                            "y":  611
+                        },
+                        {
+                            "x":  917,
+                            "y":  622
+                        },
+                        {
+                            "x":  921,
+                            "y":  623
+                        }
+                    ],
+        "label":  "POLÍGONO POR CIMA"
+    },
+    {
+        "id":  "poly_obs_mvtxezy6_gbw",
+        "x":  958,
+        "y":  602,
+        "w":  20,
+        "h":  22,
+        "polygon":  [
+                        {
+                            "x":  960,
+                            "y":  624
+                        },
+                        {
+                            "x":  962,
+                            "y":  614
+                        },
+                        {
+                            "x":  958,
+                            "y":  612
+                        },
+                        {
+                            "x":  958,
+                            "y":  605
+                        },
+                        {
+                            "x":  962,
+                            "y":  604
+                        },
+                        {
+                            "x":  963,
+                            "y":  602
+                        },
+                        {
+                            "x":  971,
+                            "y":  602
+                        },
+                        {
+                            "x":  975,
+                            "y":  606
+                        },
+                        {
+                            "x":  975,
+                            "y":  609
+                        },
+                        {
+                            "x":  978,
+                            "y":  609
+                        },
+                        {
+                            "x":  978,
+                            "y":  614
+                        },
+                        {
+                            "x":  975,
+                            "y":  614
+                        },
+                        {
+                            "x":  975,
+                            "y":  624
+                        }
+                    ],
+        "label":  "POLÍGONO POR CIMA"
+    },
+    {
+        "id":  "poly_obs_mvtxg8bj_ifz",
+        "x":  995,
+        "y":  582,
+        "w":  126,
+        "h":  41,
+        "polygon":  [
+                        {
+                            "x":  996,
+                            "y":  622
+                        },
+                        {
+                            "x":  995,
+                            "y":  586
+                        },
+                        {
+                            "x":  1000,
+                            "y":  582
+                        },
+                        {
+                            "x":  1092,
+                            "y":  582
+                        },
+                        {
+                            "x":  1102,
+                            "y":  596
+                        },
+                        {
+                            "x":  1107,
+                            "y":  596
+                        },
+                        {
+                            "x":  1109,
+                            "y":  601
+                        },
+                        {
+                            "x":  1115,
+                            "y":  602
+                        },
+                        {
+                            "x":  1114,
+                            "y":  606
+                        },
+                        {
+                            "x":  1116,
+                            "y":  609
+                        },
+                        {
+                            "x":  1116,
+                            "y":  612
+                        },
+                        {
+                            "x":  1121,
+                            "y":  615
+                        },
+                        {
+                            "x":  1120,
+                            "y":  623
+                        }
+                    ],
+        "label":  "POLÍGONO POR CIMA"
+    }
+],
     triggerZones: [
-          {
-                "id": "trigger_2yqx",
-                "x": 704,
-                "y": 368,
-                "w": 240,
-                "h": 112,
-                "label": "TRIGGER",
-                "ai_instruction": "Tire essa zona amarela, espere a personagem estar próximo a essa área para abrir o menu de loja mantenha o icone flutuante de \"pressione E para tal coisa\""
-          },
-          {
-                "id": "trigger_6ta6",
-                "x": 224,
-                "y": 224,
-                "w": 416,
-                "h": 288,
-                "label": "TRIGGER",
-                "ai_instruction": "tire essa zona azul, quando a personagem chegar na zona de trigger deve aparecer \"pressione E para abrir o mural\""
-          },
-          {
-                "id": "trigger_jfqd",
-                "x": 1328,
-                "y": 432,
-                "w": 96,
-                "h": 144,
-                "label": "TRIGGER",
-                "ai_instruction": "na primeira fase, se você tocar aqui, automáticamente você é teleportado para a primeira fase, na segunda para frente aparece aquela função de reiniciar ou ir para a próxima fase e tire esse quadrado de passar de fase de uma fase para outra faça um efeitinho só para não ficar hiper seco"
-          }
-    ],
+    {
+        "id":  "trigger_2yqx",
+        "x":  704,
+        "y":  368,
+        "w":  240,
+        "h":  112,
+        "label":  "TRIGGER",
+        "ai_instruction":  "Tire essa zona amarela, espere a personagem estar próximo a essa área para abrir o menu de loja mantenha o icone flutuante de \"pressione E para tal coisa\""
+    },
+    {
+        "id":  "trigger_6ta6",
+        "x":  224,
+        "y":  224,
+        "w":  416,
+        "h":  288,
+        "label":  "TRIGGER",
+        "ai_instruction":  "tire essa zona azul, quando a personagem chegar na zona de trigger deve aparecer \"pressione E para abrir o mural\""
+    },
+    {
+        "id":  "trigger_jfqd",
+        "x":  1328,
+        "y":  432,
+        "w":  96,
+        "h":  144,
+        "label":  "TRIGGER",
+        "ai_instruction":  "na primeira fase, se você tocar aqui, automáticamente você é teleportado para a primeira fase, na segunda para frente aparece aquela função de reiniciar ou ir para a próxima fase e tire esse quadrado de passar de fase de uma fase para outra faça um efeitinho só para não ficar hiper seco"
+    }
+],
     animationMarkers: [
-          {
-                "id": "anim_9gqp",
-                "x": 464,
-                "y": 160,
-                "label": "ANIM_766",
-                "ai_instruction": "deixe um ponto de exclamação flutuando aqui"
-          }
+      {
+        "id": "anim_9gqp",
+        "x": 464,
+        "y": 160,
+        "label": "ANIM_766",
+        "ai_instruction": "deixe um ponto de exclama\u00E7\u00E3o flutuando aqui"
+      }
     ],
+    currentScene: 0,
+    scenes: {
+    "id":  1,
+    "name":  "Cena 1 (Padrão)",
+    "condition":  "Início padrão do mapa",
+    "layers":  [
+                   {
+                       "id":  0,
+                       "name":  "Chão",
+                       "itemsCount":  0,
+                       "items":  [
+
+                                 ]
+                   },
+                   {
+                       "id":  1,
+                       "name":  "Tapetes/Decalques",
+                       "itemsCount":  0,
+                       "items":  [
+
+                                 ]
+                   },
+                   {
+                       "id":  2,
+                       "name":  "Objetos/Colisão",
+                       "itemsCount":  48,
+                       "items":  [
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  0,
+                                         "x":  190,
+                                         "y":  0,
+                                         "rotation":  0,
+                                         "w":  1150,
+                                         "h":  105,
+                                         "label":  "TETO / PAREDE SUPERIOR"
+                                     },
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  1,
+                                         "x":  0,
+                                         "y":  0,
+                                         "rotation":  0,
+                                         "w":  190,
+                                         "h":  220,
+                                         "label":  "CANTO SUPERIOR ESQUERDO"
+                                     },
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  2,
+                                         "x":  1344,
+                                         "y":  0,
+                                         "rotation":  0,
+                                         "w":  196,
+                                         "h":  180,
+                                         "label":  "CANTO SUPERIOR DIREITO"
+                                     },
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  3,
+                                         "x":  0,
+                                         "y":  220,
+                                         "rotation":  0,
+                                         "w":  64,
+                                         "h":  100,
+                                         "label":  "BATENTE PORTA ESQUERDA (ALTO)"
+                                     },
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  4,
+                                         "x":  0,
+                                         "y":  0,
+                                         "rotation":  0,
+                                         "w":  40,
+                                         "h":  857,
+                                         "label":  "LIMITE EXTERNO DA RAMPA"
+                                     },
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  5,
+                                         "x":  0,
+                                         "y":  656,
+                                         "rotation":  0,
+                                         "w":  140,
+                                         "h":  201,
+                                         "label":  "CANTO INFERIOR ESQUERDO"
+                                     },
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  6,
+                                         "x":  1480,
+                                         "y":  180,
+                                         "rotation":  0,
+                                         "w":  56,
+                                         "h":  80,
+                                         "label":  "BATENTE PORTA DIREITA (ALTO)"
+                                     },
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  7,
+                                         "x":  1480,
+                                         "y":  0,
+                                         "rotation":  0,
+                                         "w":  56,
+                                         "h":  857,
+                                         "label":  "LIMITE EXTERNO DA SAÍDA"
+                                     },
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  8,
+                                         "x":  1380,
+                                         "y":  690,
+                                         "rotation":  0,
+                                         "w":  156,
+                                         "h":  167,
+                                         "label":  "CANTO INFERIOR DIREITO"
+                                     },
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  9,
+                                         "x":  140,
+                                         "y":  810,
+                                         "rotation":  0,
+                                         "w":  1240,
+                                         "h":  47,
+                                         "label":  "PAREDE INFERIOR DA VAN"
+                                     },
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  10,
+                                         "x":  190,
+                                         "y":  105,
+                                         "rotation":  0,
+                                         "w":  495,
+                                         "h":  280,
+                                         "label":  "PAREDE TRASEIRA \u0026 MURAL DE AVISOS"
+                                     },
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  11,
+                                         "x":  940,
+                                         "y":  105,
+                                         "rotation":  0,
+                                         "w":  400,
+                                         "h":  247,
+                                         "label":  "PAREDE TRASEIRA \u0026 PAINEL DE CONTROLE"
+                                     },
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  12,
+                                         "x":  224,
+                                         "y":  288,
+                                         "rotation":  0,
+                                         "w":  115,
+                                         "h":  150,
+                                         "label":  "CAIXOTE \u0026 ENCOMENDA (NOROESTE)"
+                                     },
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  13,
+                                         "x":  352,
+                                         "y":  304,
+                                         "rotation":  0,
+                                         "w":  75,
+                                         "h":  127,
+                                         "label":  "PLANTA DA BASE (NOROESTE)"
+                                     },
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  14,
+                                         "x":  416,
+                                         "y":  288,
+                                         "rotation":  0,
+                                         "w":  115,
+                                         "h":  192,
+                                         "label":  "CADEIRA GIRATÓRIA DA ESTAÇÃO"
+                                     },
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  15,
+                                         "x":  592,
+                                         "y":  272,
+                                         "rotation":  0,
+                                         "w":  98,
+                                         "h":  150,
+                                         "label":  "VASO DE PLANTA TÁTICO"
+                                     },
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  16,
+                                         "x":  704,
+                                         "y":  96,
+                                         "rotation":  0,
+                                         "w":  240,
+                                         "h":  343,
+                                         "label":  "DISPENSADOR AUTOMÁTICO (LOJA DE ARMAS)"
+                                     },
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  17,
+                                         "x":  1024,
+                                         "y":  352,
+                                         "rotation":  0,
+                                         "w":  96,
+                                         "h":  64,
+                                         "label":  "MESA DO COMPUTADOR CRT"
+                                     },
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  18,
+                                         "x":  1120,
+                                         "y":  272,
+                                         "rotation":  0,
+                                         "w":  115,
+                                         "h":  155,
+                                         "label":  "BAÚS DE CARGA \u0026 GERADOR"
+                                     },
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  19,
+                                         "x":  112,
+                                         "y":  656,
+                                         "rotation":  0,
+                                         "w":  240,
+                                         "h":  160,
+                                         "label":  "VASO \u0026 CAIXOTE INFERIOR"
+                                     },
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  20,
+                                         "x":  330,
+                                         "y":  624,
+                                         "rotation":  0,
+                                         "w":  395,
+                                         "h":  196,
+                                         "label":  "BANCADA MECÂNICA \u0026 PROJETOS"
+                                     },
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  21,
+                                         "x":  725,
+                                         "y":  624,
+                                         "rotation":  0,
+                                         "w":  411,
+                                         "h":  196,
+                                         "label":  "LABORATÓRIO QUÍMICO \u0026 TUBOS DE ENSAIO"
+                                     },
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  22,
+                                         "x":  1136,
+                                         "y":  688,
+                                         "rotation":  0,
+                                         "w":  240,
+                                         "h":  137,
+                                         "label":  "MALETA DE CAMPO \u0026 BATERIA"
+                                     },
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  23,
+                                         "x":  528,
+                                         "y":  320,
+                                         "rotation":  0,
+                                         "w":  48,
+                                         "h":  80,
+                                         "label":  "COLISÃO",
+                                         "id":  "van_obs_rxkk_24"
+                                     },
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  24,
+                                         "x":  1232,
+                                         "y":  352,
+                                         "rotation":  0,
+                                         "w":  96,
+                                         "h":  64,
+                                         "label":  "MESA DO COMPUTADOR CRT (Cópia)",
+                                         "id":  "item_copy_71a"
+                                     },
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  25,
+                                         "x":  48,
+                                         "y":  368,
+                                         "rotation":  0,
+                                         "w":  32,
+                                         "h":  288,
+                                         "label":  "COLISÃO",
+                                         "id":  "van_obs_x47d_31"
+                                     },
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  26,
+                                         "x":  80,
+                                         "y":  624,
+                                         "rotation":  0,
+                                         "w":  16,
+                                         "h":  48,
+                                         "label":  "COLISÃO",
+                                         "id":  "van_obs_x7q1_32"
+                                     },
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  27,
+                                         "x":  1408,
+                                         "y":  176,
+                                         "rotation":  0,
+                                         "w":  112,
+                                         "h":  96,
+                                         "label":  "COLISÃO",
+                                         "id":  "van_obs_znfo_34"
+                                     },
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  28,
+                                         "x":  1360,
+                                         "y":  176,
+                                         "rotation":  0,
+                                         "w":  64,
+                                         "h":  32,
+                                         "label":  "COLISÃO",
+                                         "id":  "van_obs_zsvo_35"
+                                     },
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  29,
+                                         "x":  1376,
+                                         "y":  192,
+                                         "rotation":  0,
+                                         "w":  48,
+                                         "h":  32,
+                                         "label":  "COLISÃO",
+                                         "id":  "van_obs_zwr1_36"
+                                     },
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  30,
+                                         "x":  1392,
+                                         "y":  208,
+                                         "rotation":  0,
+                                         "w":  32,
+                                         "h":  48,
+                                         "label":  "COLISÃO",
+                                         "id":  "van_obs_07sd_37"
+                                     },
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  31,
+                                         "x":  1408,
+                                         "y":  272,
+                                         "rotation":  0,
+                                         "w":  80,
+                                         "h":  432,
+                                         "label":  "COLISÃO",
+                                         "id":  "van_obs_0ij1_38"
+                                     },
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  32,
+                                         "x":  48,
+                                         "y":  224,
+                                         "rotation":  0,
+                                         "w":  128,
+                                         "h":  160,
+                                         "label":  "COLISÃO POLIGONAL",
+                                         "id":  "poly_obs_mvtkswlj_bre",
+                                         "polygon":  [
+                                                         {
+                                                             "x":  176,
+                                                             "y":  224
+                                                         },
+                                                         {
+                                                             "x":  80,
+                                                             "y":  384
+                                                         },
+                                                         {
+                                                             "x":  48,
+                                                             "y":  368
+                                                         },
+                                                         {
+                                                             "x":  128,
+                                                             "y":  224
+                                                         }
+                                                     ],
+                                         "collisionType":  "solid"
+                                     },
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  33,
+                                         "x":  144,
+                                         "y":  176,
+                                         "rotation":  0,
+                                         "w":  48,
+                                         "h":  368,
+                                         "label":  "COLISÃO POLIGONAL",
+                                         "id":  "poly_obs_mvtkt8fq_e18",
+                                         "polygon":  [
+                                                         {
+                                                             "x":  144,
+                                                             "y":  288
+                                                         },
+                                                         {
+                                                             "x":  144,
+                                                             "y":  544
+                                                         },
+                                                         {
+                                                             "x":  192,
+                                                             "y":  448
+                                                         },
+                                                         {
+                                                             "x":  192,
+                                                             "y":  176
+                                                         }
+                                                     ],
+                                         "collisionType":  "solid"
+                                     },
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  34,
+                                         "x":  192,
+                                         "y":  384,
+                                         "rotation":  0,
+                                         "w":  32,
+                                         "h":  80,
+                                         "label":  "COLISÃO POLIGONAL",
+                                         "id":  "poly_obs_mvtktg0n_vb3",
+                                         "polygon":  [
+                                                         {
+                                                             "x":  192,
+                                                             "y":  384
+                                                         },
+                                                         {
+                                                             "x":  192,
+                                                             "y":  464
+                                                         },
+                                                         {
+                                                             "x":  224,
+                                                             "y":  384
+                                                         },
+                                                         {
+                                                             "x":  224,
+                                                             "y":  384
+                                                         }
+                                                     ],
+                                         "collisionType":  "solid"
+                                     },
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  35,
+                                         "x":  80,
+                                         "y":  288,
+                                         "rotation":  0,
+                                         "w":  64,
+                                         "h":  208,
+                                         "label":  "COLISÃO POLIGONAL",
+                                         "id":  "poly_obs_mvtktvfk_fj9",
+                                         "polygon":  [
+                                                         {
+                                                             "x":  128,
+                                                             "y":  480
+                                                         },
+                                                         {
+                                                             "x":  128,
+                                                             "y":  480
+                                                         },
+                                                         {
+                                                             "x":  112,
+                                                             "y":  496
+                                                         },
+                                                         {
+                                                             "x":  80,
+                                                             "y":  496
+                                                         },
+                                                         {
+                                                             "x":  80,
+                                                             "y":  384
+                                                         },
+                                                         {
+                                                             "x":  144,
+                                                             "y":  288
+                                                         }
+                                                     ],
+                                         "collisionType":  "solid"
+                                     },
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  36,
+                                         "x":  128,
+                                         "y":  336,
+                                         "rotation":  0,
+                                         "w":  16,
+                                         "h":  144,
+                                         "label":  "COLISÃO POLIGONAL",
+                                         "id":  "poly_obs_mvtku3iv_kpy",
+                                         "polygon":  [
+                                                         {
+                                                             "x":  128,
+                                                             "y":  480
+                                                         },
+                                                         {
+                                                             "x":  128,
+                                                             "y":  480
+                                                         },
+                                                         {
+                                                             "x":  144,
+                                                             "y":  464
+                                                         },
+                                                         {
+                                                             "x":  144,
+                                                             "y":  336
+                                                         }
+                                                     ],
+                                         "collisionType":  "solid"
+                                     },
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  37,
+                                         "x":  1344,
+                                         "y":  176,
+                                         "rotation":  0,
+                                         "w":  64,
+                                         "h":  288,
+                                         "label":  "COLISÃO POLIGONAL",
+                                         "id":  "poly_obs_mvtkumiw_77j",
+                                         "polygon":  [
+                                                         {
+                                                             "x":  1344,
+                                                             "y":  176
+                                                         },
+                                                         {
+                                                             "x":  1344,
+                                                             "y":  464
+                                                         },
+                                                         {
+                                                             "x":  1360,
+                                                             "y":  464
+                                                         },
+                                                         {
+                                                             "x":  1408,
+                                                             "y":  432
+                                                         },
+                                                         {
+                                                             "x":  1408,
+                                                             "y":  288
+                                                         }
+                                                     ],
+                                         "collisionType":  "solid"
+                                     },
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  38,
+                                         "x":  704,
+                                         "y":  368,
+                                         "rotation":  0,
+                                         "w":  240,
+                                         "h":  112,
+                                         "label":  "TRIGGER",
+                                         "id":  "trigger_2yqx",
+                                         "collisionType":  "trigger",
+                                         "isTrigger":  true,
+                                         "ai_instruction":  "Tire essa zona amarela, espere a personagem estar próximo a essa área para abrir o menu de loja mantenha o icone flutuante de \"pressione E para tal coisa\""
+                                     },
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  39,
+                                         "x":  224,
+                                         "y":  224,
+                                         "rotation":  0,
+                                         "w":  416,
+                                         "h":  288,
+                                         "label":  "TRIGGER",
+                                         "id":  "trigger_6ta6",
+                                         "collisionType":  "trigger",
+                                         "isTrigger":  true,
+                                         "ai_instruction":  "tire essa zona azul, quando a personagem chegar na zona de trigger deve aparecer \"pressione E para abrir o mural\""
+                                     },
+                                     {
+                                         "type":  "animation_marker",
+                                         "zIndex":  40,
+                                         "x":  464,
+                                         "y":  160,
+                                         "rotation":  0,
+                                         "label":  "ANIM_766",
+                                         "id":  "anim_9gqp",
+                                         "ai_instruction":  "deixe um ponto de exclamação flutuando aqui",
+                                         "isAnimationMarker":  true
+                                     },
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  41,
+                                         "x":  1328,
+                                         "y":  432,
+                                         "rotation":  0,
+                                         "w":  96,
+                                         "h":  144,
+                                         "label":  "TRIGGER",
+                                         "id":  "trigger_jfqd",
+                                         "collisionType":  "trigger",
+                                         "isTrigger":  true,
+                                         "ai_instruction":  "na primeira fase, se você tocar aqui, automáticamente você é teleportado para a primeira fase, na segunda para frente aparece aquela função de reiniciar ou ir para a próxima fase e tire esse quadrado de passar de fase de uma fase para outra faça um efeitinho só para não ficar hiper seco"
+                                     },
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  42,
+                                         "x":  330,
+                                         "y":  589,
+                                         "rotation":  0,
+                                         "w":  98,
+                                         "h":  64,
+                                         "label":  "POLÍGONO POR CIMA",
+                                         "id":  "poly_obs_mvtx9cmq_y0s",
+                                         "polygon":  [
+                                                         {
+                                                             "x":  363,
+                                                             "y":  590
+                                                         },
+                                                         {
+                                                             "x":  356,
+                                                             "y":  589
+                                                         },
+                                                         {
+                                                             "x":  352,
+                                                             "y":  595
+                                                         },
+                                                         {
+                                                             "x":  349,
+                                                             "y":  600
+                                                         },
+                                                         {
+                                                             "x":  348,
+                                                             "y":  603
+                                                         },
+                                                         {
+                                                             "x":  348,
+                                                             "y":  607
+                                                         },
+                                                         {
+                                                             "x":  345,
+                                                             "y":  606
+                                                         },
+                                                         {
+                                                             "x":  339,
+                                                             "y":  606
+                                                         },
+                                                         {
+                                                             "x":  337,
+                                                             "y":  602
+                                                         },
+                                                         {
+                                                             "x":  335,
+                                                             "y":  605
+                                                         },
+                                                         {
+                                                             "x":  334,
+                                                             "y":  617
+                                                         },
+                                                         {
+                                                             "x":  330,
+                                                             "y":  617
+                                                         },
+                                                         {
+                                                             "x":  331,
+                                                             "y":  624
+                                                         },
+                                                         {
+                                                             "x":  335,
+                                                             "y":  627
+                                                         },
+                                                         {
+                                                             "x":  335,
+                                                             "y":  652
+                                                         },
+                                                         {
+                                                             "x":  338,
+                                                             "y":  653
+                                                         },
+                                                         {
+                                                             "x":  339,
+                                                             "y":  650
+                                                         },
+                                                         {
+                                                             "x":  341,
+                                                             "y":  649
+                                                         },
+                                                         {
+                                                             "x":  341,
+                                                             "y":  625
+                                                         },
+                                                         {
+                                                             "x":  343,
+                                                             "y":  629
+                                                         },
+                                                         {
+                                                             "x":  348,
+                                                             "y":  630
+                                                         },
+                                                         {
+                                                             "x":  351,
+                                                             "y":  633
+                                                         },
+                                                         {
+                                                             "x":  354,
+                                                             "y":  635
+                                                         },
+                                                         {
+                                                             "x":  362,
+                                                             "y":  635
+                                                         },
+                                                         {
+                                                             "x":  363,
+                                                             "y":  643
+                                                         },
+                                                         {
+                                                             "x":  366,
+                                                             "y":  643
+                                                         },
+                                                         {
+                                                             "x":  369,
+                                                             "y":  647
+                                                         },
+                                                         {
+                                                             "x":  373,
+                                                             "y":  646
+                                                         },
+                                                         {
+                                                             "x":  375,
+                                                             "y":  649
+                                                         },
+                                                         {
+                                                             "x":  402,
+                                                             "y":  649
+                                                         },
+                                                         {
+                                                             "x":  404,
+                                                             "y":  646
+                                                         },
+                                                         {
+                                                             "x":  407,
+                                                             "y":  646
+                                                         },
+                                                         {
+                                                             "x":  409,
+                                                             "y":  642
+                                                         },
+                                                         {
+                                                             "x":  413,
+                                                             "y":  640
+                                                         },
+                                                         {
+                                                             "x":  414,
+                                                             "y":  636
+                                                         },
+                                                         {
+                                                             "x":  415,
+                                                             "y":  632
+                                                         },
+                                                         {
+                                                             "x":  428,
+                                                             "y":  632
+                                                         },
+                                                         {
+                                                             "x":  428,
+                                                             "y":  609
+                                                         },
+                                                         {
+                                                             "x":  411,
+                                                             "y":  610
+                                                         },
+                                                         {
+                                                             "x":  411,
+                                                             "y":  602
+                                                         },
+                                                         {
+                                                             "x":  388,
+                                                             "y":  602
+                                                         },
+                                                         {
+                                                             "x":  386,
+                                                             "y":  597
+                                                         },
+                                                         {
+                                                             "x":  384,
+                                                             "y":  595
+                                                         },
+                                                         {
+                                                             "x":  381,
+                                                             "y":  589
+                                                         }
+                                                     ],
+                                         "collisionType":  "overhead",
+                                         "isOverhead":  true
+                                     },
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  43,
+                                         "x":  667,
+                                         "y":  589,
+                                         "rotation":  0,
+                                         "w":  72,
+                                         "h":  34,
+                                         "label":  "POLÍGONO POR CIMA",
+                                         "id":  "poly_obs_mvtxavb7_vnn",
+                                         "polygon":  [
+                                                         {
+                                                             "x":  690,
+                                                             "y":  611
+                                                         },
+                                                         {
+                                                             "x":  682,
+                                                             "y":  610
+                                                         },
+                                                         {
+                                                             "x":  676,
+                                                             "y":  614
+                                                         },
+                                                         {
+                                                             "x":  671,
+                                                             "y":  618
+                                                         },
+                                                         {
+                                                             "x":  667,
+                                                             "y":  623
+                                                         },
+                                                         {
+                                                             "x":  674,
+                                                             "y":  623
+                                                         },
+                                                         {
+                                                             "x":  734,
+                                                             "y":  623
+                                                         },
+                                                         {
+                                                             "x":  728,
+                                                             "y":  619
+                                                         },
+                                                         {
+                                                             "x":  729,
+                                                             "y":  615
+                                                         },
+                                                         {
+                                                             "x":  733,
+                                                             "y":  618
+                                                         },
+                                                         {
+                                                             "x":  735,
+                                                             "y":  617
+                                                         },
+                                                         {
+                                                             "x":  734,
+                                                             "y":  611
+                                                         },
+                                                         {
+                                                             "x":  726,
+                                                             "y":  610
+                                                         },
+                                                         {
+                                                             "x":  732,
+                                                             "y":  608
+                                                         },
+                                                         {
+                                                             "x":  739,
+                                                             "y":  605
+                                                         },
+                                                         {
+                                                             "x":  737,
+                                                             "y":  602
+                                                         },
+                                                         {
+                                                             "x":  725,
+                                                             "y":  602
+                                                         },
+                                                         {
+                                                             "x":  727,
+                                                             "y":  598
+                                                         },
+                                                         {
+                                                             "x":  727,
+                                                             "y":  595
+                                                         },
+                                                         {
+                                                             "x":  725,
+                                                             "y":  593
+                                                         },
+                                                         {
+                                                             "x":  717,
+                                                             "y":  592
+                                                         },
+                                                         {
+                                                             "x":  715,
+                                                             "y":  593
+                                                         },
+                                                         {
+                                                             "x":  715,
+                                                             "y":  590
+                                                         },
+                                                         {
+                                                             "x":  712,
+                                                             "y":  589
+                                                         },
+                                                         {
+                                                             "x":  709,
+                                                             "y":  594
+                                                         },
+                                                         {
+                                                             "x":  707,
+                                                             "y":  596
+                                                         },
+                                                         {
+                                                             "x":  703,
+                                                             "y":  600
+                                                         },
+                                                         {
+                                                             "x":  702,
+                                                             "y":  601
+                                                         },
+                                                         {
+                                                             "x":  697,
+                                                             "y":  600
+                                                         },
+                                                         {
+                                                             "x":  694,
+                                                             "y":  598
+                                                         },
+                                                         {
+                                                             "x":  689,
+                                                             "y":  595
+                                                         },
+                                                         {
+                                                             "x":  682,
+                                                             "y":  593
+                                                         },
+                                                         {
+                                                             "x":  680,
+                                                             "y":  596
+                                                         },
+                                                         {
+                                                             "x":  680,
+                                                             "y":  599
+                                                         },
+                                                         {
+                                                             "x":  682,
+                                                             "y":  602
+                                                         },
+                                                         {
+                                                             "x":  683,
+                                                             "y":  605
+                                                         }
+                                                     ],
+                                         "collisionType":  "overhead",
+                                         "isOverhead":  true
+                                     },
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  44,
+                                         "x":  777,
+                                         "y":  566,
+                                         "rotation":  0,
+                                         "w":  71,
+                                         "h":  60,
+                                         "label":  "POLÍGONO POR CIMA",
+                                         "id":  "poly_obs_mvtxd37k_58p",
+                                         "polygon":  [
+                                                         {
+                                                             "x":  777,
+                                                             "y":  623
+                                                         },
+                                                         {
+                                                             "x":  783,
+                                                             "y":  609
+                                                         },
+                                                         {
+                                                             "x":  797,
+                                                             "y":  602
+                                                         },
+                                                         {
+                                                             "x":  798,
+                                                             "y":  597
+                                                         },
+                                                         {
+                                                             "x":  781,
+                                                             "y":  581
+                                                         },
+                                                         {
+                                                             "x":  781,
+                                                             "y":  577
+                                                         },
+                                                         {
+                                                             "x":  792,
+                                                             "y":  566
+                                                         },
+                                                         {
+                                                             "x":  799,
+                                                             "y":  569
+                                                         },
+                                                         {
+                                                             "x":  799,
+                                                             "y":  575
+                                                         },
+                                                         {
+                                                             "x":  835,
+                                                             "y":  607
+                                                         },
+                                                         {
+                                                             "x":  838,
+                                                             "y":  615
+                                                         },
+                                                         {
+                                                             "x":  841,
+                                                             "y":  619
+                                                         },
+                                                         {
+                                                             "x":  846,
+                                                             "y":  621
+                                                         },
+                                                         {
+                                                             "x":  848,
+                                                             "y":  626
+                                                         }
+                                                     ],
+                                         "collisionType":  "overhead",
+                                         "isOverhead":  true
+                                     },
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  45,
+                                         "x":  898,
+                                         "y":  597,
+                                         "rotation":  0,
+                                         "w":  23,
+                                         "h":  27,
+                                         "label":  "POLÍGONO POR CIMA",
+                                         "id":  "poly_obs_mvtxdz72_zz3",
+                                         "polygon":  [
+                                                         {
+                                                             "x":  898,
+                                                             "y":  623
+                                                         },
+                                                         {
+                                                             "x":  903,
+                                                             "y":  621
+                                                         },
+                                                         {
+                                                             "x":  904,
+                                                             "y":  609
+                                                         },
+                                                         {
+                                                             "x":  899,
+                                                             "y":  607
+                                                         },
+                                                         {
+                                                             "x":  899,
+                                                             "y":  600
+                                                         },
+                                                         {
+                                                             "x":  903,
+                                                             "y":  601
+                                                         },
+                                                         {
+                                                             "x":  904,
+                                                             "y":  597
+                                                         },
+                                                         {
+                                                             "x":  915,
+                                                             "y":  597
+                                                         },
+                                                         {
+                                                             "x":  916,
+                                                             "y":  600
+                                                         },
+                                                         {
+                                                             "x":  919,
+                                                             "y":  602
+                                                         },
+                                                         {
+                                                             "x":  920,
+                                                             "y":  609
+                                                         },
+                                                         {
+                                                             "x":  916,
+                                                             "y":  611
+                                                         },
+                                                         {
+                                                             "x":  917,
+                                                             "y":  622
+                                                         },
+                                                         {
+                                                             "x":  921,
+                                                             "y":  623
+                                                         }
+                                                     ],
+                                         "collisionType":  "overhead",
+                                         "isOverhead":  true
+                                     },
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  46,
+                                         "x":  958,
+                                         "y":  602,
+                                         "rotation":  0,
+                                         "w":  20,
+                                         "h":  22,
+                                         "label":  "POLÍGONO POR CIMA",
+                                         "id":  "poly_obs_mvtxezy6_gbw",
+                                         "polygon":  [
+                                                         {
+                                                             "x":  960,
+                                                             "y":  624
+                                                         },
+                                                         {
+                                                             "x":  962,
+                                                             "y":  614
+                                                         },
+                                                         {
+                                                             "x":  958,
+                                                             "y":  612
+                                                         },
+                                                         {
+                                                             "x":  958,
+                                                             "y":  605
+                                                         },
+                                                         {
+                                                             "x":  962,
+                                                             "y":  604
+                                                         },
+                                                         {
+                                                             "x":  963,
+                                                             "y":  602
+                                                         },
+                                                         {
+                                                             "x":  971,
+                                                             "y":  602
+                                                         },
+                                                         {
+                                                             "x":  975,
+                                                             "y":  606
+                                                         },
+                                                         {
+                                                             "x":  975,
+                                                             "y":  609
+                                                         },
+                                                         {
+                                                             "x":  978,
+                                                             "y":  609
+                                                         },
+                                                         {
+                                                             "x":  978,
+                                                             "y":  614
+                                                         },
+                                                         {
+                                                             "x":  975,
+                                                             "y":  614
+                                                         },
+                                                         {
+                                                             "x":  975,
+                                                             "y":  624
+                                                         }
+                                                     ],
+                                         "collisionType":  "overhead",
+                                         "isOverhead":  true
+                                     },
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  47,
+                                         "x":  995,
+                                         "y":  582,
+                                         "rotation":  0,
+                                         "w":  126,
+                                         "h":  41,
+                                         "label":  "POLÍGONO POR CIMA",
+                                         "id":  "poly_obs_mvtxg8bj_ifz",
+                                         "polygon":  [
+                                                         {
+                                                             "x":  996,
+                                                             "y":  622
+                                                         },
+                                                         {
+                                                             "x":  995,
+                                                             "y":  586
+                                                         },
+                                                         {
+                                                             "x":  1000,
+                                                             "y":  582
+                                                         },
+                                                         {
+                                                             "x":  1092,
+                                                             "y":  582
+                                                         },
+                                                         {
+                                                             "x":  1102,
+                                                             "y":  596
+                                                         },
+                                                         {
+                                                             "x":  1107,
+                                                             "y":  596
+                                                         },
+                                                         {
+                                                             "x":  1109,
+                                                             "y":  601
+                                                         },
+                                                         {
+                                                             "x":  1115,
+                                                             "y":  602
+                                                         },
+                                                         {
+                                                             "x":  1114,
+                                                             "y":  606
+                                                         },
+                                                         {
+                                                             "x":  1116,
+                                                             "y":  609
+                                                         },
+                                                         {
+                                                             "x":  1116,
+                                                             "y":  612
+                                                         },
+                                                         {
+                                                             "x":  1121,
+                                                             "y":  615
+                                                         },
+                                                         {
+                                                             "x":  1120,
+                                                             "y":  623
+                                                         }
+                                                     ],
+                                         "collisionType":  "overhead",
+                                         "isOverhead":  true
+                                     }
+                                 ]
+                   },
+                   {
+                       "id":  3,
+                       "name":  "Teto/Overlay",
+                       "itemsCount":  0,
+                       "items":  [
+
+                                 ]
+                   }
+               ]
+},
     layers: [
-          {
-                "id": 0,
-                "name": "Chão",
-                "visible": true,
-                "itemsCount": 0,
-                "items": []
-          },
-          {
-                "id": 1,
-                "name": "Tapetes/Decalques",
-                "visible": true,
-                "itemsCount": 0,
-                "items": []
-          },
-          {
-                "id": 2,
-                "name": "Objetos/Colisão",
-                "visible": true,
-                "itemsCount": 48,
-                "items": [
+    {
+        "id":  0,
+        "name":  "Chão",
+        "itemsCount":  0,
+        "items":  [
+
+                  ]
+    },
+    {
+        "id":  1,
+        "name":  "Tapetes/Decalques",
+        "itemsCount":  0,
+        "items":  [
+
+                  ]
+    },
+    {
+        "id":  2,
+        "name":  "Objetos/Colisão",
+        "itemsCount":  48,
+        "items":  [
                       {
-                            "type": "obstacle",
-                            "zIndex": 0,
-                            "x": 190,
-                            "y": 0,
-                            "rotation": 0,
-                            "w": 1150,
-                            "h": 105,
-                            "label": "TETO / PAREDE SUPERIOR"
+                          "type":  "obstacle",
+                          "zIndex":  0,
+                          "x":  190,
+                          "y":  0,
+                          "rotation":  0,
+                          "w":  1150,
+                          "h":  105,
+                          "label":  "TETO / PAREDE SUPERIOR"
                       },
                       {
-                            "type": "obstacle",
-                            "zIndex": 1,
-                            "x": 0,
-                            "y": 0,
-                            "rotation": 0,
-                            "w": 190,
-                            "h": 220,
-                            "label": "CANTO SUPERIOR ESQUERDO"
+                          "type":  "obstacle",
+                          "zIndex":  1,
+                          "x":  0,
+                          "y":  0,
+                          "rotation":  0,
+                          "w":  190,
+                          "h":  220,
+                          "label":  "CANTO SUPERIOR ESQUERDO"
                       },
                       {
-                            "type": "obstacle",
-                            "zIndex": 2,
-                            "x": 1344,
-                            "y": 0,
-                            "rotation": 0,
-                            "w": 196,
-                            "h": 180,
-                            "label": "CANTO SUPERIOR DIREITO"
+                          "type":  "obstacle",
+                          "zIndex":  2,
+                          "x":  1344,
+                          "y":  0,
+                          "rotation":  0,
+                          "w":  196,
+                          "h":  180,
+                          "label":  "CANTO SUPERIOR DIREITO"
                       },
                       {
-                            "type": "obstacle",
-                            "zIndex": 3,
-                            "x": 0,
-                            "y": 220,
-                            "rotation": 0,
-                            "w": 64,
-                            "h": 100,
-                            "label": "BATENTE PORTA ESQUERDA (ALTO)"
+                          "type":  "obstacle",
+                          "zIndex":  3,
+                          "x":  0,
+                          "y":  220,
+                          "rotation":  0,
+                          "w":  64,
+                          "h":  100,
+                          "label":  "BATENTE PORTA ESQUERDA (ALTO)"
                       },
                       {
-                            "type": "obstacle",
-                            "zIndex": 4,
-                            "x": 0,
-                            "y": 0,
-                            "rotation": 0,
-                            "w": 40,
-                            "h": 857,
-                            "label": "LIMITE EXTERNO DA RAMPA"
+                          "type":  "obstacle",
+                          "zIndex":  4,
+                          "x":  0,
+                          "y":  0,
+                          "rotation":  0,
+                          "w":  40,
+                          "h":  857,
+                          "label":  "LIMITE EXTERNO DA RAMPA"
                       },
                       {
-                            "type": "obstacle",
-                            "zIndex": 5,
-                            "x": 0,
-                            "y": 656,
-                            "rotation": 0,
-                            "w": 140,
-                            "h": 201,
-                            "label": "CANTO INFERIOR ESQUERDO"
+                          "type":  "obstacle",
+                          "zIndex":  5,
+                          "x":  0,
+                          "y":  656,
+                          "rotation":  0,
+                          "w":  140,
+                          "h":  201,
+                          "label":  "CANTO INFERIOR ESQUERDO"
                       },
                       {
-                            "type": "obstacle",
-                            "zIndex": 6,
-                            "x": 1480,
-                            "y": 180,
-                            "rotation": 0,
-                            "w": 56,
-                            "h": 80,
-                            "label": "BATENTE PORTA DIREITA (ALTO)"
+                          "type":  "obstacle",
+                          "zIndex":  6,
+                          "x":  1480,
+                          "y":  180,
+                          "rotation":  0,
+                          "w":  56,
+                          "h":  80,
+                          "label":  "BATENTE PORTA DIREITA (ALTO)"
                       },
                       {
-                            "type": "obstacle",
-                            "zIndex": 7,
-                            "x": 1480,
-                            "y": 0,
-                            "rotation": 0,
-                            "w": 56,
-                            "h": 857,
-                            "label": "LIMITE EXTERNO DA SAÍDA"
+                          "type":  "obstacle",
+                          "zIndex":  7,
+                          "x":  1480,
+                          "y":  0,
+                          "rotation":  0,
+                          "w":  56,
+                          "h":  857,
+                          "label":  "LIMITE EXTERNO DA SAÍDA"
                       },
                       {
-                            "type": "obstacle",
-                            "zIndex": 8,
-                            "x": 1380,
-                            "y": 690,
-                            "rotation": 0,
-                            "w": 156,
-                            "h": 167,
-                            "label": "CANTO INFERIOR DIREITO"
+                          "type":  "obstacle",
+                          "zIndex":  8,
+                          "x":  1380,
+                          "y":  690,
+                          "rotation":  0,
+                          "w":  156,
+                          "h":  167,
+                          "label":  "CANTO INFERIOR DIREITO"
                       },
                       {
-                            "type": "obstacle",
-                            "zIndex": 9,
-                            "x": 140,
-                            "y": 810,
-                            "rotation": 0,
-                            "w": 1240,
-                            "h": 47,
-                            "label": "PAREDE INFERIOR DA VAN"
+                          "type":  "obstacle",
+                          "zIndex":  9,
+                          "x":  140,
+                          "y":  810,
+                          "rotation":  0,
+                          "w":  1240,
+                          "h":  47,
+                          "label":  "PAREDE INFERIOR DA VAN"
                       },
                       {
-                            "type": "obstacle",
-                            "zIndex": 10,
-                            "x": 190,
-                            "y": 105,
-                            "rotation": 0,
-                            "w": 495,
-                            "h": 280,
-                            "label": "PAREDE TRASEIRA & MURAL DE AVISOS"
+                          "type":  "obstacle",
+                          "zIndex":  10,
+                          "x":  190,
+                          "y":  105,
+                          "rotation":  0,
+                          "w":  495,
+                          "h":  280,
+                          "label":  "PAREDE TRASEIRA \u0026 MURAL DE AVISOS"
                       },
                       {
-                            "type": "obstacle",
-                            "zIndex": 11,
-                            "x": 940,
-                            "y": 105,
-                            "rotation": 0,
-                            "w": 400,
-                            "h": 247,
-                            "label": "PAREDE TRASEIRA & PAINEL DE CONTROLE"
+                          "type":  "obstacle",
+                          "zIndex":  11,
+                          "x":  940,
+                          "y":  105,
+                          "rotation":  0,
+                          "w":  400,
+                          "h":  247,
+                          "label":  "PAREDE TRASEIRA \u0026 PAINEL DE CONTROLE"
                       },
                       {
-                            "type": "obstacle",
-                            "zIndex": 12,
-                            "x": 224,
-                            "y": 288,
-                            "rotation": 0,
-                            "w": 115,
-                            "h": 150,
-                            "label": "CAIXOTE & ENCOMENDA (NOROESTE)"
+                          "type":  "obstacle",
+                          "zIndex":  12,
+                          "x":  224,
+                          "y":  288,
+                          "rotation":  0,
+                          "w":  115,
+                          "h":  150,
+                          "label":  "CAIXOTE \u0026 ENCOMENDA (NOROESTE)"
                       },
                       {
-                            "type": "obstacle",
-                            "zIndex": 13,
-                            "x": 352,
-                            "y": 304,
-                            "rotation": 0,
-                            "w": 75,
-                            "h": 127,
-                            "label": "PLANTA DA BASE (NOROESTE)"
+                          "type":  "obstacle",
+                          "zIndex":  13,
+                          "x":  352,
+                          "y":  304,
+                          "rotation":  0,
+                          "w":  75,
+                          "h":  127,
+                          "label":  "PLANTA DA BASE (NOROESTE)"
                       },
                       {
-                            "type": "obstacle",
-                            "zIndex": 14,
-                            "x": 416,
-                            "y": 288,
-                            "rotation": 0,
-                            "w": 115,
-                            "h": 192,
-                            "label": "CADEIRA GIRATÓRIA DA ESTAÇÃO"
+                          "type":  "obstacle",
+                          "zIndex":  14,
+                          "x":  416,
+                          "y":  288,
+                          "rotation":  0,
+                          "w":  115,
+                          "h":  192,
+                          "label":  "CADEIRA GIRATÓRIA DA ESTAÇÃO"
                       },
                       {
-                            "type": "obstacle",
-                            "zIndex": 15,
-                            "x": 592,
-                            "y": 272,
-                            "rotation": 0,
-                            "w": 98,
-                            "h": 150,
-                            "label": "VASO DE PLANTA TÁTICO"
+                          "type":  "obstacle",
+                          "zIndex":  15,
+                          "x":  592,
+                          "y":  272,
+                          "rotation":  0,
+                          "w":  98,
+                          "h":  150,
+                          "label":  "VASO DE PLANTA TÁTICO"
                       },
                       {
-                            "type": "obstacle",
-                            "zIndex": 16,
-                            "x": 704,
-                            "y": 96,
-                            "rotation": 0,
-                            "w": 240,
-                            "h": 343,
-                            "label": "DISPENSADOR AUTOMÁTICO (LOJA DE ARMAS)"
+                          "type":  "obstacle",
+                          "zIndex":  16,
+                          "x":  704,
+                          "y":  96,
+                          "rotation":  0,
+                          "w":  240,
+                          "h":  343,
+                          "label":  "DISPENSADOR AUTOMÁTICO (LOJA DE ARMAS)"
                       },
                       {
-                            "type": "obstacle",
-                            "zIndex": 17,
-                            "x": 1024,
-                            "y": 352,
-                            "rotation": 0,
-                            "w": 96,
-                            "h": 64,
-                            "label": "MESA DO COMPUTADOR CRT"
+                          "type":  "obstacle",
+                          "zIndex":  17,
+                          "x":  1024,
+                          "y":  352,
+                          "rotation":  0,
+                          "w":  96,
+                          "h":  64,
+                          "label":  "MESA DO COMPUTADOR CRT"
                       },
                       {
-                            "type": "obstacle",
-                            "zIndex": 18,
-                            "x": 1120,
-                            "y": 272,
-                            "rotation": 0,
-                            "w": 115,
-                            "h": 155,
-                            "label": "BAÚS DE CARGA & GERADOR"
+                          "type":  "obstacle",
+                          "zIndex":  18,
+                          "x":  1120,
+                          "y":  272,
+                          "rotation":  0,
+                          "w":  115,
+                          "h":  155,
+                          "label":  "BAÚS DE CARGA \u0026 GERADOR"
                       },
                       {
-                            "type": "obstacle",
-                            "zIndex": 19,
-                            "x": 112,
-                            "y": 656,
-                            "rotation": 0,
-                            "w": 240,
-                            "h": 160,
-                            "label": "VASO & CAIXOTE INFERIOR"
+                          "type":  "obstacle",
+                          "zIndex":  19,
+                          "x":  112,
+                          "y":  656,
+                          "rotation":  0,
+                          "w":  240,
+                          "h":  160,
+                          "label":  "VASO \u0026 CAIXOTE INFERIOR"
                       },
                       {
-                            "type": "obstacle",
-                            "zIndex": 20,
-                            "x": 330,
-                            "y": 624,
-                            "rotation": 0,
-                            "w": 395,
-                            "h": 196,
-                            "label": "BANCADA MECÂNICA & PROJETOS"
+                          "type":  "obstacle",
+                          "zIndex":  20,
+                          "x":  330,
+                          "y":  624,
+                          "rotation":  0,
+                          "w":  395,
+                          "h":  196,
+                          "label":  "BANCADA MECÂNICA \u0026 PROJETOS"
                       },
                       {
-                            "type": "obstacle",
-                            "zIndex": 21,
-                            "x": 725,
-                            "y": 624,
-                            "rotation": 0,
-                            "w": 411,
-                            "h": 196,
-                            "label": "LABORATÓRIO QUÍMICO & TUBOS DE ENSAIO"
+                          "type":  "obstacle",
+                          "zIndex":  21,
+                          "x":  725,
+                          "y":  624,
+                          "rotation":  0,
+                          "w":  411,
+                          "h":  196,
+                          "label":  "LABORATÓRIO QUÍMICO \u0026 TUBOS DE ENSAIO"
                       },
                       {
-                            "type": "obstacle",
-                            "zIndex": 22,
-                            "x": 1136,
-                            "y": 688,
-                            "rotation": 0,
-                            "w": 240,
-                            "h": 137,
-                            "label": "MALETA DE CAMPO & BATERIA"
+                          "type":  "obstacle",
+                          "zIndex":  22,
+                          "x":  1136,
+                          "y":  688,
+                          "rotation":  0,
+                          "w":  240,
+                          "h":  137,
+                          "label":  "MALETA DE CAMPO \u0026 BATERIA"
                       },
                       {
-                            "type": "obstacle",
-                            "zIndex": 23,
-                            "x": 528,
-                            "y": 320,
-                            "rotation": 0,
-                            "w": 48,
-                            "h": 80,
-                            "label": "COLISÃO",
-                            "id": "van_obs_rxkk_24"
+                          "type":  "obstacle",
+                          "zIndex":  23,
+                          "x":  528,
+                          "y":  320,
+                          "rotation":  0,
+                          "w":  48,
+                          "h":  80,
+                          "label":  "COLISÃO",
+                          "id":  "van_obs_rxkk_24"
                       },
                       {
-                            "type": "obstacle",
-                            "zIndex": 24,
-                            "x": 1232,
-                            "y": 352,
-                            "rotation": 0,
-                            "w": 96,
-                            "h": 64,
-                            "label": "MESA DO COMPUTADOR CRT (Cópia)",
-                            "id": "item_copy_71a"
+                          "type":  "obstacle",
+                          "zIndex":  24,
+                          "x":  1232,
+                          "y":  352,
+                          "rotation":  0,
+                          "w":  96,
+                          "h":  64,
+                          "label":  "MESA DO COMPUTADOR CRT (Cópia)",
+                          "id":  "item_copy_71a"
                       },
                       {
-                            "type": "obstacle",
-                            "zIndex": 25,
-                            "x": 48,
-                            "y": 368,
-                            "rotation": 0,
-                            "w": 32,
-                            "h": 288,
-                            "label": "COLISÃO",
-                            "id": "van_obs_x47d_31"
+                          "type":  "obstacle",
+                          "zIndex":  25,
+                          "x":  48,
+                          "y":  368,
+                          "rotation":  0,
+                          "w":  32,
+                          "h":  288,
+                          "label":  "COLISÃO",
+                          "id":  "van_obs_x47d_31"
                       },
                       {
-                            "type": "obstacle",
-                            "zIndex": 26,
-                            "x": 80,
-                            "y": 624,
-                            "rotation": 0,
-                            "w": 16,
-                            "h": 48,
-                            "label": "COLISÃO",
-                            "id": "van_obs_x7q1_32"
+                          "type":  "obstacle",
+                          "zIndex":  26,
+                          "x":  80,
+                          "y":  624,
+                          "rotation":  0,
+                          "w":  16,
+                          "h":  48,
+                          "label":  "COLISÃO",
+                          "id":  "van_obs_x7q1_32"
                       },
                       {
-                            "type": "obstacle",
-                            "zIndex": 27,
-                            "x": 1408,
-                            "y": 176,
-                            "rotation": 0,
-                            "w": 112,
-                            "h": 96,
-                            "label": "COLISÃO",
-                            "id": "van_obs_znfo_34"
+                          "type":  "obstacle",
+                          "zIndex":  27,
+                          "x":  1408,
+                          "y":  176,
+                          "rotation":  0,
+                          "w":  112,
+                          "h":  96,
+                          "label":  "COLISÃO",
+                          "id":  "van_obs_znfo_34"
                       },
                       {
-                            "type": "obstacle",
-                            "zIndex": 28,
-                            "x": 1360,
-                            "y": 176,
-                            "rotation": 0,
-                            "w": 64,
-                            "h": 32,
-                            "label": "COLISÃO",
-                            "id": "van_obs_zsvo_35"
+                          "type":  "obstacle",
+                          "zIndex":  28,
+                          "x":  1360,
+                          "y":  176,
+                          "rotation":  0,
+                          "w":  64,
+                          "h":  32,
+                          "label":  "COLISÃO",
+                          "id":  "van_obs_zsvo_35"
                       },
                       {
-                            "type": "obstacle",
-                            "zIndex": 29,
-                            "x": 1376,
-                            "y": 192,
-                            "rotation": 0,
-                            "w": 48,
-                            "h": 32,
-                            "label": "COLISÃO",
-                            "id": "van_obs_zwr1_36"
+                          "type":  "obstacle",
+                          "zIndex":  29,
+                          "x":  1376,
+                          "y":  192,
+                          "rotation":  0,
+                          "w":  48,
+                          "h":  32,
+                          "label":  "COLISÃO",
+                          "id":  "van_obs_zwr1_36"
                       },
                       {
-                            "type": "obstacle",
-                            "zIndex": 30,
-                            "x": 1392,
-                            "y": 208,
-                            "rotation": 0,
-                            "w": 32,
-                            "h": 48,
-                            "label": "COLISÃO",
-                            "id": "van_obs_07sd_37"
+                          "type":  "obstacle",
+                          "zIndex":  30,
+                          "x":  1392,
+                          "y":  208,
+                          "rotation":  0,
+                          "w":  32,
+                          "h":  48,
+                          "label":  "COLISÃO",
+                          "id":  "van_obs_07sd_37"
                       },
                       {
-                            "type": "obstacle",
-                            "zIndex": 31,
-                            "x": 1408,
-                            "y": 272,
-                            "rotation": 0,
-                            "w": 80,
-                            "h": 432,
-                            "label": "COLISÃO",
-                            "id": "van_obs_0ij1_38"
+                          "type":  "obstacle",
+                          "zIndex":  31,
+                          "x":  1408,
+                          "y":  272,
+                          "rotation":  0,
+                          "w":  80,
+                          "h":  432,
+                          "label":  "COLISÃO",
+                          "id":  "van_obs_0ij1_38"
                       },
                       {
-                            "type": "obstacle",
-                            "zIndex": 32,
-                            "x": 48,
-                            "y": 224,
-                            "rotation": 0,
-                            "w": 128,
-                            "h": 160,
-                            "label": "COLISÃO POLIGONAL",
-                            "id": "poly_obs_mvtkswlj_bre",
-                            "polygon": [
-                                  {
-                                        "x": 176,
-                                        "y": 224
-                                  },
-                                  {
-                                        "x": 80,
-                                        "y": 384
-                                  },
-                                  {
-                                        "x": 48,
-                                        "y": 368
-                                  },
-                                  {
-                                        "x": 128,
-                                        "y": 224
-                                  }
-                            ],
-                            "collisionType": "solid"
+                          "type":  "obstacle",
+                          "zIndex":  32,
+                          "x":  48,
+                          "y":  224,
+                          "rotation":  0,
+                          "w":  128,
+                          "h":  160,
+                          "label":  "COLISÃO POLIGONAL",
+                          "id":  "poly_obs_mvtkswlj_bre",
+                          "polygon":  [
+                                          {
+                                              "x":  176,
+                                              "y":  224
+                                          },
+                                          {
+                                              "x":  80,
+                                              "y":  384
+                                          },
+                                          {
+                                              "x":  48,
+                                              "y":  368
+                                          },
+                                          {
+                                              "x":  128,
+                                              "y":  224
+                                          }
+                                      ],
+                          "collisionType":  "solid"
                       },
                       {
-                            "type": "obstacle",
-                            "zIndex": 33,
-                            "x": 144,
-                            "y": 176,
-                            "rotation": 0,
-                            "w": 48,
-                            "h": 368,
-                            "label": "COLISÃO POLIGONAL",
-                            "id": "poly_obs_mvtkt8fq_e18",
-                            "polygon": [
-                                  {
-                                        "x": 144,
-                                        "y": 288
-                                  },
-                                  {
-                                        "x": 144,
-                                        "y": 544
-                                  },
-                                  {
-                                        "x": 192,
-                                        "y": 448
-                                  },
-                                  {
-                                        "x": 192,
-                                        "y": 176
-                                  }
-                            ],
-                            "collisionType": "solid"
+                          "type":  "obstacle",
+                          "zIndex":  33,
+                          "x":  144,
+                          "y":  176,
+                          "rotation":  0,
+                          "w":  48,
+                          "h":  368,
+                          "label":  "COLISÃO POLIGONAL",
+                          "id":  "poly_obs_mvtkt8fq_e18",
+                          "polygon":  [
+                                          {
+                                              "x":  144,
+                                              "y":  288
+                                          },
+                                          {
+                                              "x":  144,
+                                              "y":  544
+                                          },
+                                          {
+                                              "x":  192,
+                                              "y":  448
+                                          },
+                                          {
+                                              "x":  192,
+                                              "y":  176
+                                          }
+                                      ],
+                          "collisionType":  "solid"
                       },
                       {
-                            "type": "obstacle",
-                            "zIndex": 34,
-                            "x": 192,
-                            "y": 384,
-                            "rotation": 0,
-                            "w": 32,
-                            "h": 80,
-                            "label": "COLISÃO POLIGONAL",
-                            "id": "poly_obs_mvtktg0n_vb3",
-                            "polygon": [
-                                  {
-                                        "x": 192,
-                                        "y": 384
-                                  },
-                                  {
-                                        "x": 192,
-                                        "y": 464
-                                  },
-                                  {
-                                        "x": 224,
-                                        "y": 384
-                                  },
-                                  {
-                                        "x": 224,
-                                        "y": 384
-                                  }
-                            ],
-                            "collisionType": "solid"
+                          "type":  "obstacle",
+                          "zIndex":  34,
+                          "x":  192,
+                          "y":  384,
+                          "rotation":  0,
+                          "w":  32,
+                          "h":  80,
+                          "label":  "COLISÃO POLIGONAL",
+                          "id":  "poly_obs_mvtktg0n_vb3",
+                          "polygon":  [
+                                          {
+                                              "x":  192,
+                                              "y":  384
+                                          },
+                                          {
+                                              "x":  192,
+                                              "y":  464
+                                          },
+                                          {
+                                              "x":  224,
+                                              "y":  384
+                                          },
+                                          {
+                                              "x":  224,
+                                              "y":  384
+                                          }
+                                      ],
+                          "collisionType":  "solid"
                       },
                       {
-                            "type": "obstacle",
-                            "zIndex": 35,
-                            "x": 80,
-                            "y": 288,
-                            "rotation": 0,
-                            "w": 64,
-                            "h": 208,
-                            "label": "COLISÃO POLIGONAL",
-                            "id": "poly_obs_mvtktvfk_fj9",
-                            "polygon": [
-                                  {
-                                        "x": 128,
-                                        "y": 480
-                                  },
-                                  {
-                                        "x": 128,
-                                        "y": 480
-                                  },
-                                  {
-                                        "x": 112,
-                                        "y": 496
-                                  },
-                                  {
-                                        "x": 80,
-                                        "y": 496
-                                  },
-                                  {
-                                        "x": 80,
-                                        "y": 384
-                                  },
-                                  {
-                                        "x": 144,
-                                        "y": 288
-                                  }
-                            ],
-                            "collisionType": "solid"
+                          "type":  "obstacle",
+                          "zIndex":  35,
+                          "x":  80,
+                          "y":  288,
+                          "rotation":  0,
+                          "w":  64,
+                          "h":  208,
+                          "label":  "COLISÃO POLIGONAL",
+                          "id":  "poly_obs_mvtktvfk_fj9",
+                          "polygon":  [
+                                          {
+                                              "x":  128,
+                                              "y":  480
+                                          },
+                                          {
+                                              "x":  128,
+                                              "y":  480
+                                          },
+                                          {
+                                              "x":  112,
+                                              "y":  496
+                                          },
+                                          {
+                                              "x":  80,
+                                              "y":  496
+                                          },
+                                          {
+                                              "x":  80,
+                                              "y":  384
+                                          },
+                                          {
+                                              "x":  144,
+                                              "y":  288
+                                          }
+                                      ],
+                          "collisionType":  "solid"
                       },
                       {
-                            "type": "obstacle",
-                            "zIndex": 36,
-                            "x": 128,
-                            "y": 336,
-                            "rotation": 0,
-                            "w": 16,
-                            "h": 144,
-                            "label": "COLISÃO POLIGONAL",
-                            "id": "poly_obs_mvtku3iv_kpy",
-                            "polygon": [
-                                  {
-                                        "x": 128,
-                                        "y": 480
-                                  },
-                                  {
-                                        "x": 128,
-                                        "y": 480
-                                  },
-                                  {
-                                        "x": 144,
-                                        "y": 464
-                                  },
-                                  {
-                                        "x": 144,
-                                        "y": 336
-                                  }
-                            ],
-                            "collisionType": "solid"
+                          "type":  "obstacle",
+                          "zIndex":  36,
+                          "x":  128,
+                          "y":  336,
+                          "rotation":  0,
+                          "w":  16,
+                          "h":  144,
+                          "label":  "COLISÃO POLIGONAL",
+                          "id":  "poly_obs_mvtku3iv_kpy",
+                          "polygon":  [
+                                          {
+                                              "x":  128,
+                                              "y":  480
+                                          },
+                                          {
+                                              "x":  128,
+                                              "y":  480
+                                          },
+                                          {
+                                              "x":  144,
+                                              "y":  464
+                                          },
+                                          {
+                                              "x":  144,
+                                              "y":  336
+                                          }
+                                      ],
+                          "collisionType":  "solid"
                       },
                       {
-                            "type": "obstacle",
-                            "zIndex": 37,
-                            "x": 1344,
-                            "y": 176,
-                            "rotation": 0,
-                            "w": 64,
-                            "h": 288,
-                            "label": "COLISÃO POLIGONAL",
-                            "id": "poly_obs_mvtkumiw_77j",
-                            "polygon": [
-                                  {
-                                        "x": 1344,
-                                        "y": 176
-                                  },
-                                  {
-                                        "x": 1344,
-                                        "y": 464
-                                  },
-                                  {
-                                        "x": 1360,
-                                        "y": 464
-                                  },
-                                  {
-                                        "x": 1408,
-                                        "y": 432
-                                  },
-                                  {
-                                        "x": 1408,
-                                        "y": 288
-                                  }
-                            ],
-                            "collisionType": "solid"
+                          "type":  "obstacle",
+                          "zIndex":  37,
+                          "x":  1344,
+                          "y":  176,
+                          "rotation":  0,
+                          "w":  64,
+                          "h":  288,
+                          "label":  "COLISÃO POLIGONAL",
+                          "id":  "poly_obs_mvtkumiw_77j",
+                          "polygon":  [
+                                          {
+                                              "x":  1344,
+                                              "y":  176
+                                          },
+                                          {
+                                              "x":  1344,
+                                              "y":  464
+                                          },
+                                          {
+                                              "x":  1360,
+                                              "y":  464
+                                          },
+                                          {
+                                              "x":  1408,
+                                              "y":  432
+                                          },
+                                          {
+                                              "x":  1408,
+                                              "y":  288
+                                          }
+                                      ],
+                          "collisionType":  "solid"
                       },
                       {
-                            "type": "obstacle",
-                            "zIndex": 38,
-                            "x": 336,
-                            "y": 592,
-                            "rotation": 0,
-                            "w": 96,
-                            "h": 64,
-                            "label": "POLÍGONO POR CIMA",
-                            "id": "poly_obs_mvtkxp7w_t9j",
-                            "polygon": [
-                                  {
-                                        "x": 336,
-                                        "y": 608
-                                  },
-                                  {
-                                        "x": 336,
-                                        "y": 624
-                                  },
-                                  {
-                                        "x": 336,
-                                        "y": 656
-                                  },
-                                  {
-                                        "x": 352,
-                                        "y": 656
-                                  },
-                                  {
-                                        "x": 416,
-                                        "y": 640
-                                  },
-                                  {
-                                        "x": 432,
-                                        "y": 624
-                                  },
-                                  {
-                                        "x": 432,
-                                        "y": 608
-                                  },
-                                  {
-                                        "x": 416,
-                                        "y": 608
-                                  },
-                                  {
-                                        "x": 400,
-                                        "y": 608
-                                  },
-                                  {
-                                        "x": 384,
-                                        "y": 608
-                                  },
-                                  {
-                                        "x": 384,
-                                        "y": 592
-                                  },
-                                  {
-                                        "x": 368,
-                                        "y": 592
-                                  },
-                                  {
-                                        "x": 352,
-                                        "y": 592
-                                  },
-                                  {
-                                        "x": 352,
-                                        "y": 608
-                                  },
-                                  {
-                                        "x": 352,
-                                        "y": 608
-                                  }
-                            ],
-                            "collisionType": "overhead",
-                            "isOverhead": true
+                          "type":  "obstacle",
+                          "zIndex":  38,
+                          "x":  704,
+                          "y":  368,
+                          "rotation":  0,
+                          "w":  240,
+                          "h":  112,
+                          "label":  "TRIGGER",
+                          "id":  "trigger_2yqx",
+                          "collisionType":  "trigger",
+                          "isTrigger":  true,
+                          "ai_instruction":  "Tire essa zona amarela, espere a personagem estar próximo a essa área para abrir o menu de loja mantenha o icone flutuante de \"pressione E para tal coisa\""
                       },
                       {
-                            "type": "obstacle",
-                            "zIndex": 39,
-                            "x": 672,
-                            "y": 592,
-                            "rotation": 0,
-                            "w": 64,
-                            "h": 32,
-                            "label": "POLÍGONO POR CIMA",
-                            "id": "poly_obs_mvtkzgp2_725",
-                            "polygon": [
-                                  {
-                                        "x": 672,
-                                        "y": 624
-                                  },
-                                  {
-                                        "x": 688,
-                                        "y": 608
-                                  },
-                                  {
-                                        "x": 672,
-                                        "y": 592
-                                  },
-                                  {
-                                        "x": 688,
-                                        "y": 592
-                                  },
-                                  {
-                                        "x": 704,
-                                        "y": 608
-                                  },
-                                  {
-                                        "x": 704,
-                                        "y": 592
-                                  },
-                                  {
-                                        "x": 720,
-                                        "y": 592
-                                  },
-                                  {
-                                        "x": 720,
-                                        "y": 608
-                                  },
-                                  {
-                                        "x": 736,
-                                        "y": 608
-                                  },
-                                  {
-                                        "x": 736,
-                                        "y": 608
-                                  },
-                                  {
-                                        "x": 720,
-                                        "y": 624
-                                  }
-                            ],
-                            "collisionType": "overhead",
-                            "isOverhead": true
+                          "type":  "obstacle",
+                          "zIndex":  39,
+                          "x":  224,
+                          "y":  224,
+                          "rotation":  0,
+                          "w":  416,
+                          "h":  288,
+                          "label":  "TRIGGER",
+                          "id":  "trigger_6ta6",
+                          "collisionType":  "trigger",
+                          "isTrigger":  true,
+                          "ai_instruction":  "tire essa zona azul, quando a personagem chegar na zona de trigger deve aparecer \"pressione E para abrir o mural\""
                       },
                       {
-                            "type": "obstacle",
-                            "zIndex": 40,
-                            "x": 784,
-                            "y": 560,
-                            "rotation": 0,
-                            "w": 64,
-                            "h": 64,
-                            "label": "POLÍGONO POR CIMA",
-                            "id": "poly_obs_mvtkzzzq_23c",
-                            "polygon": [
-                                  {
-                                        "x": 784,
-                                        "y": 624
-                                  },
-                                  {
-                                        "x": 800,
-                                        "y": 592
-                                  },
-                                  {
-                                        "x": 784,
-                                        "y": 576
-                                  },
-                                  {
-                                        "x": 800,
-                                        "y": 560
-                                  },
-                                  {
-                                        "x": 816,
-                                        "y": 592
-                                  },
-                                  {
-                                        "x": 832,
-                                        "y": 592
-                                  },
-                                  {
-                                        "x": 832,
-                                        "y": 608
-                                  },
-                                  {
-                                        "x": 848,
-                                        "y": 624
-                                  }
-                            ],
-                            "collisionType": "overhead",
-                            "isOverhead": true
+                          "type":  "animation_marker",
+                          "zIndex":  40,
+                          "x":  464,
+                          "y":  160,
+                          "rotation":  0,
+                          "label":  "ANIM_766",
+                          "id":  "anim_9gqp",
+                          "ai_instruction":  "deixe um ponto de exclamação flutuando aqui",
+                          "isAnimationMarker":  true
                       },
                       {
-                            "type": "obstacle",
-                            "zIndex": 41,
-                            "x": 896,
-                            "y": 592,
-                            "rotation": 0,
-                            "w": 32,
-                            "h": 32,
-                            "label": "POLÍGONO POR CIMA",
-                            "id": "poly_obs_mvtl076n_wxi",
-                            "polygon": [
-                                  {
-                                        "x": 896,
-                                        "y": 624
-                                  },
-                                  {
-                                        "x": 896,
-                                        "y": 624
-                                  },
-                                  {
-                                        "x": 896,
-                                        "y": 608
-                                  },
-                                  {
-                                        "x": 912,
-                                        "y": 608
-                                  },
-                                  {
-                                        "x": 912,
-                                        "y": 592
-                                  },
-                                  {
-                                        "x": 912,
-                                        "y": 592
-                                  },
-                                  {
-                                        "x": 912,
-                                        "y": 608
-                                  },
-                                  {
-                                        "x": 928,
-                                        "y": 624
-                                  },
-                                  {
-                                        "x": 912,
-                                        "y": 624
-                                  }
-                            ],
-                            "collisionType": "overhead",
-                            "isOverhead": true
+                          "type":  "obstacle",
+                          "zIndex":  41,
+                          "x":  1328,
+                          "y":  432,
+                          "rotation":  0,
+                          "w":  96,
+                          "h":  144,
+                          "label":  "TRIGGER",
+                          "id":  "trigger_jfqd",
+                          "collisionType":  "trigger",
+                          "isTrigger":  true,
+                          "ai_instruction":  "na primeira fase, se você tocar aqui, automáticamente você é teleportado para a primeira fase, na segunda para frente aparece aquela função de reiniciar ou ir para a próxima fase e tire esse quadrado de passar de fase de uma fase para outra faça um efeitinho só para não ficar hiper seco"
                       },
                       {
-                            "type": "obstacle",
-                            "zIndex": 42,
-                            "x": 960,
-                            "y": 608,
-                            "rotation": 0,
-                            "w": 16,
-                            "h": 16,
-                            "label": "POLÍGONO POR CIMA",
-                            "id": "poly_obs_mvtl0omn_btc",
-                            "polygon": [
-                                  {
-                                        "x": 960,
-                                        "y": 624
-                                  },
-                                  {
-                                        "x": 960,
-                                        "y": 608
-                                  },
-                                  {
-                                        "x": 976,
-                                        "y": 608
-                                  },
-                                  {
-                                        "x": 976,
-                                        "y": 608
-                                  },
-                                  {
-                                        "x": 976,
-                                        "y": 624
-                                  }
-                            ],
-                            "collisionType": "overhead",
-                            "isOverhead": true
+                          "type":  "obstacle",
+                          "zIndex":  42,
+                          "x":  330,
+                          "y":  589,
+                          "rotation":  0,
+                          "w":  98,
+                          "h":  64,
+                          "label":  "POLÍGONO POR CIMA",
+                          "id":  "poly_obs_mvtx9cmq_y0s",
+                          "polygon":  [
+                                          {
+                                              "x":  363,
+                                              "y":  590
+                                          },
+                                          {
+                                              "x":  356,
+                                              "y":  589
+                                          },
+                                          {
+                                              "x":  352,
+                                              "y":  595
+                                          },
+                                          {
+                                              "x":  349,
+                                              "y":  600
+                                          },
+                                          {
+                                              "x":  348,
+                                              "y":  603
+                                          },
+                                          {
+                                              "x":  348,
+                                              "y":  607
+                                          },
+                                          {
+                                              "x":  345,
+                                              "y":  606
+                                          },
+                                          {
+                                              "x":  339,
+                                              "y":  606
+                                          },
+                                          {
+                                              "x":  337,
+                                              "y":  602
+                                          },
+                                          {
+                                              "x":  335,
+                                              "y":  605
+                                          },
+                                          {
+                                              "x":  334,
+                                              "y":  617
+                                          },
+                                          {
+                                              "x":  330,
+                                              "y":  617
+                                          },
+                                          {
+                                              "x":  331,
+                                              "y":  624
+                                          },
+                                          {
+                                              "x":  335,
+                                              "y":  627
+                                          },
+                                          {
+                                              "x":  335,
+                                              "y":  652
+                                          },
+                                          {
+                                              "x":  338,
+                                              "y":  653
+                                          },
+                                          {
+                                              "x":  339,
+                                              "y":  650
+                                          },
+                                          {
+                                              "x":  341,
+                                              "y":  649
+                                          },
+                                          {
+                                              "x":  341,
+                                              "y":  625
+                                          },
+                                          {
+                                              "x":  343,
+                                              "y":  629
+                                          },
+                                          {
+                                              "x":  348,
+                                              "y":  630
+                                          },
+                                          {
+                                              "x":  351,
+                                              "y":  633
+                                          },
+                                          {
+                                              "x":  354,
+                                              "y":  635
+                                          },
+                                          {
+                                              "x":  362,
+                                              "y":  635
+                                          },
+                                          {
+                                              "x":  363,
+                                              "y":  643
+                                          },
+                                          {
+                                              "x":  366,
+                                              "y":  643
+                                          },
+                                          {
+                                              "x":  369,
+                                              "y":  647
+                                          },
+                                          {
+                                              "x":  373,
+                                              "y":  646
+                                          },
+                                          {
+                                              "x":  375,
+                                              "y":  649
+                                          },
+                                          {
+                                              "x":  402,
+                                              "y":  649
+                                          },
+                                          {
+                                              "x":  404,
+                                              "y":  646
+                                          },
+                                          {
+                                              "x":  407,
+                                              "y":  646
+                                          },
+                                          {
+                                              "x":  409,
+                                              "y":  642
+                                          },
+                                          {
+                                              "x":  413,
+                                              "y":  640
+                                          },
+                                          {
+                                              "x":  414,
+                                              "y":  636
+                                          },
+                                          {
+                                              "x":  415,
+                                              "y":  632
+                                          },
+                                          {
+                                              "x":  428,
+                                              "y":  632
+                                          },
+                                          {
+                                              "x":  428,
+                                              "y":  609
+                                          },
+                                          {
+                                              "x":  411,
+                                              "y":  610
+                                          },
+                                          {
+                                              "x":  411,
+                                              "y":  602
+                                          },
+                                          {
+                                              "x":  388,
+                                              "y":  602
+                                          },
+                                          {
+                                              "x":  386,
+                                              "y":  597
+                                          },
+                                          {
+                                              "x":  384,
+                                              "y":  595
+                                          },
+                                          {
+                                              "x":  381,
+                                              "y":  589
+                                          }
+                                      ],
+                          "collisionType":  "overhead",
+                          "isOverhead":  true
                       },
                       {
-                            "type": "obstacle",
-                            "zIndex": 43,
-                            "x": 992,
-                            "y": 576,
-                            "rotation": 0,
-                            "w": 128,
-                            "h": 48,
-                            "label": "POLÍGONO POR CIMA",
-                            "id": "poly_obs_mvtl1rls_n4d",
-                            "polygon": [
-                                  {
-                                        "x": 992,
-                                        "y": 624
-                                  },
-                                  {
-                                        "x": 992,
-                                        "y": 592
-                                  },
-                                  {
-                                        "x": 1008,
-                                        "y": 576
-                                  },
-                                  {
-                                        "x": 1024,
-                                        "y": 592
-                                  },
-                                  {
-                                        "x": 1088,
-                                        "y": 576
-                                  },
-                                  {
-                                        "x": 1120,
-                                        "y": 608
-                                  },
-                                  {
-                                        "x": 1120,
-                                        "y": 624
-                                  }
-                            ],
-                            "collisionType": "overhead",
-                            "isOverhead": true
+                          "type":  "obstacle",
+                          "zIndex":  43,
+                          "x":  667,
+                          "y":  589,
+                          "rotation":  0,
+                          "w":  72,
+                          "h":  34,
+                          "label":  "POLÍGONO POR CIMA",
+                          "id":  "poly_obs_mvtxavb7_vnn",
+                          "polygon":  [
+                                          {
+                                              "x":  690,
+                                              "y":  611
+                                          },
+                                          {
+                                              "x":  682,
+                                              "y":  610
+                                          },
+                                          {
+                                              "x":  676,
+                                              "y":  614
+                                          },
+                                          {
+                                              "x":  671,
+                                              "y":  618
+                                          },
+                                          {
+                                              "x":  667,
+                                              "y":  623
+                                          },
+                                          {
+                                              "x":  674,
+                                              "y":  623
+                                          },
+                                          {
+                                              "x":  734,
+                                              "y":  623
+                                          },
+                                          {
+                                              "x":  728,
+                                              "y":  619
+                                          },
+                                          {
+                                              "x":  729,
+                                              "y":  615
+                                          },
+                                          {
+                                              "x":  733,
+                                              "y":  618
+                                          },
+                                          {
+                                              "x":  735,
+                                              "y":  617
+                                          },
+                                          {
+                                              "x":  734,
+                                              "y":  611
+                                          },
+                                          {
+                                              "x":  726,
+                                              "y":  610
+                                          },
+                                          {
+                                              "x":  732,
+                                              "y":  608
+                                          },
+                                          {
+                                              "x":  739,
+                                              "y":  605
+                                          },
+                                          {
+                                              "x":  737,
+                                              "y":  602
+                                          },
+                                          {
+                                              "x":  725,
+                                              "y":  602
+                                          },
+                                          {
+                                              "x":  727,
+                                              "y":  598
+                                          },
+                                          {
+                                              "x":  727,
+                                              "y":  595
+                                          },
+                                          {
+                                              "x":  725,
+                                              "y":  593
+                                          },
+                                          {
+                                              "x":  717,
+                                              "y":  592
+                                          },
+                                          {
+                                              "x":  715,
+                                              "y":  593
+                                          },
+                                          {
+                                              "x":  715,
+                                              "y":  590
+                                          },
+                                          {
+                                              "x":  712,
+                                              "y":  589
+                                          },
+                                          {
+                                              "x":  709,
+                                              "y":  594
+                                          },
+                                          {
+                                              "x":  707,
+                                              "y":  596
+                                          },
+                                          {
+                                              "x":  703,
+                                              "y":  600
+                                          },
+                                          {
+                                              "x":  702,
+                                              "y":  601
+                                          },
+                                          {
+                                              "x":  697,
+                                              "y":  600
+                                          },
+                                          {
+                                              "x":  694,
+                                              "y":  598
+                                          },
+                                          {
+                                              "x":  689,
+                                              "y":  595
+                                          },
+                                          {
+                                              "x":  682,
+                                              "y":  593
+                                          },
+                                          {
+                                              "x":  680,
+                                              "y":  596
+                                          },
+                                          {
+                                              "x":  680,
+                                              "y":  599
+                                          },
+                                          {
+                                              "x":  682,
+                                              "y":  602
+                                          },
+                                          {
+                                              "x":  683,
+                                              "y":  605
+                                          }
+                                      ],
+                          "collisionType":  "overhead",
+                          "isOverhead":  true
                       },
                       {
-                            "type": "obstacle",
-                            "zIndex": 44,
-                            "x": 704,
-                            "y": 368,
-                            "rotation": 0,
-                            "w": 240,
-                            "h": 112,
-                            "label": "TRIGGER",
-                            "id": "trigger_2yqx",
-                            "collisionType": "trigger",
-                            "isTrigger": true,
-                            "ai_instruction": "Tire essa zona amarela, espere a personagem estar próximo a essa área para abrir o menu de loja mantenha o icone flutuante de \"pressione E para tal coisa\""
+                          "type":  "obstacle",
+                          "zIndex":  44,
+                          "x":  777,
+                          "y":  566,
+                          "rotation":  0,
+                          "w":  71,
+                          "h":  60,
+                          "label":  "POLÍGONO POR CIMA",
+                          "id":  "poly_obs_mvtxd37k_58p",
+                          "polygon":  [
+                                          {
+                                              "x":  777,
+                                              "y":  623
+                                          },
+                                          {
+                                              "x":  783,
+                                              "y":  609
+                                          },
+                                          {
+                                              "x":  797,
+                                              "y":  602
+                                          },
+                                          {
+                                              "x":  798,
+                                              "y":  597
+                                          },
+                                          {
+                                              "x":  781,
+                                              "y":  581
+                                          },
+                                          {
+                                              "x":  781,
+                                              "y":  577
+                                          },
+                                          {
+                                              "x":  792,
+                                              "y":  566
+                                          },
+                                          {
+                                              "x":  799,
+                                              "y":  569
+                                          },
+                                          {
+                                              "x":  799,
+                                              "y":  575
+                                          },
+                                          {
+                                              "x":  835,
+                                              "y":  607
+                                          },
+                                          {
+                                              "x":  838,
+                                              "y":  615
+                                          },
+                                          {
+                                              "x":  841,
+                                              "y":  619
+                                          },
+                                          {
+                                              "x":  846,
+                                              "y":  621
+                                          },
+                                          {
+                                              "x":  848,
+                                              "y":  626
+                                          }
+                                      ],
+                          "collisionType":  "overhead",
+                          "isOverhead":  true
                       },
                       {
-                            "type": "obstacle",
-                            "zIndex": 45,
-                            "x": 224,
-                            "y": 224,
-                            "rotation": 0,
-                            "w": 416,
-                            "h": 288,
-                            "label": "TRIGGER",
-                            "id": "trigger_6ta6",
-                            "collisionType": "trigger",
-                            "isTrigger": true,
-                            "ai_instruction": "tire essa zona azul, quando a personagem chegar na zona de trigger deve aparecer \"pressione E para abrir o mural\""
+                          "type":  "obstacle",
+                          "zIndex":  45,
+                          "x":  898,
+                          "y":  597,
+                          "rotation":  0,
+                          "w":  23,
+                          "h":  27,
+                          "label":  "POLÍGONO POR CIMA",
+                          "id":  "poly_obs_mvtxdz72_zz3",
+                          "polygon":  [
+                                          {
+                                              "x":  898,
+                                              "y":  623
+                                          },
+                                          {
+                                              "x":  903,
+                                              "y":  621
+                                          },
+                                          {
+                                              "x":  904,
+                                              "y":  609
+                                          },
+                                          {
+                                              "x":  899,
+                                              "y":  607
+                                          },
+                                          {
+                                              "x":  899,
+                                              "y":  600
+                                          },
+                                          {
+                                              "x":  903,
+                                              "y":  601
+                                          },
+                                          {
+                                              "x":  904,
+                                              "y":  597
+                                          },
+                                          {
+                                              "x":  915,
+                                              "y":  597
+                                          },
+                                          {
+                                              "x":  916,
+                                              "y":  600
+                                          },
+                                          {
+                                              "x":  919,
+                                              "y":  602
+                                          },
+                                          {
+                                              "x":  920,
+                                              "y":  609
+                                          },
+                                          {
+                                              "x":  916,
+                                              "y":  611
+                                          },
+                                          {
+                                              "x":  917,
+                                              "y":  622
+                                          },
+                                          {
+                                              "x":  921,
+                                              "y":  623
+                                          }
+                                      ],
+                          "collisionType":  "overhead",
+                          "isOverhead":  true
                       },
                       {
-                            "type": "animation_marker",
-                            "zIndex": 46,
-                            "x": 464,
-                            "y": 160,
-                            "rotation": 0,
-                            "label": "ANIM_766",
-                            "id": "anim_9gqp",
-                            "ai_instruction": "deixe um ponto de exclamação flutuando aqui",
-                            "isAnimationMarker": true
+                          "type":  "obstacle",
+                          "zIndex":  46,
+                          "x":  958,
+                          "y":  602,
+                          "rotation":  0,
+                          "w":  20,
+                          "h":  22,
+                          "label":  "POLÍGONO POR CIMA",
+                          "id":  "poly_obs_mvtxezy6_gbw",
+                          "polygon":  [
+                                          {
+                                              "x":  960,
+                                              "y":  624
+                                          },
+                                          {
+                                              "x":  962,
+                                              "y":  614
+                                          },
+                                          {
+                                              "x":  958,
+                                              "y":  612
+                                          },
+                                          {
+                                              "x":  958,
+                                              "y":  605
+                                          },
+                                          {
+                                              "x":  962,
+                                              "y":  604
+                                          },
+                                          {
+                                              "x":  963,
+                                              "y":  602
+                                          },
+                                          {
+                                              "x":  971,
+                                              "y":  602
+                                          },
+                                          {
+                                              "x":  975,
+                                              "y":  606
+                                          },
+                                          {
+                                              "x":  975,
+                                              "y":  609
+                                          },
+                                          {
+                                              "x":  978,
+                                              "y":  609
+                                          },
+                                          {
+                                              "x":  978,
+                                              "y":  614
+                                          },
+                                          {
+                                              "x":  975,
+                                              "y":  614
+                                          },
+                                          {
+                                              "x":  975,
+                                              "y":  624
+                                          }
+                                      ],
+                          "collisionType":  "overhead",
+                          "isOverhead":  true
                       },
                       {
-                            "type": "obstacle",
-                            "zIndex": 47,
-                            "x": 1328,
-                            "y": 432,
-                            "rotation": 0,
-                            "w": 96,
-                            "h": 144,
-                            "label": "TRIGGER",
-                            "id": "trigger_jfqd",
-                            "collisionType": "trigger",
-                            "isTrigger": true,
-                            "ai_instruction": "na primeira fase, se você tocar aqui, automáticamente você é teleportado para a primeira fase, na segunda para frente aparece aquela função de reiniciar ou ir para a próxima fase e tire esse quadrado de passar de fase de uma fase para outra faça um efeitinho só para não ficar hiper seco"
+                          "type":  "obstacle",
+                          "zIndex":  47,
+                          "x":  995,
+                          "y":  582,
+                          "rotation":  0,
+                          "w":  126,
+                          "h":  41,
+                          "label":  "POLÍGONO POR CIMA",
+                          "id":  "poly_obs_mvtxg8bj_ifz",
+                          "polygon":  [
+                                          {
+                                              "x":  996,
+                                              "y":  622
+                                          },
+                                          {
+                                              "x":  995,
+                                              "y":  586
+                                          },
+                                          {
+                                              "x":  1000,
+                                              "y":  582
+                                          },
+                                          {
+                                              "x":  1092,
+                                              "y":  582
+                                          },
+                                          {
+                                              "x":  1102,
+                                              "y":  596
+                                          },
+                                          {
+                                              "x":  1107,
+                                              "y":  596
+                                          },
+                                          {
+                                              "x":  1109,
+                                              "y":  601
+                                          },
+                                          {
+                                              "x":  1115,
+                                              "y":  602
+                                          },
+                                          {
+                                              "x":  1114,
+                                              "y":  606
+                                          },
+                                          {
+                                              "x":  1116,
+                                              "y":  609
+                                          },
+                                          {
+                                              "x":  1116,
+                                              "y":  612
+                                          },
+                                          {
+                                              "x":  1121,
+                                              "y":  615
+                                          },
+                                          {
+                                              "x":  1120,
+                                              "y":  623
+                                          }
+                                      ],
+                          "collisionType":  "overhead",
+                          "isOverhead":  true
                       }
-                ]
-          },
-          {
-                "id": 3,
-                "name": "Teto/Overlay",
-                "visible": true,
-                "itemsCount": 0,
-                "items": []
-          }
-    ],
+                  ]
+    },
+    {
+        "id":  3,
+        "name":  "Teto/Overlay",
+        "itemsCount":  0,
+        "items":  [
+
+                  ]
+    }
+],
     obstacles: [
-          {
-                "type": "obstacle",
-                "zIndex": 0,
-                "x": 190,
-                "y": 0,
-                "rotation": 0,
-                "w": 1150,
-                "h": 105,
-                "label": "TETO / PAREDE SUPERIOR"
-          },
-          {
-                "type": "obstacle",
-                "zIndex": 1,
-                "x": 0,
-                "y": 0,
-                "rotation": 0,
-                "w": 190,
-                "h": 220,
-                "label": "CANTO SUPERIOR ESQUERDO"
-          },
-          {
-                "type": "obstacle",
-                "zIndex": 2,
-                "x": 1344,
-                "y": 0,
-                "rotation": 0,
-                "w": 196,
-                "h": 180,
-                "label": "CANTO SUPERIOR DIREITO"
-          },
-          {
-                "type": "obstacle",
-                "zIndex": 3,
-                "x": 0,
-                "y": 220,
-                "rotation": 0,
-                "w": 64,
-                "h": 100,
-                "label": "BATENTE PORTA ESQUERDA (ALTO)"
-          },
-          {
-                "type": "obstacle",
-                "zIndex": 4,
-                "x": 0,
-                "y": 0,
-                "rotation": 0,
-                "w": 40,
-                "h": 857,
-                "label": "LIMITE EXTERNO DA RAMPA"
-          },
-          {
-                "type": "obstacle",
-                "zIndex": 5,
-                "x": 0,
-                "y": 656,
-                "rotation": 0,
-                "w": 140,
-                "h": 201,
-                "label": "CANTO INFERIOR ESQUERDO"
-          },
-          {
-                "type": "obstacle",
-                "zIndex": 6,
-                "x": 1480,
-                "y": 180,
-                "rotation": 0,
-                "w": 56,
-                "h": 80,
-                "label": "BATENTE PORTA DIREITA (ALTO)"
-          },
-          {
-                "type": "obstacle",
-                "zIndex": 7,
-                "x": 1480,
-                "y": 0,
-                "rotation": 0,
-                "w": 56,
-                "h": 857,
-                "label": "LIMITE EXTERNO DA SAÍDA"
-          },
-          {
-                "type": "obstacle",
-                "zIndex": 8,
-                "x": 1380,
-                "y": 690,
-                "rotation": 0,
-                "w": 156,
-                "h": 167,
-                "label": "CANTO INFERIOR DIREITO"
-          },
-          {
-                "type": "obstacle",
-                "zIndex": 9,
-                "x": 140,
-                "y": 810,
-                "rotation": 0,
-                "w": 1240,
-                "h": 47,
-                "label": "PAREDE INFERIOR DA VAN"
-          },
-          {
-                "type": "obstacle",
-                "zIndex": 10,
-                "x": 190,
-                "y": 105,
-                "rotation": 0,
-                "w": 495,
-                "h": 280,
-                "label": "PAREDE TRASEIRA & MURAL DE AVISOS"
-          },
-          {
-                "type": "obstacle",
-                "zIndex": 11,
-                "x": 940,
-                "y": 105,
-                "rotation": 0,
-                "w": 400,
-                "h": 247,
-                "label": "PAREDE TRASEIRA & PAINEL DE CONTROLE"
-          },
-          {
-                "type": "obstacle",
-                "zIndex": 12,
-                "x": 224,
-                "y": 288,
-                "rotation": 0,
-                "w": 115,
-                "h": 150,
-                "label": "CAIXOTE & ENCOMENDA (NOROESTE)"
-          },
-          {
-                "type": "obstacle",
-                "zIndex": 13,
-                "x": 352,
-                "y": 304,
-                "rotation": 0,
-                "w": 75,
-                "h": 127,
-                "label": "PLANTA DA BASE (NOROESTE)"
-          },
-          {
-                "type": "obstacle",
-                "zIndex": 14,
-                "x": 416,
-                "y": 288,
-                "rotation": 0,
-                "w": 115,
-                "h": 192,
-                "label": "CADEIRA GIRATÓRIA DA ESTAÇÃO"
-          },
-          {
-                "type": "obstacle",
-                "zIndex": 15,
-                "x": 592,
-                "y": 272,
-                "rotation": 0,
-                "w": 98,
-                "h": 150,
-                "label": "VASO DE PLANTA TÁTICO"
-          },
-          {
-                "type": "obstacle",
-                "zIndex": 16,
-                "x": 704,
-                "y": 96,
-                "rotation": 0,
-                "w": 240,
-                "h": 343,
-                "label": "DISPENSADOR AUTOMÁTICO (LOJA DE ARMAS)"
-          },
-          {
-                "type": "obstacle",
-                "zIndex": 17,
-                "x": 1024,
-                "y": 352,
-                "rotation": 0,
-                "w": 96,
-                "h": 64,
-                "label": "MESA DO COMPUTADOR CRT"
-          },
-          {
-                "type": "obstacle",
-                "zIndex": 18,
-                "x": 1120,
-                "y": 272,
-                "rotation": 0,
-                "w": 115,
-                "h": 155,
-                "label": "BAÚS DE CARGA & GERADOR"
-          },
-          {
-                "type": "obstacle",
-                "zIndex": 19,
-                "x": 112,
-                "y": 656,
-                "rotation": 0,
-                "w": 240,
-                "h": 160,
-                "label": "VASO & CAIXOTE INFERIOR"
-          },
-          {
-                "type": "obstacle",
-                "zIndex": 20,
-                "x": 330,
-                "y": 624,
-                "rotation": 0,
-                "w": 395,
-                "h": 196,
-                "label": "BANCADA MECÂNICA & PROJETOS"
-          },
-          {
-                "type": "obstacle",
-                "zIndex": 21,
-                "x": 725,
-                "y": 624,
-                "rotation": 0,
-                "w": 411,
-                "h": 196,
-                "label": "LABORATÓRIO QUÍMICO & TUBOS DE ENSAIO"
-          },
-          {
-                "type": "obstacle",
-                "zIndex": 22,
-                "x": 1136,
-                "y": 688,
-                "rotation": 0,
-                "w": 240,
-                "h": 137,
-                "label": "MALETA DE CAMPO & BATERIA"
-          },
-          {
-                "type": "obstacle",
-                "zIndex": 23,
-                "x": 528,
-                "y": 320,
-                "rotation": 0,
-                "w": 48,
-                "h": 80,
-                "label": "COLISÃO",
-                "id": "van_obs_rxkk_24"
-          },
-          {
-                "type": "obstacle",
-                "zIndex": 24,
-                "x": 1232,
-                "y": 352,
-                "rotation": 0,
-                "w": 96,
-                "h": 64,
-                "label": "MESA DO COMPUTADOR CRT (Cópia)",
-                "id": "item_copy_71a"
-          },
-          {
-                "type": "obstacle",
-                "zIndex": 25,
-                "x": 48,
-                "y": 368,
-                "rotation": 0,
-                "w": 32,
-                "h": 288,
-                "label": "COLISÃO",
-                "id": "van_obs_x47d_31"
-          },
-          {
-                "type": "obstacle",
-                "zIndex": 26,
-                "x": 80,
-                "y": 624,
-                "rotation": 0,
-                "w": 16,
-                "h": 48,
-                "label": "COLISÃO",
-                "id": "van_obs_x7q1_32"
-          },
-          {
-                "type": "obstacle",
-                "zIndex": 27,
-                "x": 1408,
-                "y": 176,
-                "rotation": 0,
-                "w": 112,
-                "h": 96,
-                "label": "COLISÃO",
-                "id": "van_obs_znfo_34"
-          },
-          {
-                "type": "obstacle",
-                "zIndex": 28,
-                "x": 1360,
-                "y": 176,
-                "rotation": 0,
-                "w": 64,
-                "h": 32,
-                "label": "COLISÃO",
-                "id": "van_obs_zsvo_35"
-          },
-          {
-                "type": "obstacle",
-                "zIndex": 29,
-                "x": 1376,
-                "y": 192,
-                "rotation": 0,
-                "w": 48,
-                "h": 32,
-                "label": "COLISÃO",
-                "id": "van_obs_zwr1_36"
-          },
-          {
-                "type": "obstacle",
-                "zIndex": 30,
-                "x": 1392,
-                "y": 208,
-                "rotation": 0,
-                "w": 32,
-                "h": 48,
-                "label": "COLISÃO",
-                "id": "van_obs_07sd_37"
-          },
-          {
-                "type": "obstacle",
-                "zIndex": 31,
-                "x": 1408,
-                "y": 272,
-                "rotation": 0,
-                "w": 80,
-                "h": 432,
-                "label": "COLISÃO",
-                "id": "van_obs_0ij1_38"
-          },
-          {
-                "type": "obstacle",
-                "zIndex": 32,
-                "x": 48,
-                "y": 224,
-                "rotation": 0,
-                "w": 128,
-                "h": 160,
-                "label": "COLISÃO POLIGONAL",
-                "id": "poly_obs_mvtkswlj_bre",
-                "polygon": [
-                      {
-                            "x": 176,
-                            "y": 224
-                      },
-                      {
-                            "x": 80,
-                            "y": 384
-                      },
-                      {
-                            "x": 48,
-                            "y": 368
-                      },
-                      {
-                            "x": 128,
-                            "y": 224
-                      }
-                ],
-                "collisionType": "solid"
-          },
-          {
-                "type": "obstacle",
-                "zIndex": 33,
-                "x": 144,
-                "y": 176,
-                "rotation": 0,
-                "w": 48,
-                "h": 368,
-                "label": "COLISÃO POLIGONAL",
-                "id": "poly_obs_mvtkt8fq_e18",
-                "polygon": [
-                      {
-                            "x": 144,
-                            "y": 288
-                      },
-                      {
-                            "x": 144,
-                            "y": 544
-                      },
-                      {
-                            "x": 192,
-                            "y": 448
-                      },
-                      {
-                            "x": 192,
-                            "y": 176
-                      }
-                ],
-                "collisionType": "solid"
-          },
-          {
-                "type": "obstacle",
-                "zIndex": 34,
-                "x": 192,
-                "y": 384,
-                "rotation": 0,
-                "w": 32,
-                "h": 80,
-                "label": "COLISÃO POLIGONAL",
-                "id": "poly_obs_mvtktg0n_vb3",
-                "polygon": [
-                      {
-                            "x": 192,
-                            "y": 384
-                      },
-                      {
-                            "x": 192,
-                            "y": 464
-                      },
-                      {
-                            "x": 224,
-                            "y": 384
-                      },
-                      {
-                            "x": 224,
-                            "y": 384
-                      }
-                ],
-                "collisionType": "solid"
-          },
-          {
-                "type": "obstacle",
-                "zIndex": 35,
-                "x": 80,
-                "y": 288,
-                "rotation": 0,
-                "w": 64,
-                "h": 208,
-                "label": "COLISÃO POLIGONAL",
-                "id": "poly_obs_mvtktvfk_fj9",
-                "polygon": [
-                      {
-                            "x": 128,
-                            "y": 480
-                      },
-                      {
-                            "x": 128,
-                            "y": 480
-                      },
-                      {
-                            "x": 112,
-                            "y": 496
-                      },
-                      {
-                            "x": 80,
-                            "y": 496
-                      },
-                      {
-                            "x": 80,
-                            "y": 384
-                      },
-                      {
-                            "x": 144,
-                            "y": 288
-                      }
-                ],
-                "collisionType": "solid"
-          },
-          {
-                "type": "obstacle",
-                "zIndex": 36,
-                "x": 128,
-                "y": 336,
-                "rotation": 0,
-                "w": 16,
-                "h": 144,
-                "label": "COLISÃO POLIGONAL",
-                "id": "poly_obs_mvtku3iv_kpy",
-                "polygon": [
-                      {
-                            "x": 128,
-                            "y": 480
-                      },
-                      {
-                            "x": 128,
-                            "y": 480
-                      },
-                      {
-                            "x": 144,
-                            "y": 464
-                      },
-                      {
-                            "x": 144,
-                            "y": 336
-                      }
-                ],
-                "collisionType": "solid"
-          },
-          {
-                "type": "obstacle",
-                "zIndex": 37,
-                "x": 1344,
-                "y": 176,
-                "rotation": 0,
-                "w": 64,
-                "h": 288,
-                "label": "COLISÃO POLIGONAL",
-                "id": "poly_obs_mvtkumiw_77j",
-                "polygon": [
-                      {
-                            "x": 1344,
-                            "y": 176
-                      },
-                      {
-                            "x": 1344,
-                            "y": 464
-                      },
-                      {
-                            "x": 1360,
-                            "y": 464
-                      },
-                      {
-                            "x": 1408,
-                            "y": 432
-                      },
-                      {
-                            "x": 1408,
-                            "y": 288
-                      }
-                ],
-                "collisionType": "solid"
-          },
-          {
-                "type": "obstacle",
-                "zIndex": 38,
-                "x": 336,
-                "y": 592,
-                "rotation": 0,
-                "w": 96,
-                "h": 64,
-                "label": "POLÍGONO POR CIMA",
-                "id": "poly_obs_mvtkxp7w_t9j",
-                "polygon": [
-                      {
-                            "x": 336,
-                            "y": 608
-                      },
-                      {
-                            "x": 336,
-                            "y": 624
-                      },
-                      {
-                            "x": 336,
-                            "y": 656
-                      },
-                      {
-                            "x": 352,
-                            "y": 656
-                      },
-                      {
-                            "x": 416,
-                            "y": 640
-                      },
-                      {
-                            "x": 432,
-                            "y": 624
-                      },
-                      {
-                            "x": 432,
-                            "y": 608
-                      },
-                      {
-                            "x": 416,
-                            "y": 608
-                      },
-                      {
-                            "x": 400,
-                            "y": 608
-                      },
-                      {
-                            "x": 384,
-                            "y": 608
-                      },
-                      {
-                            "x": 384,
-                            "y": 592
-                      },
-                      {
-                            "x": 368,
-                            "y": 592
-                      },
-                      {
-                            "x": 352,
-                            "y": 592
-                      },
-                      {
-                            "x": 352,
-                            "y": 608
-                      },
-                      {
-                            "x": 352,
-                            "y": 608
-                      }
-                ],
-                "collisionType": "overhead",
-                "isOverhead": true
-          },
-          {
-                "type": "obstacle",
-                "zIndex": 39,
-                "x": 672,
-                "y": 592,
-                "rotation": 0,
-                "w": 64,
-                "h": 32,
-                "label": "POLÍGONO POR CIMA",
-                "id": "poly_obs_mvtkzgp2_725",
-                "polygon": [
-                      {
-                            "x": 672,
-                            "y": 624
-                      },
-                      {
-                            "x": 688,
-                            "y": 608
-                      },
-                      {
-                            "x": 672,
-                            "y": 592
-                      },
-                      {
-                            "x": 688,
-                            "y": 592
-                      },
-                      {
-                            "x": 704,
-                            "y": 608
-                      },
-                      {
-                            "x": 704,
-                            "y": 592
-                      },
-                      {
-                            "x": 720,
-                            "y": 592
-                      },
-                      {
-                            "x": 720,
-                            "y": 608
-                      },
-                      {
-                            "x": 736,
-                            "y": 608
-                      },
-                      {
-                            "x": 736,
-                            "y": 608
-                      },
-                      {
-                            "x": 720,
-                            "y": 624
-                      }
-                ],
-                "collisionType": "overhead",
-                "isOverhead": true
-          },
-          {
-                "type": "obstacle",
-                "zIndex": 40,
-                "x": 784,
-                "y": 560,
-                "rotation": 0,
-                "w": 64,
-                "h": 64,
-                "label": "POLÍGONO POR CIMA",
-                "id": "poly_obs_mvtkzzzq_23c",
-                "polygon": [
-                      {
-                            "x": 784,
-                            "y": 624
-                      },
-                      {
-                            "x": 800,
-                            "y": 592
-                      },
-                      {
-                            "x": 784,
-                            "y": 576
-                      },
-                      {
-                            "x": 800,
-                            "y": 560
-                      },
-                      {
-                            "x": 816,
-                            "y": 592
-                      },
-                      {
-                            "x": 832,
-                            "y": 592
-                      },
-                      {
-                            "x": 832,
-                            "y": 608
-                      },
-                      {
-                            "x": 848,
-                            "y": 624
-                      }
-                ],
-                "collisionType": "overhead",
-                "isOverhead": true
-          },
-          {
-                "type": "obstacle",
-                "zIndex": 41,
-                "x": 896,
-                "y": 592,
-                "rotation": 0,
-                "w": 32,
-                "h": 32,
-                "label": "POLÍGONO POR CIMA",
-                "id": "poly_obs_mvtl076n_wxi",
-                "polygon": [
-                      {
-                            "x": 896,
-                            "y": 624
-                      },
-                      {
-                            "x": 896,
-                            "y": 624
-                      },
-                      {
-                            "x": 896,
-                            "y": 608
-                      },
-                      {
-                            "x": 912,
-                            "y": 608
-                      },
-                      {
-                            "x": 912,
-                            "y": 592
-                      },
-                      {
-                            "x": 912,
-                            "y": 592
-                      },
-                      {
-                            "x": 912,
-                            "y": 608
-                      },
-                      {
-                            "x": 928,
-                            "y": 624
-                      },
-                      {
-                            "x": 912,
-                            "y": 624
-                      }
-                ],
-                "collisionType": "overhead",
-                "isOverhead": true
-          },
-          {
-                "type": "obstacle",
-                "zIndex": 42,
-                "x": 960,
-                "y": 608,
-                "rotation": 0,
-                "w": 16,
-                "h": 16,
-                "label": "POLÍGONO POR CIMA",
-                "id": "poly_obs_mvtl0omn_btc",
-                "polygon": [
-                      {
-                            "x": 960,
-                            "y": 624
-                      },
-                      {
-                            "x": 960,
-                            "y": 608
-                      },
-                      {
-                            "x": 976,
-                            "y": 608
-                      },
-                      {
-                            "x": 976,
-                            "y": 608
-                      },
-                      {
-                            "x": 976,
-                            "y": 624
-                      }
-                ],
-                "collisionType": "overhead",
-                "isOverhead": true
-          },
-          {
-                "type": "obstacle",
-                "zIndex": 43,
-                "x": 992,
-                "y": 576,
-                "rotation": 0,
-                "w": 128,
-                "h": 48,
-                "label": "POLÍGONO POR CIMA",
-                "id": "poly_obs_mvtl1rls_n4d",
-                "polygon": [
-                      {
-                            "x": 992,
-                            "y": 624
-                      },
-                      {
-                            "x": 992,
-                            "y": 592
-                      },
-                      {
-                            "x": 1008,
-                            "y": 576
-                      },
-                      {
-                            "x": 1024,
-                            "y": 592
-                      },
-                      {
-                            "x": 1088,
-                            "y": 576
-                      },
-                      {
-                            "x": 1120,
-                            "y": 608
-                      },
-                      {
-                            "x": 1120,
-                            "y": 624
-                      }
-                ],
-                "collisionType": "overhead",
-                "isOverhead": true
-          },
-          {
-                "type": "obstacle",
-                "zIndex": 44,
-                "x": 704,
-                "y": 368,
-                "rotation": 0,
-                "w": 240,
-                "h": 112,
-                "label": "TRIGGER",
-                "id": "trigger_2yqx",
-                "collisionType": "trigger",
-                "isTrigger": true,
-                "ai_instruction": "Tire essa zona amarela, espere a personagem estar próximo a essa área para abrir o menu de loja mantenha o icone flutuante de \"pressione E para tal coisa\""
-          },
-          {
-                "type": "obstacle",
-                "zIndex": 45,
-                "x": 224,
-                "y": 224,
-                "rotation": 0,
-                "w": 416,
-                "h": 288,
-                "label": "TRIGGER",
-                "id": "trigger_6ta6",
-                "collisionType": "trigger",
-                "isTrigger": true,
-                "ai_instruction": "tire essa zona azul, quando a personagem chegar na zona de trigger deve aparecer \"pressione E para abrir o mural\""
-          },
-          {
-                "type": "obstacle",
-                "zIndex": 47,
-                "x": 1328,
-                "y": 432,
-                "rotation": 0,
-                "w": 96,
-                "h": 144,
-                "label": "TRIGGER",
-                "id": "trigger_jfqd",
-                "collisionType": "trigger",
-                "isTrigger": true,
-                "ai_instruction": "na primeira fase, se você tocar aqui, automáticamente você é teleportado para a primeira fase, na segunda para frente aparece aquela função de reiniciar ou ir para a próxima fase e tire esse quadrado de passar de fase de uma fase para outra faça um efeitinho só para não ficar hiper seco"
-          }
-    ]
+    {
+        "x":  190,
+        "y":  0,
+        "w":  1150,
+        "h":  105,
+        "rotation":  0,
+        "label":  "TETO / PAREDE SUPERIOR"
+    },
+    {
+        "x":  0,
+        "y":  0,
+        "w":  190,
+        "h":  220,
+        "rotation":  0,
+        "label":  "CANTO SUPERIOR ESQUERDO"
+    },
+    {
+        "x":  1344,
+        "y":  0,
+        "w":  196,
+        "h":  180,
+        "rotation":  0,
+        "label":  "CANTO SUPERIOR DIREITO"
+    },
+    {
+        "x":  0,
+        "y":  220,
+        "w":  64,
+        "h":  100,
+        "rotation":  0,
+        "label":  "BATENTE PORTA ESQUERDA (ALTO)"
+    },
+    {
+        "x":  0,
+        "y":  0,
+        "w":  40,
+        "h":  857,
+        "rotation":  0,
+        "label":  "LIMITE EXTERNO DA RAMPA"
+    },
+    {
+        "x":  0,
+        "y":  656,
+        "w":  140,
+        "h":  201,
+        "rotation":  0,
+        "label":  "CANTO INFERIOR ESQUERDO"
+    },
+    {
+        "x":  1480,
+        "y":  180,
+        "w":  56,
+        "h":  80,
+        "rotation":  0,
+        "label":  "BATENTE PORTA DIREITA (ALTO)"
+    },
+    {
+        "x":  1480,
+        "y":  0,
+        "w":  56,
+        "h":  857,
+        "rotation":  0,
+        "label":  "LIMITE EXTERNO DA SAÍDA"
+    },
+    {
+        "x":  1380,
+        "y":  690,
+        "w":  156,
+        "h":  167,
+        "rotation":  0,
+        "label":  "CANTO INFERIOR DIREITO"
+    },
+    {
+        "x":  140,
+        "y":  810,
+        "w":  1240,
+        "h":  47,
+        "rotation":  0,
+        "label":  "PAREDE INFERIOR DA VAN"
+    },
+    {
+        "x":  190,
+        "y":  105,
+        "w":  495,
+        "h":  280,
+        "rotation":  0,
+        "label":  "PAREDE TRASEIRA \u0026 MURAL DE AVISOS"
+    },
+    {
+        "x":  940,
+        "y":  105,
+        "w":  400,
+        "h":  247,
+        "rotation":  0,
+        "label":  "PAREDE TRASEIRA \u0026 PAINEL DE CONTROLE"
+    },
+    {
+        "x":  224,
+        "y":  288,
+        "w":  115,
+        "h":  150,
+        "rotation":  0,
+        "label":  "CAIXOTE \u0026 ENCOMENDA (NOROESTE)"
+    },
+    {
+        "x":  352,
+        "y":  304,
+        "w":  75,
+        "h":  127,
+        "rotation":  0,
+        "label":  "PLANTA DA BASE (NOROESTE)"
+    },
+    {
+        "x":  416,
+        "y":  288,
+        "w":  115,
+        "h":  192,
+        "rotation":  0,
+        "label":  "CADEIRA GIRATÓRIA DA ESTAÇÃO"
+    },
+    {
+        "x":  592,
+        "y":  272,
+        "w":  98,
+        "h":  150,
+        "rotation":  0,
+        "label":  "VASO DE PLANTA TÁTICO"
+    },
+    {
+        "x":  704,
+        "y":  96,
+        "w":  240,
+        "h":  343,
+        "rotation":  0,
+        "label":  "DISPENSADOR AUTOMÁTICO (LOJA DE ARMAS)"
+    },
+    {
+        "x":  1024,
+        "y":  352,
+        "w":  96,
+        "h":  64,
+        "rotation":  0,
+        "label":  "MESA DO COMPUTADOR CRT"
+    },
+    {
+        "x":  1120,
+        "y":  272,
+        "w":  115,
+        "h":  155,
+        "rotation":  0,
+        "label":  "BAÚS DE CARGA \u0026 GERADOR"
+    },
+    {
+        "x":  112,
+        "y":  656,
+        "w":  240,
+        "h":  160,
+        "rotation":  0,
+        "label":  "VASO \u0026 CAIXOTE INFERIOR"
+    },
+    {
+        "x":  330,
+        "y":  624,
+        "w":  395,
+        "h":  196,
+        "rotation":  0,
+        "label":  "BANCADA MECÂNICA \u0026 PROJETOS"
+    },
+    {
+        "x":  725,
+        "y":  624,
+        "w":  411,
+        "h":  196,
+        "rotation":  0,
+        "label":  "LABORATÓRIO QUÍMICO \u0026 TUBOS DE ENSAIO"
+    },
+    {
+        "x":  1136,
+        "y":  688,
+        "w":  240,
+        "h":  137,
+        "rotation":  0,
+        "label":  "MALETA DE CAMPO \u0026 BATERIA"
+    },
+    {
+        "x":  528,
+        "y":  320,
+        "w":  48,
+        "h":  80,
+        "rotation":  0,
+        "label":  "COLISÃO",
+        "id":  "van_obs_rxkk_24"
+    },
+    {
+        "x":  1232,
+        "y":  352,
+        "w":  96,
+        "h":  64,
+        "rotation":  0,
+        "label":  "MESA DO COMPUTADOR CRT (Cópia)",
+        "id":  "item_copy_71a"
+    },
+    {
+        "x":  48,
+        "y":  368,
+        "w":  32,
+        "h":  288,
+        "rotation":  0,
+        "label":  "COLISÃO",
+        "id":  "van_obs_x47d_31"
+    },
+    {
+        "x":  80,
+        "y":  624,
+        "w":  16,
+        "h":  48,
+        "rotation":  0,
+        "label":  "COLISÃO",
+        "id":  "van_obs_x7q1_32"
+    },
+    {
+        "x":  1408,
+        "y":  176,
+        "w":  112,
+        "h":  96,
+        "rotation":  0,
+        "label":  "COLISÃO",
+        "id":  "van_obs_znfo_34"
+    },
+    {
+        "x":  1360,
+        "y":  176,
+        "w":  64,
+        "h":  32,
+        "rotation":  0,
+        "label":  "COLISÃO",
+        "id":  "van_obs_zsvo_35"
+    },
+    {
+        "x":  1376,
+        "y":  192,
+        "w":  48,
+        "h":  32,
+        "rotation":  0,
+        "label":  "COLISÃO",
+        "id":  "van_obs_zwr1_36"
+    },
+    {
+        "x":  1392,
+        "y":  208,
+        "w":  32,
+        "h":  48,
+        "rotation":  0,
+        "label":  "COLISÃO",
+        "id":  "van_obs_07sd_37"
+    },
+    {
+        "x":  1408,
+        "y":  272,
+        "w":  80,
+        "h":  432,
+        "rotation":  0,
+        "label":  "COLISÃO",
+        "id":  "van_obs_0ij1_38"
+    },
+    {
+        "x":  48,
+        "y":  224,
+        "w":  128,
+        "h":  160,
+        "rotation":  0,
+        "label":  "COLISÃO POLIGONAL",
+        "id":  "poly_obs_mvtkswlj_bre",
+        "polygon":  [
+                        {
+                            "x":  176,
+                            "y":  224
+                        },
+                        {
+                            "x":  80,
+                            "y":  384
+                        },
+                        {
+                            "x":  48,
+                            "y":  368
+                        },
+                        {
+                            "x":  128,
+                            "y":  224
+                        }
+                    ],
+        "collisionType":  "solid"
+    },
+    {
+        "x":  144,
+        "y":  176,
+        "w":  48,
+        "h":  368,
+        "rotation":  0,
+        "label":  "COLISÃO POLIGONAL",
+        "id":  "poly_obs_mvtkt8fq_e18",
+        "polygon":  [
+                        {
+                            "x":  144,
+                            "y":  288
+                        },
+                        {
+                            "x":  144,
+                            "y":  544
+                        },
+                        {
+                            "x":  192,
+                            "y":  448
+                        },
+                        {
+                            "x":  192,
+                            "y":  176
+                        }
+                    ],
+        "collisionType":  "solid"
+    },
+    {
+        "x":  192,
+        "y":  384,
+        "w":  32,
+        "h":  80,
+        "rotation":  0,
+        "label":  "COLISÃO POLIGONAL",
+        "id":  "poly_obs_mvtktg0n_vb3",
+        "polygon":  [
+                        {
+                            "x":  192,
+                            "y":  384
+                        },
+                        {
+                            "x":  192,
+                            "y":  464
+                        },
+                        {
+                            "x":  224,
+                            "y":  384
+                        },
+                        {
+                            "x":  224,
+                            "y":  384
+                        }
+                    ],
+        "collisionType":  "solid"
+    },
+    {
+        "x":  80,
+        "y":  288,
+        "w":  64,
+        "h":  208,
+        "rotation":  0,
+        "label":  "COLISÃO POLIGONAL",
+        "id":  "poly_obs_mvtktvfk_fj9",
+        "polygon":  [
+                        {
+                            "x":  128,
+                            "y":  480
+                        },
+                        {
+                            "x":  128,
+                            "y":  480
+                        },
+                        {
+                            "x":  112,
+                            "y":  496
+                        },
+                        {
+                            "x":  80,
+                            "y":  496
+                        },
+                        {
+                            "x":  80,
+                            "y":  384
+                        },
+                        {
+                            "x":  144,
+                            "y":  288
+                        }
+                    ],
+        "collisionType":  "solid"
+    },
+    {
+        "x":  128,
+        "y":  336,
+        "w":  16,
+        "h":  144,
+        "rotation":  0,
+        "label":  "COLISÃO POLIGONAL",
+        "id":  "poly_obs_mvtku3iv_kpy",
+        "polygon":  [
+                        {
+                            "x":  128,
+                            "y":  480
+                        },
+                        {
+                            "x":  128,
+                            "y":  480
+                        },
+                        {
+                            "x":  144,
+                            "y":  464
+                        },
+                        {
+                            "x":  144,
+                            "y":  336
+                        }
+                    ],
+        "collisionType":  "solid"
+    },
+    {
+        "x":  1344,
+        "y":  176,
+        "w":  64,
+        "h":  288,
+        "rotation":  0,
+        "label":  "COLISÃO POLIGONAL",
+        "id":  "poly_obs_mvtkumiw_77j",
+        "polygon":  [
+                        {
+                            "x":  1344,
+                            "y":  176
+                        },
+                        {
+                            "x":  1344,
+                            "y":  464
+                        },
+                        {
+                            "x":  1360,
+                            "y":  464
+                        },
+                        {
+                            "x":  1408,
+                            "y":  432
+                        },
+                        {
+                            "x":  1408,
+                            "y":  288
+                        }
+                    ],
+        "collisionType":  "solid"
+    }
+],
+    collisionBounds: [
+    {
+        "x":  190,
+        "y":  0,
+        "w":  1150,
+        "h":  105,
+        "rotation":  0,
+        "label":  "TETO / PAREDE SUPERIOR"
+    },
+    {
+        "x":  0,
+        "y":  0,
+        "w":  190,
+        "h":  220,
+        "rotation":  0,
+        "label":  "CANTO SUPERIOR ESQUERDO"
+    },
+    {
+        "x":  1344,
+        "y":  0,
+        "w":  196,
+        "h":  180,
+        "rotation":  0,
+        "label":  "CANTO SUPERIOR DIREITO"
+    },
+    {
+        "x":  0,
+        "y":  220,
+        "w":  64,
+        "h":  100,
+        "rotation":  0,
+        "label":  "BATENTE PORTA ESQUERDA (ALTO)"
+    },
+    {
+        "x":  0,
+        "y":  0,
+        "w":  40,
+        "h":  857,
+        "rotation":  0,
+        "label":  "LIMITE EXTERNO DA RAMPA"
+    },
+    {
+        "x":  0,
+        "y":  656,
+        "w":  140,
+        "h":  201,
+        "rotation":  0,
+        "label":  "CANTO INFERIOR ESQUERDO"
+    },
+    {
+        "x":  1480,
+        "y":  180,
+        "w":  56,
+        "h":  80,
+        "rotation":  0,
+        "label":  "BATENTE PORTA DIREITA (ALTO)"
+    },
+    {
+        "x":  1480,
+        "y":  0,
+        "w":  56,
+        "h":  857,
+        "rotation":  0,
+        "label":  "LIMITE EXTERNO DA SAÍDA"
+    },
+    {
+        "x":  1380,
+        "y":  690,
+        "w":  156,
+        "h":  167,
+        "rotation":  0,
+        "label":  "CANTO INFERIOR DIREITO"
+    },
+    {
+        "x":  140,
+        "y":  810,
+        "w":  1240,
+        "h":  47,
+        "rotation":  0,
+        "label":  "PAREDE INFERIOR DA VAN"
+    },
+    {
+        "x":  190,
+        "y":  105,
+        "w":  495,
+        "h":  280,
+        "rotation":  0,
+        "label":  "PAREDE TRASEIRA \u0026 MURAL DE AVISOS"
+    },
+    {
+        "x":  940,
+        "y":  105,
+        "w":  400,
+        "h":  247,
+        "rotation":  0,
+        "label":  "PAREDE TRASEIRA \u0026 PAINEL DE CONTROLE"
+    },
+    {
+        "x":  224,
+        "y":  288,
+        "w":  115,
+        "h":  150,
+        "rotation":  0,
+        "label":  "CAIXOTE \u0026 ENCOMENDA (NOROESTE)"
+    },
+    {
+        "x":  352,
+        "y":  304,
+        "w":  75,
+        "h":  127,
+        "rotation":  0,
+        "label":  "PLANTA DA BASE (NOROESTE)"
+    },
+    {
+        "x":  416,
+        "y":  288,
+        "w":  115,
+        "h":  192,
+        "rotation":  0,
+        "label":  "CADEIRA GIRATÓRIA DA ESTAÇÃO"
+    },
+    {
+        "x":  592,
+        "y":  272,
+        "w":  98,
+        "h":  150,
+        "rotation":  0,
+        "label":  "VASO DE PLANTA TÁTICO"
+    },
+    {
+        "x":  704,
+        "y":  96,
+        "w":  240,
+        "h":  343,
+        "rotation":  0,
+        "label":  "DISPENSADOR AUTOMÁTICO (LOJA DE ARMAS)"
+    },
+    {
+        "x":  1024,
+        "y":  352,
+        "w":  96,
+        "h":  64,
+        "rotation":  0,
+        "label":  "MESA DO COMPUTADOR CRT"
+    },
+    {
+        "x":  1120,
+        "y":  272,
+        "w":  115,
+        "h":  155,
+        "rotation":  0,
+        "label":  "BAÚS DE CARGA \u0026 GERADOR"
+    },
+    {
+        "x":  112,
+        "y":  656,
+        "w":  240,
+        "h":  160,
+        "rotation":  0,
+        "label":  "VASO \u0026 CAIXOTE INFERIOR"
+    },
+    {
+        "x":  330,
+        "y":  624,
+        "w":  395,
+        "h":  196,
+        "rotation":  0,
+        "label":  "BANCADA MECÂNICA \u0026 PROJETOS"
+    },
+    {
+        "x":  725,
+        "y":  624,
+        "w":  411,
+        "h":  196,
+        "rotation":  0,
+        "label":  "LABORATÓRIO QUÍMICO \u0026 TUBOS DE ENSAIO"
+    },
+    {
+        "x":  1136,
+        "y":  688,
+        "w":  240,
+        "h":  137,
+        "rotation":  0,
+        "label":  "MALETA DE CAMPO \u0026 BATERIA"
+    },
+    {
+        "x":  528,
+        "y":  320,
+        "w":  48,
+        "h":  80,
+        "rotation":  0,
+        "label":  "COLISÃO",
+        "id":  "van_obs_rxkk_24"
+    },
+    {
+        "x":  1232,
+        "y":  352,
+        "w":  96,
+        "h":  64,
+        "rotation":  0,
+        "label":  "MESA DO COMPUTADOR CRT (Cópia)",
+        "id":  "item_copy_71a"
+    },
+    {
+        "x":  48,
+        "y":  368,
+        "w":  32,
+        "h":  288,
+        "rotation":  0,
+        "label":  "COLISÃO",
+        "id":  "van_obs_x47d_31"
+    },
+    {
+        "x":  80,
+        "y":  624,
+        "w":  16,
+        "h":  48,
+        "rotation":  0,
+        "label":  "COLISÃO",
+        "id":  "van_obs_x7q1_32"
+    },
+    {
+        "x":  1408,
+        "y":  176,
+        "w":  112,
+        "h":  96,
+        "rotation":  0,
+        "label":  "COLISÃO",
+        "id":  "van_obs_znfo_34"
+    },
+    {
+        "x":  1360,
+        "y":  176,
+        "w":  64,
+        "h":  32,
+        "rotation":  0,
+        "label":  "COLISÃO",
+        "id":  "van_obs_zsvo_35"
+    },
+    {
+        "x":  1376,
+        "y":  192,
+        "w":  48,
+        "h":  32,
+        "rotation":  0,
+        "label":  "COLISÃO",
+        "id":  "van_obs_zwr1_36"
+    },
+    {
+        "x":  1392,
+        "y":  208,
+        "w":  32,
+        "h":  48,
+        "rotation":  0,
+        "label":  "COLISÃO",
+        "id":  "van_obs_07sd_37"
+    },
+    {
+        "x":  1408,
+        "y":  272,
+        "w":  80,
+        "h":  432,
+        "rotation":  0,
+        "label":  "COLISÃO",
+        "id":  "van_obs_0ij1_38"
+    },
+    {
+        "x":  48,
+        "y":  224,
+        "w":  128,
+        "h":  160,
+        "rotation":  0,
+        "label":  "COLISÃO POLIGONAL",
+        "id":  "poly_obs_mvtkswlj_bre",
+        "polygon":  [
+                        {
+                            "x":  176,
+                            "y":  224
+                        },
+                        {
+                            "x":  80,
+                            "y":  384
+                        },
+                        {
+                            "x":  48,
+                            "y":  368
+                        },
+                        {
+                            "x":  128,
+                            "y":  224
+                        }
+                    ],
+        "collisionType":  "solid"
+    },
+    {
+        "x":  144,
+        "y":  176,
+        "w":  48,
+        "h":  368,
+        "rotation":  0,
+        "label":  "COLISÃO POLIGONAL",
+        "id":  "poly_obs_mvtkt8fq_e18",
+        "polygon":  [
+                        {
+                            "x":  144,
+                            "y":  288
+                        },
+                        {
+                            "x":  144,
+                            "y":  544
+                        },
+                        {
+                            "x":  192,
+                            "y":  448
+                        },
+                        {
+                            "x":  192,
+                            "y":  176
+                        }
+                    ],
+        "collisionType":  "solid"
+    },
+    {
+        "x":  192,
+        "y":  384,
+        "w":  32,
+        "h":  80,
+        "rotation":  0,
+        "label":  "COLISÃO POLIGONAL",
+        "id":  "poly_obs_mvtktg0n_vb3",
+        "polygon":  [
+                        {
+                            "x":  192,
+                            "y":  384
+                        },
+                        {
+                            "x":  192,
+                            "y":  464
+                        },
+                        {
+                            "x":  224,
+                            "y":  384
+                        },
+                        {
+                            "x":  224,
+                            "y":  384
+                        }
+                    ],
+        "collisionType":  "solid"
+    },
+    {
+        "x":  80,
+        "y":  288,
+        "w":  64,
+        "h":  208,
+        "rotation":  0,
+        "label":  "COLISÃO POLIGONAL",
+        "id":  "poly_obs_mvtktvfk_fj9",
+        "polygon":  [
+                        {
+                            "x":  128,
+                            "y":  480
+                        },
+                        {
+                            "x":  128,
+                            "y":  480
+                        },
+                        {
+                            "x":  112,
+                            "y":  496
+                        },
+                        {
+                            "x":  80,
+                            "y":  496
+                        },
+                        {
+                            "x":  80,
+                            "y":  384
+                        },
+                        {
+                            "x":  144,
+                            "y":  288
+                        }
+                    ],
+        "collisionType":  "solid"
+    },
+    {
+        "x":  128,
+        "y":  336,
+        "w":  16,
+        "h":  144,
+        "rotation":  0,
+        "label":  "COLISÃO POLIGONAL",
+        "id":  "poly_obs_mvtku3iv_kpy",
+        "polygon":  [
+                        {
+                            "x":  128,
+                            "y":  480
+                        },
+                        {
+                            "x":  128,
+                            "y":  480
+                        },
+                        {
+                            "x":  144,
+                            "y":  464
+                        },
+                        {
+                            "x":  144,
+                            "y":  336
+                        }
+                    ],
+        "collisionType":  "solid"
+    },
+    {
+        "x":  1344,
+        "y":  176,
+        "w":  64,
+        "h":  288,
+        "rotation":  0,
+        "label":  "COLISÃO POLIGONAL",
+        "id":  "poly_obs_mvtkumiw_77j",
+        "polygon":  [
+                        {
+                            "x":  1344,
+                            "y":  176
+                        },
+                        {
+                            "x":  1344,
+                            "y":  464
+                        },
+                        {
+                            "x":  1360,
+                            "y":  464
+                        },
+                        {
+                            "x":  1408,
+                            "y":  432
+                        },
+                        {
+                            "x":  1408,
+                            "y":  288
+                        }
+                    ],
+        "collisionType":  "solid"
+    }
+]
   },
 
   // =========================================================================

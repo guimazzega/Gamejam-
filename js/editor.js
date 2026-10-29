@@ -1729,7 +1729,8 @@ window.MapEditor = class MapEditor {
 
     if (this.history) this.history.commit(null, 'Criar Colisão Poligonal');
 
-    const pts = this.polygonPoints.map(p => ({ x: Math.round(p.x), y: Math.round(p.y) }));
+    // Sprint 19 (PrecisÃ£o Absoluta): VÃ©rtices do polÃ­gono preservam coordenadas brutas sem Math.round/Math.floor
+    const pts = this.polygonPoints.map(p => ({ x: p.x, y: p.y }));
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
     for (const p of pts) {
       if (p.x < minX) minX = p.x;
@@ -1747,10 +1748,10 @@ window.MapEditor = class MapEditor {
       isTrigger: false,
       isOverhead: false,
       polygon: pts,
-      x: Math.round(minX),
-      y: Math.round(minY),
-      w: Math.max(1, Math.round(maxX - minX)),
-      h: Math.max(1, Math.round(maxY - minY)),
+      x: minX,
+      y: minY,
+      w: Math.max(1, maxX - minX),
+      h: Math.max(1, maxY - minY),
       rotation: 0
     };
 
@@ -2794,10 +2795,13 @@ window.MapEditor = class MapEditor {
       }
     }
 
-    // 0.1 Ferramenta de Colisão Poligonal ativa (Sprint 14 - Requisito 1)
+    // 0.1 Ferramenta de ColisÃ£o Poligonal ativa (Sprint 19 - PrecisÃ£o Absoluta com e.offsetX/offsetY sem snap)
     if (this.toolMode === 'polygon' && this.activeLayerIndex === 2) {
-      const snapX = this.snap(wPos.x, e.altKey || e.shiftKey);
-      const snapY = this.snap(wPos.y, e.altKey || e.shiftKey);
+      const polyCanvasX = (e.offsetX !== undefined) ? e.offsetX : e.clientX;
+      const polyCanvasY = (e.offsetY !== undefined) ? e.offsetY : e.clientY;
+      const polyRawWorld = this.screenToWorld(polyCanvasX, polyCanvasY);
+      const snapX = polyRawWorld.x;
+      const snapY = polyRawWorld.y;
 
       if (this.polygonPoints.length === 0) {
         this.deselectItem();
@@ -2808,7 +2812,7 @@ window.MapEditor = class MapEditor {
         return;
       } else {
         const firstPt = this.polygonPoints[0];
-        const dist = Math.hypot(wPos.x - firstPt.x, wPos.y - firstPt.y);
+        const dist = Math.hypot(snapX - firstPt.x, snapY - firstPt.y);
         const closeThreshold = 14 / this.zoom;
         if (this.polygonPoints.length >= 3 && dist <= closeThreshold) {
           this.finishPolygon();
@@ -2910,12 +2914,12 @@ window.MapEditor = class MapEditor {
       return;
     }
 
-    // Linha elástica em tempo real da colisão poligonal (Sprint 14 - Requisito 1)
+    // Linha elÃ¡stica em tempo real da colisÃ£o poligonal (Sprint 19 - PrecisÃ£o Absoluta sem snap)
     if (this.isDrawingPolygon && this.polygonPoints.length > 0) {
-      this.polygonCurrentWorld = {
-        x: this.snap(this.mouseWorld.x, e.altKey || e.shiftKey),
-        y: this.snap(this.mouseWorld.y, e.altKey || e.shiftKey)
-      };
+      const polyCanvasX = (e.offsetX !== undefined) ? e.offsetX : e.clientX;
+      const polyCanvasY = (e.offsetY !== undefined) ? e.offsetY : e.clientY;
+      const polyRawWorld = this.screenToWorld(polyCanvasX, polyCanvasY);
+      this.polygonCurrentWorld = { x: polyRawWorld.x, y: polyRawWorld.y };
     }
 
     // Detecção de hover sobre vértices quando CTRL está pressionado (Sprint 14 - Requisito 4)

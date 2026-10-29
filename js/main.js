@@ -1,4 +1,4 @@
-/**
+﻿/**
  * js/main.js
  * Motor Principal do Protótipo 2D Top-Down ("ScienceEco Girls"):
  * - Máquina de Estados e Fluxo: Van Inicial -> Mapa 1 -> Van -> Mapa 2 -> Van -> Mapa 3 -> Van Final
@@ -25,6 +25,9 @@ class Game {
 
     // Estado da Aplicação: 'MAIN_MENU' | 'PLAYING' | 'PAUSED' | 'GAMEOVER'
     this.appState = 'MAIN_MENU';
+    this.gameState = 'MENU';
+    this.isEditorMode = false;
+    this.afkTimer = 0;
 
     // Modo de Jogo: 'singleplayer' | 'multiplayer'
     this.gameMode = 'singleplayer';
@@ -101,6 +104,7 @@ class Game {
 
     // Gerenciador de Inputs (sem atalhos de dev)
     this.input = new window.InputManager({
+      onAnyInput: () => this.resetAfkTimer(),
       onSwitchPlayer: () => this.handleSwitchPlayer(),
       onTogglePause: () => this.handlePauseShortcut(),
       onInteract: () => this.handleInteractShortcut(),
@@ -168,7 +172,87 @@ class Game {
    * 1. Inicia o jogo na VAN INICIAL:
    * Fluxo: Van Inicial -> Mapa 1 -> Van -> Mapa 2 -> Van -> Mapa 3 -> Van Final
    */
+  resetAfkTimer() {
+    this.afkTimer = 0;
+    if (this.players) {
+      for (const p of this.players) {
+        p.isAfk = false;
+        p.animState = null;
+      }
+    }
+  }
+
+  initGame() {
+    this.resetGame();
+  }
+
+  resetGame() {
+    this.afkTimer = 0;
+    this.isEditorMode = false;
+    if (this.editor) {
+      this.editor.active = false;
+      if (typeof this.editor.close === 'function') this.editor.close();
+    }
+    if (this.uiEditor) {
+      this.uiEditor.active = false;
+      if (typeof this.uiEditor.close === 'function') this.uiEditor.close();
+    }
+    if (this.players) {
+      for (const p of this.players) {
+        p.isAfk = false;
+        p.animState = null;
+      }
+    }
+    this.isGameOver = false;
+    this.p1.hp = this.p1.maxHp;
+    this.p2.hp = this.p2.maxHp;
+    this.p1.isDrowning = false;
+    this.p2.isDrowning = false;
+    this.p1.drowningProgress = 0;
+    this.p2.drowningProgress = 0;
+    this.p1.damageAnimTimer = 0;
+    this.p2.damageAnimTimer = 0;
+    this.activePlayerIndex = 0;
+    this.floatingTexts = [];
+    this.stageElapsedTime = 0;
+    this.stageTrashCollectedInRun = 0;
+    this.stageEnemiesDefeated = 0;
+    this.isShowingStageStats = false;
+    this.isVictorySequence = false;
+    this.victoryConfetti = [];
+
+    if (this.ui) {
+      this.ui.hideVictoryModal();
+      this.ui.hideGameOver();
+    }
+    if (this.waterSystem) this.waterSystem.reset();
+    if (this.enemyManager) this.enemyManager.reset();
+  }
+
+  async loadMapData(filePathOrKey = 'caminho_do_arquivo.json') {
+    try {
+      let data = null;
+      const targetStr = typeof filePathOrKey === 'string' ? filePathOrKey.trim() : 'van';
+      if (typeof fetch === 'function' && (targetStr.endsWith('.json') || targetStr.includes('/') || targetStr.includes('\\'))) {
+        try {
+          const resp = await fetch(targetStr);
+          if (resp.ok) {
+            data = await resp.json();
+          }
+        } catch (fetchErr) {
+          console.warn('[loadMapData] Fetch falhou:', fetchErr);
+        }
+      }
+      return data;
+    } catch (err) {
+      console.error('[loadMapData] Erro:', err);
+      return null;
+    }
+  }
+
   startNewGame() {
+    this.initGame();
+    this.gameState = 'VAN';
     this.isGameOver = false;
     this.p1.hp = this.p1.maxHp;
     this.p2.hp = this.p2.maxHp;
@@ -656,6 +740,9 @@ class Game {
     this.isVictorySequence = false;
     this.victoryConfetti = [];
     this.appState = 'MAIN_MENU';
+    this.gameState = 'MENU';
+    this.isEditorMode = false;
+    this.afkTimer = 0;
     if (this.waterSystem) this.waterSystem.reset();
     if (this.ui) {
       this.ui.hideGameOver();
@@ -945,14 +1032,15 @@ class Game {
         return;
       }
 
-      // Interação com Trigger Zones (ex: trigger_044f)
+      // InteraÃ§Ã£o com Trigger Zones (Sprint 21 - Prompts permanentemente ocultados)
       if (this.currentMap && Array.isArray(this.currentMap.triggerZones)) {
         for (const trigger of this.currentMap.triggerZones) {
           if (this.players.some(p => p.isTouchingZone(trigger))) {
-            let msg = trigger.ai_instruction || 'Em breve...';
-            msg = msg.replace(/^Abrir aviso escrito ["']?|["']$/gi, '').trim();
-            if (!msg) msg = 'Em breve...';
-            this.ui.showToast(`🚧 ${msg}`, 2600);
+            const now = this.elapsedTime || 0;
+            trigger._lastFired = now;
+            if (typeof trigger.onTrigger === 'function') {
+              trigger.onTrigger(this.players.find(p => p.isTouchingZone(trigger)), this);
+            }
             return;
           }
         }
@@ -973,6 +1061,15 @@ class Game {
     return this.p1.isTouchingZone(zone) || this.p2.isTouchingZone(zone);
   }
 
+  _isPlayerNearStation(player, st, pad = 36) {
+    if (!player || !st) return false;
+    if (typeof player.isTouchingZone === 'function' && player.isTouchingZone(st)) return true;
+    const px = player.x;
+    const py = player.y;
+    return px >= (st.x - pad) && px <= (st.x + st.w + pad) &&
+           py >= (st.y - pad) && py <= (st.y + st.h + pad);
+  }
+
   getTouchedSafeRoomStation() {
     const stations = this.currentMap ? this.currentMap.interactiveStations : null;
     if (!stations || !stations.length) return null;
@@ -981,14 +1078,14 @@ class Game {
       const active = this.players[this.activePlayerIndex];
       if (active) {
         for (const st of stations) {
-          if (active.isTouchingZone(st)) return st;
+          if (this._isPlayerNearStation(active, st, 36)) return st;
         }
       }
       return null;
     }
 
     for (const st of stations) {
-      if (this.p1.isTouchingZone(st) || this.p2.isTouchingZone(st)) {
+      if (this._isPlayerNearStation(this.p1, st, 36) || this._isPlayerNearStation(this.p2, st, 36)) {
         return st;
       }
     }
@@ -1107,7 +1204,38 @@ class Game {
       }
     }
 
-    // Verificação de Trigger Zones ativas no mapa (ex: trigger_044f)
+    // Inatividade (AFK apÃ³s 5 segundos) - Sprint 21 Requisito 2
+    let isMovingOrAttacking = false;
+    if (this.gameMode === 'singleplayer') {
+      const activePlayer = this.players[this.activePlayerIndex];
+      isMovingOrAttacking = Boolean(activePlayer && (activePlayer.vx !== 0 || activePlayer.vy !== 0 || activePlayer.attackTimer > 0));
+    } else {
+      isMovingOrAttacking = this.players.some(p => p.vx !== 0 || p.vy !== 0 || p.attackTimer > 0);
+    }
+
+    if (isMovingOrAttacking) {
+      this.afkTimer = 0;
+      for (const p of this.players) {
+        p.isAfk = false;
+        p.animState = null;
+      }
+    } else {
+      this.afkTimer = (this.afkTimer || 0) + dt;
+      if (this.afkTimer >= 5.0) {
+        for (const p of this.players) {
+          p.isAfk = true;
+          const isBlonde = p.characterKey === 'p1' || p.id === 1;
+          p.animState = isBlonde ? 'postura combate' : 'idle_m\u00E3o levantadas';
+        }
+      } else {
+        for (const p of this.players) {
+          p.isAfk = false;
+          p.animState = null;
+        }
+      }
+    }
+
+    // VerificaÃ§Ã£o de Trigger Zones ativas no mapa - OperaÃ§Ã£o 100% invisÃ­vel (Sprint 21 - Requisito 3)
     if (this.currentMap && Array.isArray(this.currentMap.triggerZones)) {
       for (const trigger of this.currentMap.triggerZones) {
         for (const player of this.players) {
@@ -1115,28 +1243,15 @@ class Game {
             const now = this.elapsedTime || 0;
             if (!trigger._lastFired || now - trigger._lastFired > 3.0) {
               trigger._lastFired = now;
-              let msg = trigger.ai_instruction || 'Em breve...';
-              msg = msg.replace(/^Abrir aviso escrito ["']?|["']$/gi, '').trim();
-              if (!msg) msg = 'Em breve...';
-              if (this.ui) {
-                this.ui.showToast(`🚧 ${msg}`, 2600);
+              if (typeof trigger.onTrigger === 'function') {
+                trigger.onTrigger(player, this);
               }
-              this.floatingTexts.push(
-                new window.FloatingText(
-                  trigger.x + (trigger.w || 0) / 2,
-                  trigger.y - 20,
-                  `🚧 ${msg}`,
-                  '#facc15',
-                  2.2
-                )
-              );
             }
             break;
           }
         }
       }
     }
-
     // 2. Coleta de Lixo
     if (!isWaterSurging) {
       this._checkTrashCollection();
@@ -1682,6 +1797,8 @@ class Game {
     // Esta ordem garante que canos, batentes de porta altos e copas de árvores cubram
     // perfeitamente o sprite do jogador quando ele passar por baixo.
     // =========================================================================
+    const drawnOverheadKeys = new Set();
+
     if (map.layers && Array.isArray(map.layers)) {
       for (let l = 0; l < map.layers.length; l++) {
         const layer = map.layers[l];
@@ -1699,20 +1816,28 @@ class Game {
             isCeilingLayer;
 
           if (isItemOverhead) {
-            if (item.type === 'sprite' || item.src) {
-              this._drawRotatedSpriteItem(ctx, item);
-            } else if (item.type === 'obstacle' || item.polygon || (item.w && item.h)) {
-              this._drawSingleObstacle(ctx, item, map);
-            }
+            const key = item.id || (item.x + '_' + item.y);
+            drawnOverheadKeys.add(key);
+            this._drawOverheadItem(ctx, item, map);
           }
         }
       }
     } else if (Array.isArray(map.visualSprites)) {
       for (const item of map.visualSprites) {
         if (item.isOverhead === true || item.collisionType === 'overhead' || item.layer === 3) {
-          if (item.type === 'sprite' || item.src) {
-            this._drawRotatedSpriteItem(ctx, item);
-          }
+          const key = item.id || (item.x + '_' + item.y);
+          drawnOverheadKeys.add(key);
+          this._drawOverheadItem(ctx, item, map);
+        }
+      }
+    }
+
+    if (Array.isArray(map.overheadZones)) {
+      for (const zone of map.overheadZones) {
+        const key = zone.id || (zone.x + '_' + zone.y);
+        if (!drawnOverheadKeys.has(key)) {
+          drawnOverheadKeys.add(key);
+          this._drawOverheadItem(ctx, zone, map);
         }
       }
     }
@@ -1744,6 +1869,7 @@ class Game {
 
     if ((this.appState === 'PLAYING' || this.appState === 'PAUSED') && (!this.editor || !this.editor.active) && (!this.uiEditor || !this.uiEditor.active)) {
       this._drawExtractionCompass(ctx);
+      this._drawTrashHUD(ctx, viewW, viewH);
     }
 
     // Renderização do Editor de Menus & Interface UI (Sprint 10) em Espaço de Tela
@@ -1765,6 +1891,45 @@ class Game {
    * Renderiza um sprite com rotação centralizada e opacidade
    * [Requisito 3]: translate(cx, cy) -> rotate(rad) -> drawImage(-w/2, -h/2)
    */
+  /**
+   * Renderiza Zonas "Por Cima" (Overhead) via Clipping Mask real da imagem do cenario
+   * (Sprint 18 / Sprint 22): recorta a arte fiel do mapa sobre o jogador sem preenchimento solido.
+   */
+  _drawOverheadItem(ctx, item, map) {
+    if (!item) return;
+
+    if (item.type === 'sprite' || item.src) {
+      this._drawRotatedSpriteItem(ctx, item);
+      return;
+    }
+
+    if (this.isEditorMode) {
+      this._drawSingleObstacle(ctx, item, map);
+      return;
+    }
+
+    const mapImg = (map.id === 'map1' && map.isWaterDrained && this.mapImages.has('map1_dry'))
+      ? this.mapImages.get('map1_dry')
+      : this.mapImages.get(map.id);
+
+    if (mapImg && mapImg.complete && mapImg.naturalWidth > 0) {
+      ctx.save();
+      ctx.beginPath();
+      if (item.polygon && Array.isArray(item.polygon) && item.polygon.length >= 3) {
+        ctx.moveTo(item.polygon[0].x, item.polygon[0].y);
+        for (let i = 1; i < item.polygon.length; i++) {
+          ctx.lineTo(item.polygon[i].x, item.polygon[i].y);
+        }
+        ctx.closePath();
+      } else if (item.w && item.h) {
+        ctx.rect(item.x, item.y, item.w, item.h);
+      }
+      ctx.clip();
+      ctx.drawImage(mapImg, 0, 0, map.width || mapImg.naturalWidth, map.height || mapImg.naturalHeight);
+      ctx.restore();
+    }
+  }
+
   _drawRotatedSpriteItem(ctx, item) {
     if (!item || !item.src) return;
     if (!item._img) {
@@ -1900,7 +2065,9 @@ class Game {
 
     ctx.save();
     for (const st of map.interactiveStations) {
-      const isTouched = this.p1.isTouchingZone(st) || this.p2.isTouchingZone(st);
+      const isTouched = (this.gameMode === 'singleplayer')
+        ? this._isPlayerNearStation(this.players[this.activePlayerIndex], st, 36)
+        : (this._isPlayerNearStation(this.p1, st, 36) || this._isPlayerNearStation(this.p2, st, 36));
       if (!isTouched) continue;
 
       const rawText = st.promptText || 'Pressione [E] para Interagir';
@@ -2253,7 +2420,7 @@ class Game {
       ctx.fill();
       ctx.stroke();
 
-      if (obs.label && obs.w >= 60 && obs.h >= 40) {
+      if (this.isEditorMode && this.editor && this.editor.active && obs.label && obs.w >= 60 && obs.h >= 40) {
         let cx = 0, cy = 0;
         for (const p of obs.polygon) { cx += p.x; cy += p.y; }
         cx /= obs.polygon.length;
@@ -2273,7 +2440,7 @@ class Game {
     ctx.lineWidth = obs.customStroke ? 2.5 : 2;
     ctx.strokeRect(obs.x, obs.y, obs.w, obs.h);
 
-    if (obs.label && obs.w >= 120 && obs.h >= 65) {
+    if (this.isEditorMode && this.editor && this.editor.active && obs.label && obs.w >= 120 && obs.h >= 65) {
       ctx.fillStyle = '#f8fafc';
       ctx.font = 'bold 11px Consolas, monospace';
       ctx.textAlign = 'center';
@@ -2313,7 +2480,7 @@ class Game {
         cx /= obs.polygon.length;
         cy /= obs.polygon.length;
 
-        if (obs.label && obs.w >= 60 && obs.h >= 40) {
+        if (this.isEditorMode && this.editor && this.editor.active && obs.label && obs.w >= 60 && obs.h >= 40) {
           ctx.fillStyle = '#f8fafc';
           ctx.font = 'bold 11px Consolas, monospace';
           ctx.textAlign = 'center';
@@ -2329,7 +2496,7 @@ class Game {
       ctx.lineWidth = obs.customStroke ? 2.5 : 2;
       ctx.strokeRect(obs.x, obs.y, obs.w, obs.h);
 
-      if (obs.w >= 120 && obs.h >= 65) {
+      if (this.isEditorMode && this.editor && this.editor.active && obs.w >= 120 && obs.h >= 65) {
         ctx.fillStyle = '#f8fafc';
         ctx.font = 'bold 11px Consolas, monospace';
         ctx.textAlign = 'center';
@@ -2405,6 +2572,48 @@ class Game {
       this.ui.loadUILayout(layoutData);
     }
   }
+  /**
+   * HUD Oficial de Lixos (Sprint 21 - Requisito 4)
+   * DeclaraÃ§Ã£o explÃ­cita de fonte e trava de seguranÃ§a contra dados indefinidos.
+   */
+  _drawTrashHUD(ctx, viewW, viewH) {
+    if (this.appState !== 'PLAYING' && this.appState !== 'PAUSED') return;
+    const stageMeta = this.getCurrentStageMeta();
+    if (!stageMeta || stageMeta.isSafeRoom) return;
+
+    const fixedSpawns = window.GlobalState ? window.GlobalState.getFixedTrashSpawns(this.currentMap) : null;
+    const total = fixedSpawns ? fixedSpawns.length : (window.GameConfig.TOTAL_TRASH_PER_MAP || 16);
+    const collected = fixedSpawns
+      ? fixedSpawns.filter(t => window.GlobalState.isTrashCollected(t.id)).length
+      : (this.stageTrashCollectedInRun || 0);
+
+    const texto = "Lixos: " + collected + " / " + total;
+    if (texto === undefined || texto === null) return;
+
+    ctx.save();
+    ctx.font = "16px sans-serif";
+    ctx.fillStyle = "white";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+
+    const badgeX = viewW / 2;
+    const badgeY = 72;
+    const textW = ctx.measureText(texto).width;
+    const padX = 14;
+
+    ctx.fillStyle = "rgba(15, 23, 42, 0.88)";
+    ctx.strokeStyle = "rgba(74, 222, 128, 0.75)";
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.roundRect(badgeX - textW / 2 - padX, badgeY - 14, textW + padX * 2, 28, 14);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.font = "16px sans-serif";
+    ctx.fillStyle = "white";
+    ctx.fillText(texto, badgeX, badgeY);
+    ctx.restore();
+  }
 }
 
 window.Game = Game;
@@ -2413,3 +2622,14 @@ window.addEventListener('DOMContentLoaded', () => {
   window.gameInstance = new Game();
   window.game = window.gameInstance;
 });
+
+// Atalhos Globais de Compatibilidade (Sprint 20)
+window.initGame = () => {
+  if (window.game) return window.game.initGame();
+};
+window.resetGame = () => {
+  if (window.game) return window.game.resetGame();
+};
+window.loadMapData = async (path) => {
+  if (window.game) return await window.game.loadMapData(path);
+};

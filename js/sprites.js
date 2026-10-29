@@ -172,6 +172,26 @@
               fps: 6,
               flipX: false
             },
+            'postura combate': {
+              frames: [
+                'assets/p1/07_postura_combate/combate_01.png',
+                'assets/p1/07_postura_combate/combate_02.png',
+                'assets/p1/07_postura_combate/combate_03.png',
+                'assets/p1/07_postura_combate/combate_04.png'
+              ],
+              fps: 6,
+              flipX: false
+            },
+            'postura_combate': {
+              frames: [
+                'assets/p1/07_postura_combate/combate_01.png',
+                'assets/p1/07_postura_combate/combate_02.png',
+                'assets/p1/07_postura_combate/combate_03.png',
+                'assets/p1/07_postura_combate/combate_04.png'
+              ],
+              fps: 6,
+              flipX: false
+            },
             pickup: {
               frames: [
                 'assets/p1/06_pegando_item_chao/pegando_item_01.png',
@@ -346,7 +366,38 @@
               fps: 12,
               flipX: false
             },
-            combat: {
+            // Novo estado independente no dicionario para a Personagem Negra (Sprint 21)
+            ['idle_m\\u00E3o levantadas']: {
+              frames: [
+                'assets/p2/idle_maos_levantadas/idle_maos_levantadas_01.png',
+                'assets/p2/idle_maos_levantadas/idle_maos_levantadas_02.png',
+                'assets/p2/idle_maos_levantadas/idle_maos_levantadas_03.png',
+                'assets/p2/idle_maos_levantadas/idle_maos_levantadas_04.png'
+              ],
+              fps: 6,
+              flipX: false
+            },
+            ['idle_m\\u00E3os levantadas']: {
+              frames: [
+                'assets/p2/idle_maos_levantadas/idle_maos_levantadas_01.png',
+                'assets/p2/idle_maos_levantadas/idle_maos_levantadas_02.png',
+                'assets/p2/idle_maos_levantadas/idle_maos_levantadas_03.png',
+                'assets/p2/idle_maos_levantadas/idle_maos_levantadas_04.png'
+              ],
+              fps: 6,
+              flipX: false
+            },
+            ['idle_m\\u00E3o levantadas']: {
+              frames: [
+                'assets/p2/idle_maos_levantadas/idle_maos_levantadas_01.png',
+                'assets/p2/idle_maos_levantadas/idle_maos_levantadas_02.png',
+                'assets/p2/idle_maos_levantadas/idle_maos_levantadas_03.png',
+                'assets/p2/idle_maos_levantadas/idle_maos_levantadas_04.png'
+              ],
+              fps: 6,
+              flipX: false
+            },
+            idle_maos_levantadas: {
               frames: [
                 'assets/p2/idle_maos_levantadas/idle_maos_levantadas_01.png',
                 'assets/p2/idle_maos_levantadas/idle_maos_levantadas_02.png',
@@ -991,7 +1042,19 @@
      */
     draw(ctx, charKey, animName, frameIndex, worldX, footY, options = {}) {
       const config = this.characterConfigs[charKey] || this.characterConfigs.p1;
-      const anim = (config.animations && config.animations[animName]) ||
+      const keyStr = String(animName || '').trim();
+      const normalizedKey = keyStr
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/\s+/g, '_');
+      const anim = (config.animations && (
+                     config.animations[animName] ||
+                     config.animations[keyStr] ||
+                     config.animations[keyStr.toLowerCase()] ||
+                     config.animations[normalizedKey] ||
+                     config.animations[normalizedKey.replace(/_/g, ' ')]
+                   )) ||
                    (config.animations && config.animations.idle) ||
                    (config.animations && config.animations.idle_down);
       if (!anim) return;
@@ -1050,13 +1113,29 @@
       ctx.drawImage(img, -drawAnchorX, -drawAnchorY, drawW, drawH);
 
       // Efeito de Hit Flash quando levar dano: silhueta vermelha limpa sobreposta exclusivamente nos pixels
+      // Efeito de Hit Flash quando levar dano (Sprint 19 - Requisito 4):
+      // Offscreen canvas com 'source-in' para colorir com precisÃ£o cirÃºrgica exclusivamente os pixels do sprite
       if (options.hitFlash) {
-        ctx.save();
-        ctx.globalCompositeOperation = 'source-atop';
-        ctx.fillStyle = 'rgba(255, 0, 0, 0.5)';
-        ctx.fillRect(-drawAnchorX, -drawAnchorY, drawW, drawH);
-        ctx.restore();
+        if (!this._hitFlashCanvas) {
+          this._hitFlashCanvas = document.createElement('canvas');
+        }
+        const offCanvas = this._hitFlashCanvas;
+        offCanvas.width = animFrameW;
+        offCanvas.height = animFrameH;
+        const offCtx = offCanvas.getContext('2d');
+        offCtx.clearRect(0, 0, animFrameW, animFrameH);
+        offCtx.drawImage(img, 0, 0, animFrameW, animFrameH);
+        offCtx.globalCompositeOperation = 'source-in';
+        offCtx.fillStyle = 'rgba(239, 68, 68, 0.72)';
+        offCtx.fillRect(0, 0, animFrameW, animFrameH);
+        ctx.drawImage(offCanvas, -drawAnchorX, -drawAnchorY, drawW, drawH);
       }
+
+
+
+
+
+
 
       ctx.restore();
     }

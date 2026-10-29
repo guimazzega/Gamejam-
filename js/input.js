@@ -59,7 +59,14 @@ window.InputManager = class InputManager {
     });
   }
 
+  _notifyAnyInput() {
+    if (this.callbacks && typeof this.callbacks.onAnyInput === 'function') {
+      this.callbacks.onAnyInput();
+    }
+  }
+
   _onMouseMove(e) {
+    this._notifyAnyInput();
     this.mouseX = e.clientX;
     this.mouseY = e.clientY;
   }
@@ -90,6 +97,7 @@ window.InputManager = class InputManager {
    * - Botão Esquerdo (button 0): Dispara ataque direcionado
    */
   _onMouseDown(e) {
+    this._notifyAnyInput();
     this.mouseX = e.clientX;
     this.mouseY = e.clientY;
 
@@ -108,6 +116,7 @@ window.InputManager = class InputManager {
   }
 
   _onKeyDown(e) {
+    this._notifyAnyInput();
     const code = e.code;
 
     // Modo de Remapeamento de Teclas
@@ -182,6 +191,7 @@ window.InputManager = class InputManager {
   }
 
   _onKeyUp(e) {
+    this._notifyAnyInput();
     this.keysDown.delete(e.code);
   }
 
@@ -259,6 +269,7 @@ window.InputManager = class InputManager {
       const moveVec = this._readGamepadMovement(gp);
       if (moveVec.dx !== 0 || moveVec.dy !== 0) {
         this.gamepadVectors[targetSlot] = moveVec;
+        this._notifyAnyInput();
       }
 
       const prev = this.prevGamepadButtons[gp.index] || [];
@@ -268,6 +279,7 @@ window.InputManager = class InputManager {
       // 2. Botões de Ataque
       const attacked = profile.attackButtons.some((bIdx) => justPressed(bIdx));
       if (attacked) {
+        this._notifyAnyInput();
         if (this.callbacks.onGamepadAttack) {
           this.callbacks.onGamepadAttack(targetSlot, `Gamepad #${gp.index + 1}`);
         }
@@ -276,6 +288,7 @@ window.InputManager = class InputManager {
       // 3. Botões de Interação
       const interacted = profile.interactButtons.some((bIdx) => justPressed(bIdx));
       if (interacted) {
+        this._notifyAnyInput();
         if (this.callbacks.onGamepadInteractOrAttack) {
           this.callbacks.onGamepadInteractOrAttack(targetSlot, `Gamepad #${gp.index + 1}`);
         }

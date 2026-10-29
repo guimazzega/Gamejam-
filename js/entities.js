@@ -27,9 +27,11 @@ window.FloatingText = class FloatingText {
   }
 
   draw(ctx) {
+    if (this.text === undefined || this.text === null || this.text === '') return;
     ctx.save();
     ctx.globalAlpha = this.alpha;
     ctx.font = '700 14px "Segoe UI", system-ui, -apple-system, sans-serif';
+    ctx.fillStyle = this.color || '#ffffff';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
@@ -37,7 +39,6 @@ window.FloatingText = class FloatingText {
     ctx.strokeStyle = 'rgba(9, 13, 22, 0.92)';
     ctx.strokeText(this.text, this.x, this.y);
 
-    ctx.fillStyle = this.color;
     ctx.fillText(this.text, this.x, this.y);
     ctx.restore();
   }
@@ -205,7 +206,8 @@ window.TrashItem = class TrashItem {
     ctx.font = '700 10px "Segoe UI", system-ui, sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    const labelText = `♻ ${this.typeInfo.shortLabel || 'LIXO'}`;
+    const labelText = "\u267B " + (this.typeInfo.shortLabel || "LIXO");
+    if (labelText === undefined || labelText === null) return;
     const boxW = Math.max(46, ctx.measureText(labelText).width + 12);
     const boxH = 16;
 
@@ -253,6 +255,12 @@ window.Player = class Player {
     this.knockbackDuration = 0.05; // 2 a 3 frames (~0.05s)
 
     this.characterKey = config.id === 2 ? 'p2' : 'p1';
+    this.isAfk = false;
+    this.animState = null;
+    this.currentAnimation = 'idle_down';
+    this.animations = (window.SpriteManager && window.SpriteManager.characterConfigs && window.SpriteManager.characterConfigs[this.characterKey])
+      ? window.SpriteManager.characterConfigs[this.characterKey].animations
+      : {};
     this.facingX = 0;
     this.facingY = 1;
     this.facingDirection = 'down';
@@ -1166,27 +1174,34 @@ window.Player = class Player {
   /**
    * Renderiza a personagem no Canvas com visual limpo e polido
    */
+  drawSelectionRing(ctx, isControlled, gameMode, timeSeconds) {
+    if (!isControlled) return;
+    const half = this.size / 2;
+    const pulse = 1 + Math.sin(timeSeconds * 5.5) * 0.06;
+    ctx.save();
+    ctx.beginPath();
+    ctx.ellipse(this.x, this.y + half - 2, (half + 8) * pulse, (half * 0.5) * pulse, 0, 0, Math.PI * 2);
+    ctx.fillStyle = gameMode === 'singleplayer'
+      ? 'rgba(250, 204, 21, 0.22)'
+      : 'rgba(56, 189, 248, 0.20)';
+    ctx.fill();
+    ctx.lineWidth = 1.8;
+    ctx.strokeStyle = gameMode === 'singleplayer' ? 'rgba(250, 204, 21, 0.75)' : this.primaryColor;
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  get visualHeight() {
+    return (this.scale || (this.inSafeRoom ? 1.0 : 0.75)) * 96;
+  }
+
   draw(ctx, isControlled, gameMode, timeSeconds) {
     const half = this.size / 2;
     const isMoving = this.vx !== 0 || this.vy !== 0;
 
     ctx.save();
 
-    // 1. Aura suave sob a personagem ativa
-    if (isControlled) {
-      const pulse = 1 + Math.sin(timeSeconds * 5.5) * 0.06;
-      ctx.save();
-      ctx.beginPath();
-      ctx.ellipse(this.x, this.y + half - 2, (half + 8) * pulse, (half * 0.5) * pulse, 0, 0, Math.PI * 2);
-      ctx.fillStyle = gameMode === 'singleplayer'
-        ? 'rgba(250, 204, 21, 0.22)'
-        : 'rgba(56, 189, 248, 0.20)';
-      ctx.fill();
-      ctx.lineWidth = 1.8;
-      ctx.strokeStyle = gameMode === 'singleplayer' ? 'rgba(250, 204, 21, 0.75)' : this.primaryColor;
-      ctx.stroke();
-      ctx.restore();
-    }
+    // 1. Rodinha de selecao renderizada na camada Background antes do Y-Sort (Sprint 19 - Requisito 2)
 
     // 2. Sombra natural sob os pés
     ctx.beginPath();
@@ -1242,6 +1257,14 @@ window.Player = class Player {
         overrideFlipX = false;
       }
       frameIndex = Math.floor(this.walkCycle);
+    } else if (this.isAfk) {
+      // AFK Individualizado por Personagem (Sprint 21 - Requisito 2)
+      // Se for a personagem loira: Mude o estado de animaÃ§Ã£o dela exclusivamente para "postura combate"
+      // Se for a personagem negra: Mude o estado de animaÃ§Ã£o dela exclusivamente para "idle_mÃ£o levantadas"
+      const isBlonde = this.characterKey === 'p1' || this.id === 1;
+      animName = isBlonde ? "postura combate" : "idle_m\u00E3o levantadas";
+      frameIndex = Math.floor(timeSeconds * 6);
+      overrideFlipX = this.facingX < 0;
     } else {
       if (this.facingDirection === 'up') {
         animName = 'idle_up';
@@ -1264,6 +1287,9 @@ window.Player = class Player {
       }
       frameIndex = 0;
     }
+
+    this.currentAnimation = animName;
+    this.animState = animName;
 
     // Feedback Visual de Dano (Sprint 16 - Requisito 3):
     // Alterna o piscar vermelho (source-atop) exclusivamente nos pixels do sprite por 0.5 a 1.0s
@@ -1296,7 +1322,9 @@ window.Player = class Player {
 
     // 5. Indicador discreto de Jogador Ativo sobre a cabeça
     if (gameMode === 'singleplayer' && isControlled) {
-      const labelY = this.y - 58;
+      const charVisualHeight = this.visualHeight;
+      const arrowMargin = 15;
+      const labelY = this.y - charVisualHeight - arrowMargin;
       const arrowBounce = Math.sin(timeSeconds * 7) * 3;
       const arrowY = labelY - 6 + arrowBounce;
 
@@ -1311,7 +1339,9 @@ window.Player = class Player {
       ctx.fill();
       ctx.stroke();
     } else if (gameMode === 'multiplayer') {
-      const labelY = this.y - 56;
+      const charVisualHeight = this.visualHeight;
+      const arrowMargin = 15;
+      const labelY = this.y - charVisualHeight - arrowMargin;
       this._drawOverheadTag(
         ctx,
         this.x,

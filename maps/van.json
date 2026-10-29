@@ -1,0 +1,2368 @@
+﻿{
+    "id":  "van",
+    "name":  "SAFE ROOM: A VAN DE OPERAÃ‡Ã•ES (LABORATÃ“RIO TÃTICO)",
+    "subtitle":  "Base MÃ³vel â€¢ Consulte o Mural de Pesquisas, equipe-se na MÃ¡quina de Suprimentos ou avance pela Porta",
+    "imageAsset":  "assets/van_interior.jpg",
+    "width":  1536,
+    "height":  857,
+    "isSafeRoom":  true,
+    "palette":  {
+                    "bg":  "#0c0f17",
+                    "wallFill":  "#1a1f2c",
+                    "wallStroke":  "#38bdf8",
+                    "pathFill":  "rgba(56, 189, 248, 0.08)",
+                    "pathStroke":  "rgba(56, 189, 248, 0.25)"
+                },
+    "spawnP1":  {
+                    "x":  200,
+                    "y":  560
+                },
+    "spawnP2":  {
+                    "x":  200,
+                    "y":  620
+                },
+    "trashSpawns":  [
+
+                    ],
+    "enemySpawns":  [
+
+                    ],
+    "floorZones":  [
+                       {
+                           "x":  140,
+                           "y":  440,
+                           "w":  1250,
+                           "h":  260,
+                           "label":  "PÃTIO TÃTICO DA VAN"
+                       }
+                   ],
+    "interactiveStations":  [
+                                {
+                                    "id":  "notice_board",
+                                    "name":  "Mural de Avisos \u0026 Pesquisas",
+                                    "icon":  "ðŸ“‹",
+                                    "x":  224,
+                                    "y":  224,
+                                    "w":  416,
+                                    "h":  288,
+                                    "zoneLabel":  "MURAL DE PESQUISAS",
+                                    "promptText":  "Pressione [E] para Abrir o Mural",
+                                    "strokeColor":  "#38bdf8",
+                                    "fillColor":  "transparent",
+                                    "hideFloorZone":  true
+                                },
+                                {
+                                    "id":  "shop",
+                                    "name":  "Dispensador de Armas (Loja)",
+                                    "icon":  "âš”ï¸",
+                                    "x":  704,
+                                    "y":  368,
+                                    "w":  240,
+                                    "h":  112,
+                                    "zoneLabel":  "DISPENSADOR DE ARMAS (LOJA)",
+                                    "promptText":  "Pressione [E] para Abrir a Loja de Armas",
+                                    "strokeColor":  "#facc15",
+                                    "fillColor":  "transparent",
+                                    "hideFloorZone":  true
+                                }
+                            ],
+    "transitionZone":  {
+                           "id":  "trigger_jfqd",
+                           "x":  1328,
+                           "y":  432,
+                           "w":  96,
+                           "h":  144,
+                           "label":  "PORTA DA VAN â†’ SEGUIR VIAGEM",
+                           "subLabel":  "Toque para avanÃ§ar",
+                           "strokeColor":  "#38bdf8",
+                           "fillColor":  "transparent",
+                           "hideBox":  true
+                       },
+    "overheadZones":  [
+                          {
+                              "id":  "poly_obs_mvtkxp7w_t9j",
+                              "x":  336,
+                              "y":  592,
+                              "w":  96,
+                              "h":  64,
+                              "polygon":  [
+                                              {
+                                                  "x":  336,
+                                                  "y":  608
+                                              },
+                                              {
+                                                  "x":  336,
+                                                  "y":  624
+                                              },
+                                              {
+                                                  "x":  336,
+                                                  "y":  656
+                                              },
+                                              {
+                                                  "x":  352,
+                                                  "y":  656
+                                              },
+                                              {
+                                                  "x":  416,
+                                                  "y":  640
+                                              },
+                                              {
+                                                  "x":  432,
+                                                  "y":  624
+                                              },
+                                              {
+                                                  "x":  432,
+                                                  "y":  608
+                                              },
+                                              {
+                                                  "x":  416,
+                                                  "y":  608
+                                              },
+                                              {
+                                                  "x":  400,
+                                                  "y":  608
+                                              },
+                                              {
+                                                  "x":  384,
+                                                  "y":  608
+                                              },
+                                              {
+                                                  "x":  384,
+                                                  "y":  592
+                                              },
+                                              {
+                                                  "x":  368,
+                                                  "y":  592
+                                              },
+                                              {
+                                                  "x":  352,
+                                                  "y":  592
+                                              },
+                                              {
+                                                  "x":  352,
+                                                  "y":  608
+                                              },
+                                              {
+                                                  "x":  352,
+                                                  "y":  608
+                                              }
+                                          ],
+                              "label":  "POLÃGONO POR CIMA"
+                          },
+                          {
+                              "id":  "poly_obs_mvtkzgp2_725",
+                              "x":  672,
+                              "y":  592,
+                              "w":  64,
+                              "h":  32,
+                              "polygon":  [
+                                              {
+                                                  "x":  672,
+                                                  "y":  624
+                                              },
+                                              {
+                                                  "x":  688,
+                                                  "y":  608
+                                              },
+                                              {
+                                                  "x":  672,
+                                                  "y":  592
+                                              },
+                                              {
+                                                  "x":  688,
+                                                  "y":  592
+                                              },
+                                              {
+                                                  "x":  704,
+                                                  "y":  608
+                                              },
+                                              {
+                                                  "x":  704,
+                                                  "y":  592
+                                              },
+                                              {
+                                                  "x":  720,
+                                                  "y":  592
+                                              },
+                                              {
+                                                  "x":  720,
+                                                  "y":  608
+                                              },
+                                              {
+                                                  "x":  736,
+                                                  "y":  608
+                                              },
+                                              {
+                                                  "x":  736,
+                                                  "y":  608
+                                              },
+                                              {
+                                                  "x":  720,
+                                                  "y":  624
+                                              }
+                                          ],
+                              "label":  "POLÃGONO POR CIMA"
+                          },
+                          {
+                              "id":  "poly_obs_mvtkzzzq_23c",
+                              "x":  784,
+                              "y":  560,
+                              "w":  64,
+                              "h":  64,
+                              "polygon":  [
+                                              {
+                                                  "x":  784,
+                                                  "y":  624
+                                              },
+                                              {
+                                                  "x":  800,
+                                                  "y":  592
+                                              },
+                                              {
+                                                  "x":  784,
+                                                  "y":  576
+                                              },
+                                              {
+                                                  "x":  800,
+                                                  "y":  560
+                                              },
+                                              {
+                                                  "x":  816,
+                                                  "y":  592
+                                              },
+                                              {
+                                                  "x":  832,
+                                                  "y":  592
+                                              },
+                                              {
+                                                  "x":  832,
+                                                  "y":  608
+                                              },
+                                              {
+                                                  "x":  848,
+                                                  "y":  624
+                                              }
+                                          ],
+                              "label":  "POLÃGONO POR CIMA"
+                          },
+                          {
+                              "id":  "poly_obs_mvtl076n_wxi",
+                              "x":  896,
+                              "y":  592,
+                              "w":  32,
+                              "h":  32,
+                              "polygon":  [
+                                              {
+                                                  "x":  896,
+                                                  "y":  624
+                                              },
+                                              {
+                                                  "x":  896,
+                                                  "y":  624
+                                              },
+                                              {
+                                                  "x":  896,
+                                                  "y":  608
+                                              },
+                                              {
+                                                  "x":  912,
+                                                  "y":  608
+                                              },
+                                              {
+                                                  "x":  912,
+                                                  "y":  592
+                                              },
+                                              {
+                                                  "x":  912,
+                                                  "y":  592
+                                              },
+                                              {
+                                                  "x":  912,
+                                                  "y":  608
+                                              },
+                                              {
+                                                  "x":  928,
+                                                  "y":  624
+                                              },
+                                              {
+                                                  "x":  912,
+                                                  "y":  624
+                                              }
+                                          ],
+                              "label":  "POLÃGONO POR CIMA"
+                          },
+                          {
+                              "id":  "poly_obs_mvtl0omn_btc",
+                              "x":  960,
+                              "y":  608,
+                              "w":  16,
+                              "h":  16,
+                              "polygon":  [
+                                              {
+                                                  "x":  960,
+                                                  "y":  624
+                                              },
+                                              {
+                                                  "x":  960,
+                                                  "y":  608
+                                              },
+                                              {
+                                                  "x":  976,
+                                                  "y":  608
+                                              },
+                                              {
+                                                  "x":  976,
+                                                  "y":  608
+                                              },
+                                              {
+                                                  "x":  976,
+                                                  "y":  624
+                                              }
+                                          ],
+                              "label":  "POLÃGONO POR CIMA"
+                          },
+                          {
+                              "id":  "poly_obs_mvtl1rls_n4d",
+                              "x":  992,
+                              "y":  576,
+                              "w":  128,
+                              "h":  48,
+                              "polygon":  [
+                                              {
+                                                  "x":  992,
+                                                  "y":  624
+                                              },
+                                              {
+                                                  "x":  992,
+                                                  "y":  592
+                                              },
+                                              {
+                                                  "x":  1008,
+                                                  "y":  576
+                                              },
+                                              {
+                                                  "x":  1024,
+                                                  "y":  592
+                                              },
+                                              {
+                                                  "x":  1088,
+                                                  "y":  576
+                                              },
+                                              {
+                                                  "x":  1120,
+                                                  "y":  608
+                                              },
+                                              {
+                                                  "x":  1120,
+                                                  "y":  624
+                                              }
+                                          ],
+                              "label":  "POLÃGONO POR CIMA"
+                          }
+                      ],
+    "triggerZones":  [
+                         {
+                             "id":  "trigger_2yqx",
+                             "x":  704,
+                             "y":  368,
+                             "w":  240,
+                             "h":  112,
+                             "label":  "TRIGGER",
+                             "ai_instruction":  "Tire essa zona amarela, espere a personagem estar prÃ³ximo a essa Ã¡rea para abrir o menu de loja mantenha o icone flutuante de \"pressione E para tal coisa\""
+                         },
+                         {
+                             "id":  "trigger_6ta6",
+                             "x":  224,
+                             "y":  224,
+                             "w":  416,
+                             "h":  288,
+                             "label":  "TRIGGER",
+                             "ai_instruction":  "tire essa zona azul, quando a personagem chegar na zona de trigger deve aparecer \"pressione E para abrir o mural\""
+                         },
+                         {
+                             "id":  "trigger_jfqd",
+                             "x":  1328,
+                             "y":  432,
+                             "w":  96,
+                             "h":  144,
+                             "label":  "TRIGGER",
+                             "ai_instruction":  "na primeira fase, se vocÃª tocar aqui, automÃ¡ticamente vocÃª Ã© teleportado para a primeira fase, na segunda para frente aparece aquela funÃ§Ã£o de reiniciar ou ir para a prÃ³xima fase e tire esse quadrado de passar de fase de uma fase para outra faÃ§a um efeitinho sÃ³ para nÃ£o ficar hiper seco"
+                         }
+                     ],
+    "animationMarkers":  [
+                             {
+                                 "id":  "anim_9gqp",
+                                 "x":  464,
+                                 "y":  160,
+                                 "label":  "ANIM_766",
+                                 "ai_instruction":  "deixe um ponto de exclamaÃ§Ã£o flutuando aqui"
+                             }
+                         ],
+    "layers":  [
+                   {
+                       "id":  0,
+                       "name":  "ChÃ£o",
+                       "visible":  true,
+                       "itemsCount":  0,
+                       "items":  [
+
+                                 ]
+                   },
+                   {
+                       "id":  1,
+                       "name":  "Tapetes/Decalques",
+                       "visible":  true,
+                       "itemsCount":  0,
+                       "items":  [
+
+                                 ]
+                   },
+                   {
+                       "id":  2,
+                       "name":  "Objetos/ColisÃ£o",
+                       "visible":  true,
+                       "itemsCount":  48,
+                       "items":  [
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  0,
+                                         "x":  190,
+                                         "y":  0,
+                                         "rotation":  0,
+                                         "w":  1150,
+                                         "h":  105,
+                                         "label":  "TETO / PAREDE SUPERIOR"
+                                     },
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  1,
+                                         "x":  0,
+                                         "y":  0,
+                                         "rotation":  0,
+                                         "w":  190,
+                                         "h":  220,
+                                         "label":  "CANTO SUPERIOR ESQUERDO"
+                                     },
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  2,
+                                         "x":  1344,
+                                         "y":  0,
+                                         "rotation":  0,
+                                         "w":  196,
+                                         "h":  180,
+                                         "label":  "CANTO SUPERIOR DIREITO"
+                                     },
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  3,
+                                         "x":  0,
+                                         "y":  220,
+                                         "rotation":  0,
+                                         "w":  64,
+                                         "h":  100,
+                                         "label":  "BATENTE PORTA ESQUERDA (ALTO)"
+                                     },
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  4,
+                                         "x":  0,
+                                         "y":  0,
+                                         "rotation":  0,
+                                         "w":  40,
+                                         "h":  857,
+                                         "label":  "LIMITE EXTERNO DA RAMPA"
+                                     },
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  5,
+                                         "x":  0,
+                                         "y":  656,
+                                         "rotation":  0,
+                                         "w":  140,
+                                         "h":  201,
+                                         "label":  "CANTO INFERIOR ESQUERDO"
+                                     },
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  6,
+                                         "x":  1480,
+                                         "y":  180,
+                                         "rotation":  0,
+                                         "w":  56,
+                                         "h":  80,
+                                         "label":  "BATENTE PORTA DIREITA (ALTO)"
+                                     },
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  7,
+                                         "x":  1480,
+                                         "y":  0,
+                                         "rotation":  0,
+                                         "w":  56,
+                                         "h":  857,
+                                         "label":  "LIMITE EXTERNO DA SAÃDA"
+                                     },
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  8,
+                                         "x":  1380,
+                                         "y":  690,
+                                         "rotation":  0,
+                                         "w":  156,
+                                         "h":  167,
+                                         "label":  "CANTO INFERIOR DIREITO"
+                                     },
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  9,
+                                         "x":  140,
+                                         "y":  810,
+                                         "rotation":  0,
+                                         "w":  1240,
+                                         "h":  47,
+                                         "label":  "PAREDE INFERIOR DA VAN"
+                                     },
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  10,
+                                         "x":  190,
+                                         "y":  105,
+                                         "rotation":  0,
+                                         "w":  495,
+                                         "h":  280,
+                                         "label":  "PAREDE TRASEIRA \u0026 MURAL DE AVISOS"
+                                     },
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  11,
+                                         "x":  940,
+                                         "y":  105,
+                                         "rotation":  0,
+                                         "w":  400,
+                                         "h":  247,
+                                         "label":  "PAREDE TRASEIRA \u0026 PAINEL DE CONTROLE"
+                                     },
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  12,
+                                         "x":  224,
+                                         "y":  288,
+                                         "rotation":  0,
+                                         "w":  115,
+                                         "h":  150,
+                                         "label":  "CAIXOTE \u0026 ENCOMENDA (NOROESTE)"
+                                     },
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  13,
+                                         "x":  352,
+                                         "y":  304,
+                                         "rotation":  0,
+                                         "w":  75,
+                                         "h":  127,
+                                         "label":  "PLANTA DA BASE (NOROESTE)"
+                                     },
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  14,
+                                         "x":  416,
+                                         "y":  288,
+                                         "rotation":  0,
+                                         "w":  115,
+                                         "h":  192,
+                                         "label":  "CADEIRA GIRATÃ“RIA DA ESTAÃ‡ÃƒO"
+                                     },
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  15,
+                                         "x":  592,
+                                         "y":  272,
+                                         "rotation":  0,
+                                         "w":  98,
+                                         "h":  150,
+                                         "label":  "VASO DE PLANTA TÃTICO"
+                                     },
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  16,
+                                         "x":  704,
+                                         "y":  96,
+                                         "rotation":  0,
+                                         "w":  240,
+                                         "h":  343,
+                                         "label":  "DISPENSADOR AUTOMÃTICO (LOJA DE ARMAS)"
+                                     },
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  17,
+                                         "x":  1024,
+                                         "y":  352,
+                                         "rotation":  0,
+                                         "w":  96,
+                                         "h":  64,
+                                         "label":  "MESA DO COMPUTADOR CRT"
+                                     },
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  18,
+                                         "x":  1120,
+                                         "y":  272,
+                                         "rotation":  0,
+                                         "w":  115,
+                                         "h":  155,
+                                         "label":  "BAÃšS DE CARGA \u0026 GERADOR"
+                                     },
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  19,
+                                         "x":  112,
+                                         "y":  656,
+                                         "rotation":  0,
+                                         "w":  240,
+                                         "h":  160,
+                                         "label":  "VASO \u0026 CAIXOTE INFERIOR"
+                                     },
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  20,
+                                         "x":  330,
+                                         "y":  624,
+                                         "rotation":  0,
+                                         "w":  395,
+                                         "h":  196,
+                                         "label":  "BANCADA MECÃ‚NICA \u0026 PROJETOS"
+                                     },
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  21,
+                                         "x":  725,
+                                         "y":  624,
+                                         "rotation":  0,
+                                         "w":  411,
+                                         "h":  196,
+                                         "label":  "LABORATÃ“RIO QUÃMICO \u0026 TUBOS DE ENSAIO"
+                                     },
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  22,
+                                         "x":  1136,
+                                         "y":  688,
+                                         "rotation":  0,
+                                         "w":  240,
+                                         "h":  137,
+                                         "label":  "MALETA DE CAMPO \u0026 BATERIA"
+                                     },
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  23,
+                                         "x":  528,
+                                         "y":  320,
+                                         "rotation":  0,
+                                         "w":  48,
+                                         "h":  80,
+                                         "label":  "COLISÃƒO",
+                                         "id":  "van_obs_rxkk_24"
+                                     },
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  24,
+                                         "x":  1232,
+                                         "y":  352,
+                                         "rotation":  0,
+                                         "w":  96,
+                                         "h":  64,
+                                         "label":  "MESA DO COMPUTADOR CRT (CÃ³pia)",
+                                         "id":  "item_copy_71a"
+                                     },
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  25,
+                                         "x":  48,
+                                         "y":  368,
+                                         "rotation":  0,
+                                         "w":  32,
+                                         "h":  288,
+                                         "label":  "COLISÃƒO",
+                                         "id":  "van_obs_x47d_31"
+                                     },
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  26,
+                                         "x":  80,
+                                         "y":  624,
+                                         "rotation":  0,
+                                         "w":  16,
+                                         "h":  48,
+                                         "label":  "COLISÃƒO",
+                                         "id":  "van_obs_x7q1_32"
+                                     },
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  27,
+                                         "x":  1408,
+                                         "y":  176,
+                                         "rotation":  0,
+                                         "w":  112,
+                                         "h":  96,
+                                         "label":  "COLISÃƒO",
+                                         "id":  "van_obs_znfo_34"
+                                     },
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  28,
+                                         "x":  1360,
+                                         "y":  176,
+                                         "rotation":  0,
+                                         "w":  64,
+                                         "h":  32,
+                                         "label":  "COLISÃƒO",
+                                         "id":  "van_obs_zsvo_35"
+                                     },
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  29,
+                                         "x":  1376,
+                                         "y":  192,
+                                         "rotation":  0,
+                                         "w":  48,
+                                         "h":  32,
+                                         "label":  "COLISÃƒO",
+                                         "id":  "van_obs_zwr1_36"
+                                     },
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  30,
+                                         "x":  1392,
+                                         "y":  208,
+                                         "rotation":  0,
+                                         "w":  32,
+                                         "h":  48,
+                                         "label":  "COLISÃƒO",
+                                         "id":  "van_obs_07sd_37"
+                                     },
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  31,
+                                         "x":  1408,
+                                         "y":  272,
+                                         "rotation":  0,
+                                         "w":  80,
+                                         "h":  432,
+                                         "label":  "COLISÃƒO",
+                                         "id":  "van_obs_0ij1_38"
+                                     },
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  32,
+                                         "x":  48,
+                                         "y":  224,
+                                         "rotation":  0,
+                                         "w":  128,
+                                         "h":  160,
+                                         "label":  "COLISÃƒO POLIGONAL",
+                                         "id":  "poly_obs_mvtkswlj_bre",
+                                         "polygon":  [
+                                                         {
+                                                             "x":  176,
+                                                             "y":  224
+                                                         },
+                                                         {
+                                                             "x":  80,
+                                                             "y":  384
+                                                         },
+                                                         {
+                                                             "x":  48,
+                                                             "y":  368
+                                                         },
+                                                         {
+                                                             "x":  128,
+                                                             "y":  224
+                                                         }
+                                                     ],
+                                         "collisionType":  "solid"
+                                     },
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  33,
+                                         "x":  144,
+                                         "y":  176,
+                                         "rotation":  0,
+                                         "w":  48,
+                                         "h":  368,
+                                         "label":  "COLISÃƒO POLIGONAL",
+                                         "id":  "poly_obs_mvtkt8fq_e18",
+                                         "polygon":  [
+                                                         {
+                                                             "x":  144,
+                                                             "y":  288
+                                                         },
+                                                         {
+                                                             "x":  144,
+                                                             "y":  544
+                                                         },
+                                                         {
+                                                             "x":  192,
+                                                             "y":  448
+                                                         },
+                                                         {
+                                                             "x":  192,
+                                                             "y":  176
+                                                         }
+                                                     ],
+                                         "collisionType":  "solid"
+                                     },
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  34,
+                                         "x":  192,
+                                         "y":  384,
+                                         "rotation":  0,
+                                         "w":  32,
+                                         "h":  80,
+                                         "label":  "COLISÃƒO POLIGONAL",
+                                         "id":  "poly_obs_mvtktg0n_vb3",
+                                         "polygon":  [
+                                                         {
+                                                             "x":  192,
+                                                             "y":  384
+                                                         },
+                                                         {
+                                                             "x":  192,
+                                                             "y":  464
+                                                         },
+                                                         {
+                                                             "x":  224,
+                                                             "y":  384
+                                                         },
+                                                         {
+                                                             "x":  224,
+                                                             "y":  384
+                                                         }
+                                                     ],
+                                         "collisionType":  "solid"
+                                     },
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  35,
+                                         "x":  80,
+                                         "y":  288,
+                                         "rotation":  0,
+                                         "w":  64,
+                                         "h":  208,
+                                         "label":  "COLISÃƒO POLIGONAL",
+                                         "id":  "poly_obs_mvtktvfk_fj9",
+                                         "polygon":  [
+                                                         {
+                                                             "x":  128,
+                                                             "y":  480
+                                                         },
+                                                         {
+                                                             "x":  128,
+                                                             "y":  480
+                                                         },
+                                                         {
+                                                             "x":  112,
+                                                             "y":  496
+                                                         },
+                                                         {
+                                                             "x":  80,
+                                                             "y":  496
+                                                         },
+                                                         {
+                                                             "x":  80,
+                                                             "y":  384
+                                                         },
+                                                         {
+                                                             "x":  144,
+                                                             "y":  288
+                                                         }
+                                                     ],
+                                         "collisionType":  "solid"
+                                     },
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  36,
+                                         "x":  128,
+                                         "y":  336,
+                                         "rotation":  0,
+                                         "w":  16,
+                                         "h":  144,
+                                         "label":  "COLISÃƒO POLIGONAL",
+                                         "id":  "poly_obs_mvtku3iv_kpy",
+                                         "polygon":  [
+                                                         {
+                                                             "x":  128,
+                                                             "y":  480
+                                                         },
+                                                         {
+                                                             "x":  128,
+                                                             "y":  480
+                                                         },
+                                                         {
+                                                             "x":  144,
+                                                             "y":  464
+                                                         },
+                                                         {
+                                                             "x":  144,
+                                                             "y":  336
+                                                         }
+                                                     ],
+                                         "collisionType":  "solid"
+                                     },
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  37,
+                                         "x":  1344,
+                                         "y":  176,
+                                         "rotation":  0,
+                                         "w":  64,
+                                         "h":  288,
+                                         "label":  "COLISÃƒO POLIGONAL",
+                                         "id":  "poly_obs_mvtkumiw_77j",
+                                         "polygon":  [
+                                                         {
+                                                             "x":  1344,
+                                                             "y":  176
+                                                         },
+                                                         {
+                                                             "x":  1344,
+                                                             "y":  464
+                                                         },
+                                                         {
+                                                             "x":  1360,
+                                                             "y":  464
+                                                         },
+                                                         {
+                                                             "x":  1408,
+                                                             "y":  432
+                                                         },
+                                                         {
+                                                             "x":  1408,
+                                                             "y":  288
+                                                         }
+                                                     ],
+                                         "collisionType":  "solid"
+                                     },
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  38,
+                                         "x":  336,
+                                         "y":  592,
+                                         "rotation":  0,
+                                         "w":  96,
+                                         "h":  64,
+                                         "label":  "POLÃGONO POR CIMA",
+                                         "id":  "poly_obs_mvtkxp7w_t9j",
+                                         "polygon":  [
+                                                         {
+                                                             "x":  336,
+                                                             "y":  608
+                                                         },
+                                                         {
+                                                             "x":  336,
+                                                             "y":  624
+                                                         },
+                                                         {
+                                                             "x":  336,
+                                                             "y":  656
+                                                         },
+                                                         {
+                                                             "x":  352,
+                                                             "y":  656
+                                                         },
+                                                         {
+                                                             "x":  416,
+                                                             "y":  640
+                                                         },
+                                                         {
+                                                             "x":  432,
+                                                             "y":  624
+                                                         },
+                                                         {
+                                                             "x":  432,
+                                                             "y":  608
+                                                         },
+                                                         {
+                                                             "x":  416,
+                                                             "y":  608
+                                                         },
+                                                         {
+                                                             "x":  400,
+                                                             "y":  608
+                                                         },
+                                                         {
+                                                             "x":  384,
+                                                             "y":  608
+                                                         },
+                                                         {
+                                                             "x":  384,
+                                                             "y":  592
+                                                         },
+                                                         {
+                                                             "x":  368,
+                                                             "y":  592
+                                                         },
+                                                         {
+                                                             "x":  352,
+                                                             "y":  592
+                                                         },
+                                                         {
+                                                             "x":  352,
+                                                             "y":  608
+                                                         },
+                                                         {
+                                                             "x":  352,
+                                                             "y":  608
+                                                         }
+                                                     ],
+                                         "collisionType":  "overhead",
+                                         "isOverhead":  true
+                                     },
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  39,
+                                         "x":  672,
+                                         "y":  592,
+                                         "rotation":  0,
+                                         "w":  64,
+                                         "h":  32,
+                                         "label":  "POLÃGONO POR CIMA",
+                                         "id":  "poly_obs_mvtkzgp2_725",
+                                         "polygon":  [
+                                                         {
+                                                             "x":  672,
+                                                             "y":  624
+                                                         },
+                                                         {
+                                                             "x":  688,
+                                                             "y":  608
+                                                         },
+                                                         {
+                                                             "x":  672,
+                                                             "y":  592
+                                                         },
+                                                         {
+                                                             "x":  688,
+                                                             "y":  592
+                                                         },
+                                                         {
+                                                             "x":  704,
+                                                             "y":  608
+                                                         },
+                                                         {
+                                                             "x":  704,
+                                                             "y":  592
+                                                         },
+                                                         {
+                                                             "x":  720,
+                                                             "y":  592
+                                                         },
+                                                         {
+                                                             "x":  720,
+                                                             "y":  608
+                                                         },
+                                                         {
+                                                             "x":  736,
+                                                             "y":  608
+                                                         },
+                                                         {
+                                                             "x":  736,
+                                                             "y":  608
+                                                         },
+                                                         {
+                                                             "x":  720,
+                                                             "y":  624
+                                                         }
+                                                     ],
+                                         "collisionType":  "overhead",
+                                         "isOverhead":  true
+                                     },
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  40,
+                                         "x":  784,
+                                         "y":  560,
+                                         "rotation":  0,
+                                         "w":  64,
+                                         "h":  64,
+                                         "label":  "POLÃGONO POR CIMA",
+                                         "id":  "poly_obs_mvtkzzzq_23c",
+                                         "polygon":  [
+                                                         {
+                                                             "x":  784,
+                                                             "y":  624
+                                                         },
+                                                         {
+                                                             "x":  800,
+                                                             "y":  592
+                                                         },
+                                                         {
+                                                             "x":  784,
+                                                             "y":  576
+                                                         },
+                                                         {
+                                                             "x":  800,
+                                                             "y":  560
+                                                         },
+                                                         {
+                                                             "x":  816,
+                                                             "y":  592
+                                                         },
+                                                         {
+                                                             "x":  832,
+                                                             "y":  592
+                                                         },
+                                                         {
+                                                             "x":  832,
+                                                             "y":  608
+                                                         },
+                                                         {
+                                                             "x":  848,
+                                                             "y":  624
+                                                         }
+                                                     ],
+                                         "collisionType":  "overhead",
+                                         "isOverhead":  true
+                                     },
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  41,
+                                         "x":  896,
+                                         "y":  592,
+                                         "rotation":  0,
+                                         "w":  32,
+                                         "h":  32,
+                                         "label":  "POLÃGONO POR CIMA",
+                                         "id":  "poly_obs_mvtl076n_wxi",
+                                         "polygon":  [
+                                                         {
+                                                             "x":  896,
+                                                             "y":  624
+                                                         },
+                                                         {
+                                                             "x":  896,
+                                                             "y":  624
+                                                         },
+                                                         {
+                                                             "x":  896,
+                                                             "y":  608
+                                                         },
+                                                         {
+                                                             "x":  912,
+                                                             "y":  608
+                                                         },
+                                                         {
+                                                             "x":  912,
+                                                             "y":  592
+                                                         },
+                                                         {
+                                                             "x":  912,
+                                                             "y":  592
+                                                         },
+                                                         {
+                                                             "x":  912,
+                                                             "y":  608
+                                                         },
+                                                         {
+                                                             "x":  928,
+                                                             "y":  624
+                                                         },
+                                                         {
+                                                             "x":  912,
+                                                             "y":  624
+                                                         }
+                                                     ],
+                                         "collisionType":  "overhead",
+                                         "isOverhead":  true
+                                     },
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  42,
+                                         "x":  960,
+                                         "y":  608,
+                                         "rotation":  0,
+                                         "w":  16,
+                                         "h":  16,
+                                         "label":  "POLÃGONO POR CIMA",
+                                         "id":  "poly_obs_mvtl0omn_btc",
+                                         "polygon":  [
+                                                         {
+                                                             "x":  960,
+                                                             "y":  624
+                                                         },
+                                                         {
+                                                             "x":  960,
+                                                             "y":  608
+                                                         },
+                                                         {
+                                                             "x":  976,
+                                                             "y":  608
+                                                         },
+                                                         {
+                                                             "x":  976,
+                                                             "y":  608
+                                                         },
+                                                         {
+                                                             "x":  976,
+                                                             "y":  624
+                                                         }
+                                                     ],
+                                         "collisionType":  "overhead",
+                                         "isOverhead":  true
+                                     },
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  43,
+                                         "x":  992,
+                                         "y":  576,
+                                         "rotation":  0,
+                                         "w":  128,
+                                         "h":  48,
+                                         "label":  "POLÃGONO POR CIMA",
+                                         "id":  "poly_obs_mvtl1rls_n4d",
+                                         "polygon":  [
+                                                         {
+                                                             "x":  992,
+                                                             "y":  624
+                                                         },
+                                                         {
+                                                             "x":  992,
+                                                             "y":  592
+                                                         },
+                                                         {
+                                                             "x":  1008,
+                                                             "y":  576
+                                                         },
+                                                         {
+                                                             "x":  1024,
+                                                             "y":  592
+                                                         },
+                                                         {
+                                                             "x":  1088,
+                                                             "y":  576
+                                                         },
+                                                         {
+                                                             "x":  1120,
+                                                             "y":  608
+                                                         },
+                                                         {
+                                                             "x":  1120,
+                                                             "y":  624
+                                                         }
+                                                     ],
+                                         "collisionType":  "overhead",
+                                         "isOverhead":  true
+                                     },
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  44,
+                                         "x":  704,
+                                         "y":  368,
+                                         "rotation":  0,
+                                         "w":  240,
+                                         "h":  112,
+                                         "label":  "TRIGGER",
+                                         "id":  "trigger_2yqx",
+                                         "collisionType":  "trigger",
+                                         "isTrigger":  true,
+                                         "ai_instruction":  "Tire essa zona amarela, espere a personagem estar prÃ³ximo a essa Ã¡rea para abrir o menu de loja mantenha o icone flutuante de \"pressione E para tal coisa\""
+                                     },
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  45,
+                                         "x":  224,
+                                         "y":  224,
+                                         "rotation":  0,
+                                         "w":  416,
+                                         "h":  288,
+                                         "label":  "TRIGGER",
+                                         "id":  "trigger_6ta6",
+                                         "collisionType":  "trigger",
+                                         "isTrigger":  true,
+                                         "ai_instruction":  "tire essa zona azul, quando a personagem chegar na zona de trigger deve aparecer \"pressione E para abrir o mural\""
+                                     },
+                                     {
+                                         "type":  "animation_marker",
+                                         "zIndex":  46,
+                                         "x":  464,
+                                         "y":  160,
+                                         "rotation":  0,
+                                         "label":  "ANIM_766",
+                                         "id":  "anim_9gqp",
+                                         "ai_instruction":  "deixe um ponto de exclamaÃ§Ã£o flutuando aqui",
+                                         "isAnimationMarker":  true
+                                     },
+                                     {
+                                         "type":  "obstacle",
+                                         "zIndex":  47,
+                                         "x":  1328,
+                                         "y":  432,
+                                         "rotation":  0,
+                                         "w":  96,
+                                         "h":  144,
+                                         "label":  "TRIGGER",
+                                         "id":  "trigger_jfqd",
+                                         "collisionType":  "trigger",
+                                         "isTrigger":  true,
+                                         "ai_instruction":  "na primeira fase, se vocÃª tocar aqui, automÃ¡ticamente vocÃª Ã© teleportado para a primeira fase, na segunda para frente aparece aquela funÃ§Ã£o de reiniciar ou ir para a prÃ³xima fase e tire esse quadrado de passar de fase de uma fase para outra faÃ§a um efeitinho sÃ³ para nÃ£o ficar hiper seco"
+                                     }
+                                 ]
+                   },
+                   {
+                       "id":  3,
+                       "name":  "Teto/Overlay",
+                       "visible":  true,
+                       "itemsCount":  0,
+                       "items":  [
+
+                                 ]
+                   }
+               ],
+    "obstacles":  [
+                      {
+                          "type":  "obstacle",
+                          "zIndex":  0,
+                          "x":  190,
+                          "y":  0,
+                          "rotation":  0,
+                          "w":  1150,
+                          "h":  105,
+                          "label":  "TETO / PAREDE SUPERIOR"
+                      },
+                      {
+                          "type":  "obstacle",
+                          "zIndex":  1,
+                          "x":  0,
+                          "y":  0,
+                          "rotation":  0,
+                          "w":  190,
+                          "h":  220,
+                          "label":  "CANTO SUPERIOR ESQUERDO"
+                      },
+                      {
+                          "type":  "obstacle",
+                          "zIndex":  2,
+                          "x":  1344,
+                          "y":  0,
+                          "rotation":  0,
+                          "w":  196,
+                          "h":  180,
+                          "label":  "CANTO SUPERIOR DIREITO"
+                      },
+                      {
+                          "type":  "obstacle",
+                          "zIndex":  3,
+                          "x":  0,
+                          "y":  220,
+                          "rotation":  0,
+                          "w":  64,
+                          "h":  100,
+                          "label":  "BATENTE PORTA ESQUERDA (ALTO)"
+                      },
+                      {
+                          "type":  "obstacle",
+                          "zIndex":  4,
+                          "x":  0,
+                          "y":  0,
+                          "rotation":  0,
+                          "w":  40,
+                          "h":  857,
+                          "label":  "LIMITE EXTERNO DA RAMPA"
+                      },
+                      {
+                          "type":  "obstacle",
+                          "zIndex":  5,
+                          "x":  0,
+                          "y":  656,
+                          "rotation":  0,
+                          "w":  140,
+                          "h":  201,
+                          "label":  "CANTO INFERIOR ESQUERDO"
+                      },
+                      {
+                          "type":  "obstacle",
+                          "zIndex":  6,
+                          "x":  1480,
+                          "y":  180,
+                          "rotation":  0,
+                          "w":  56,
+                          "h":  80,
+                          "label":  "BATENTE PORTA DIREITA (ALTO)"
+                      },
+                      {
+                          "type":  "obstacle",
+                          "zIndex":  7,
+                          "x":  1480,
+                          "y":  0,
+                          "rotation":  0,
+                          "w":  56,
+                          "h":  857,
+                          "label":  "LIMITE EXTERNO DA SAÃDA"
+                      },
+                      {
+                          "type":  "obstacle",
+                          "zIndex":  8,
+                          "x":  1380,
+                          "y":  690,
+                          "rotation":  0,
+                          "w":  156,
+                          "h":  167,
+                          "label":  "CANTO INFERIOR DIREITO"
+                      },
+                      {
+                          "type":  "obstacle",
+                          "zIndex":  9,
+                          "x":  140,
+                          "y":  810,
+                          "rotation":  0,
+                          "w":  1240,
+                          "h":  47,
+                          "label":  "PAREDE INFERIOR DA VAN"
+                      },
+                      {
+                          "type":  "obstacle",
+                          "zIndex":  10,
+                          "x":  190,
+                          "y":  105,
+                          "rotation":  0,
+                          "w":  495,
+                          "h":  280,
+                          "label":  "PAREDE TRASEIRA \u0026 MURAL DE AVISOS"
+                      },
+                      {
+                          "type":  "obstacle",
+                          "zIndex":  11,
+                          "x":  940,
+                          "y":  105,
+                          "rotation":  0,
+                          "w":  400,
+                          "h":  247,
+                          "label":  "PAREDE TRASEIRA \u0026 PAINEL DE CONTROLE"
+                      },
+                      {
+                          "type":  "obstacle",
+                          "zIndex":  12,
+                          "x":  224,
+                          "y":  288,
+                          "rotation":  0,
+                          "w":  115,
+                          "h":  150,
+                          "label":  "CAIXOTE \u0026 ENCOMENDA (NOROESTE)"
+                      },
+                      {
+                          "type":  "obstacle",
+                          "zIndex":  13,
+                          "x":  352,
+                          "y":  304,
+                          "rotation":  0,
+                          "w":  75,
+                          "h":  127,
+                          "label":  "PLANTA DA BASE (NOROESTE)"
+                      },
+                      {
+                          "type":  "obstacle",
+                          "zIndex":  14,
+                          "x":  416,
+                          "y":  288,
+                          "rotation":  0,
+                          "w":  115,
+                          "h":  192,
+                          "label":  "CADEIRA GIRATÃ“RIA DA ESTAÃ‡ÃƒO"
+                      },
+                      {
+                          "type":  "obstacle",
+                          "zIndex":  15,
+                          "x":  592,
+                          "y":  272,
+                          "rotation":  0,
+                          "w":  98,
+                          "h":  150,
+                          "label":  "VASO DE PLANTA TÃTICO"
+                      },
+                      {
+                          "type":  "obstacle",
+                          "zIndex":  16,
+                          "x":  704,
+                          "y":  96,
+                          "rotation":  0,
+                          "w":  240,
+                          "h":  343,
+                          "label":  "DISPENSADOR AUTOMÃTICO (LOJA DE ARMAS)"
+                      },
+                      {
+                          "type":  "obstacle",
+                          "zIndex":  17,
+                          "x":  1024,
+                          "y":  352,
+                          "rotation":  0,
+                          "w":  96,
+                          "h":  64,
+                          "label":  "MESA DO COMPUTADOR CRT"
+                      },
+                      {
+                          "type":  "obstacle",
+                          "zIndex":  18,
+                          "x":  1120,
+                          "y":  272,
+                          "rotation":  0,
+                          "w":  115,
+                          "h":  155,
+                          "label":  "BAÃšS DE CARGA \u0026 GERADOR"
+                      },
+                      {
+                          "type":  "obstacle",
+                          "zIndex":  19,
+                          "x":  112,
+                          "y":  656,
+                          "rotation":  0,
+                          "w":  240,
+                          "h":  160,
+                          "label":  "VASO \u0026 CAIXOTE INFERIOR"
+                      },
+                      {
+                          "type":  "obstacle",
+                          "zIndex":  20,
+                          "x":  330,
+                          "y":  624,
+                          "rotation":  0,
+                          "w":  395,
+                          "h":  196,
+                          "label":  "BANCADA MECÃ‚NICA \u0026 PROJETOS"
+                      },
+                      {
+                          "type":  "obstacle",
+                          "zIndex":  21,
+                          "x":  725,
+                          "y":  624,
+                          "rotation":  0,
+                          "w":  411,
+                          "h":  196,
+                          "label":  "LABORATÃ“RIO QUÃMICO \u0026 TUBOS DE ENSAIO"
+                      },
+                      {
+                          "type":  "obstacle",
+                          "zIndex":  22,
+                          "x":  1136,
+                          "y":  688,
+                          "rotation":  0,
+                          "w":  240,
+                          "h":  137,
+                          "label":  "MALETA DE CAMPO \u0026 BATERIA"
+                      },
+                      {
+                          "type":  "obstacle",
+                          "zIndex":  23,
+                          "x":  528,
+                          "y":  320,
+                          "rotation":  0,
+                          "w":  48,
+                          "h":  80,
+                          "label":  "COLISÃƒO",
+                          "id":  "van_obs_rxkk_24"
+                      },
+                      {
+                          "type":  "obstacle",
+                          "zIndex":  24,
+                          "x":  1232,
+                          "y":  352,
+                          "rotation":  0,
+                          "w":  96,
+                          "h":  64,
+                          "label":  "MESA DO COMPUTADOR CRT (CÃ³pia)",
+                          "id":  "item_copy_71a"
+                      },
+                      {
+                          "type":  "obstacle",
+                          "zIndex":  25,
+                          "x":  48,
+                          "y":  368,
+                          "rotation":  0,
+                          "w":  32,
+                          "h":  288,
+                          "label":  "COLISÃƒO",
+                          "id":  "van_obs_x47d_31"
+                      },
+                      {
+                          "type":  "obstacle",
+                          "zIndex":  26,
+                          "x":  80,
+                          "y":  624,
+                          "rotation":  0,
+                          "w":  16,
+                          "h":  48,
+                          "label":  "COLISÃƒO",
+                          "id":  "van_obs_x7q1_32"
+                      },
+                      {
+                          "type":  "obstacle",
+                          "zIndex":  27,
+                          "x":  1408,
+                          "y":  176,
+                          "rotation":  0,
+                          "w":  112,
+                          "h":  96,
+                          "label":  "COLISÃƒO",
+                          "id":  "van_obs_znfo_34"
+                      },
+                      {
+                          "type":  "obstacle",
+                          "zIndex":  28,
+                          "x":  1360,
+                          "y":  176,
+                          "rotation":  0,
+                          "w":  64,
+                          "h":  32,
+                          "label":  "COLISÃƒO",
+                          "id":  "van_obs_zsvo_35"
+                      },
+                      {
+                          "type":  "obstacle",
+                          "zIndex":  29,
+                          "x":  1376,
+                          "y":  192,
+                          "rotation":  0,
+                          "w":  48,
+                          "h":  32,
+                          "label":  "COLISÃƒO",
+                          "id":  "van_obs_zwr1_36"
+                      },
+                      {
+                          "type":  "obstacle",
+                          "zIndex":  30,
+                          "x":  1392,
+                          "y":  208,
+                          "rotation":  0,
+                          "w":  32,
+                          "h":  48,
+                          "label":  "COLISÃƒO",
+                          "id":  "van_obs_07sd_37"
+                      },
+                      {
+                          "type":  "obstacle",
+                          "zIndex":  31,
+                          "x":  1408,
+                          "y":  272,
+                          "rotation":  0,
+                          "w":  80,
+                          "h":  432,
+                          "label":  "COLISÃƒO",
+                          "id":  "van_obs_0ij1_38"
+                      },
+                      {
+                          "type":  "obstacle",
+                          "zIndex":  32,
+                          "x":  48,
+                          "y":  224,
+                          "rotation":  0,
+                          "w":  128,
+                          "h":  160,
+                          "label":  "COLISÃƒO POLIGONAL",
+                          "id":  "poly_obs_mvtkswlj_bre",
+                          "polygon":  [
+                                          {
+                                              "x":  176,
+                                              "y":  224
+                                          },
+                                          {
+                                              "x":  80,
+                                              "y":  384
+                                          },
+                                          {
+                                              "x":  48,
+                                              "y":  368
+                                          },
+                                          {
+                                              "x":  128,
+                                              "y":  224
+                                          }
+                                      ],
+                          "collisionType":  "solid"
+                      },
+                      {
+                          "type":  "obstacle",
+                          "zIndex":  33,
+                          "x":  144,
+                          "y":  176,
+                          "rotation":  0,
+                          "w":  48,
+                          "h":  368,
+                          "label":  "COLISÃƒO POLIGONAL",
+                          "id":  "poly_obs_mvtkt8fq_e18",
+                          "polygon":  [
+                                          {
+                                              "x":  144,
+                                              "y":  288
+                                          },
+                                          {
+                                              "x":  144,
+                                              "y":  544
+                                          },
+                                          {
+                                              "x":  192,
+                                              "y":  448
+                                          },
+                                          {
+                                              "x":  192,
+                                              "y":  176
+                                          }
+                                      ],
+                          "collisionType":  "solid"
+                      },
+                      {
+                          "type":  "obstacle",
+                          "zIndex":  34,
+                          "x":  192,
+                          "y":  384,
+                          "rotation":  0,
+                          "w":  32,
+                          "h":  80,
+                          "label":  "COLISÃƒO POLIGONAL",
+                          "id":  "poly_obs_mvtktg0n_vb3",
+                          "polygon":  [
+                                          {
+                                              "x":  192,
+                                              "y":  384
+                                          },
+                                          {
+                                              "x":  192,
+                                              "y":  464
+                                          },
+                                          {
+                                              "x":  224,
+                                              "y":  384
+                                          },
+                                          {
+                                              "x":  224,
+                                              "y":  384
+                                          }
+                                      ],
+                          "collisionType":  "solid"
+                      },
+                      {
+                          "type":  "obstacle",
+                          "zIndex":  35,
+                          "x":  80,
+                          "y":  288,
+                          "rotation":  0,
+                          "w":  64,
+                          "h":  208,
+                          "label":  "COLISÃƒO POLIGONAL",
+                          "id":  "poly_obs_mvtktvfk_fj9",
+                          "polygon":  [
+                                          {
+                                              "x":  128,
+                                              "y":  480
+                                          },
+                                          {
+                                              "x":  128,
+                                              "y":  480
+                                          },
+                                          {
+                                              "x":  112,
+                                              "y":  496
+                                          },
+                                          {
+                                              "x":  80,
+                                              "y":  496
+                                          },
+                                          {
+                                              "x":  80,
+                                              "y":  384
+                                          },
+                                          {
+                                              "x":  144,
+                                              "y":  288
+                                          }
+                                      ],
+                          "collisionType":  "solid"
+                      },
+                      {
+                          "type":  "obstacle",
+                          "zIndex":  36,
+                          "x":  128,
+                          "y":  336,
+                          "rotation":  0,
+                          "w":  16,
+                          "h":  144,
+                          "label":  "COLISÃƒO POLIGONAL",
+                          "id":  "poly_obs_mvtku3iv_kpy",
+                          "polygon":  [
+                                          {
+                                              "x":  128,
+                                              "y":  480
+                                          },
+                                          {
+                                              "x":  128,
+                                              "y":  480
+                                          },
+                                          {
+                                              "x":  144,
+                                              "y":  464
+                                          },
+                                          {
+                                              "x":  144,
+                                              "y":  336
+                                          }
+                                      ],
+                          "collisionType":  "solid"
+                      },
+                      {
+                          "type":  "obstacle",
+                          "zIndex":  37,
+                          "x":  1344,
+                          "y":  176,
+                          "rotation":  0,
+                          "w":  64,
+                          "h":  288,
+                          "label":  "COLISÃƒO POLIGONAL",
+                          "id":  "poly_obs_mvtkumiw_77j",
+                          "polygon":  [
+                                          {
+                                              "x":  1344,
+                                              "y":  176
+                                          },
+                                          {
+                                              "x":  1344,
+                                              "y":  464
+                                          },
+                                          {
+                                              "x":  1360,
+                                              "y":  464
+                                          },
+                                          {
+                                              "x":  1408,
+                                              "y":  432
+                                          },
+                                          {
+                                              "x":  1408,
+                                              "y":  288
+                                          }
+                                      ],
+                          "collisionType":  "solid"
+                      }
+                  ],
+    "collisionBounds":  [
+                            {
+                                "type":  "obstacle",
+                                "zIndex":  0,
+                                "x":  190,
+                                "y":  0,
+                                "rotation":  0,
+                                "w":  1150,
+                                "h":  105,
+                                "label":  "TETO / PAREDE SUPERIOR"
+                            },
+                            {
+                                "type":  "obstacle",
+                                "zIndex":  1,
+                                "x":  0,
+                                "y":  0,
+                                "rotation":  0,
+                                "w":  190,
+                                "h":  220,
+                                "label":  "CANTO SUPERIOR ESQUERDO"
+                            },
+                            {
+                                "type":  "obstacle",
+                                "zIndex":  2,
+                                "x":  1344,
+                                "y":  0,
+                                "rotation":  0,
+                                "w":  196,
+                                "h":  180,
+                                "label":  "CANTO SUPERIOR DIREITO"
+                            },
+                            {
+                                "type":  "obstacle",
+                                "zIndex":  3,
+                                "x":  0,
+                                "y":  220,
+                                "rotation":  0,
+                                "w":  64,
+                                "h":  100,
+                                "label":  "BATENTE PORTA ESQUERDA (ALTO)"
+                            },
+                            {
+                                "type":  "obstacle",
+                                "zIndex":  4,
+                                "x":  0,
+                                "y":  0,
+                                "rotation":  0,
+                                "w":  40,
+                                "h":  857,
+                                "label":  "LIMITE EXTERNO DA RAMPA"
+                            },
+                            {
+                                "type":  "obstacle",
+                                "zIndex":  5,
+                                "x":  0,
+                                "y":  656,
+                                "rotation":  0,
+                                "w":  140,
+                                "h":  201,
+                                "label":  "CANTO INFERIOR ESQUERDO"
+                            },
+                            {
+                                "type":  "obstacle",
+                                "zIndex":  6,
+                                "x":  1480,
+                                "y":  180,
+                                "rotation":  0,
+                                "w":  56,
+                                "h":  80,
+                                "label":  "BATENTE PORTA DIREITA (ALTO)"
+                            },
+                            {
+                                "type":  "obstacle",
+                                "zIndex":  7,
+                                "x":  1480,
+                                "y":  0,
+                                "rotation":  0,
+                                "w":  56,
+                                "h":  857,
+                                "label":  "LIMITE EXTERNO DA SAÃDA"
+                            },
+                            {
+                                "type":  "obstacle",
+                                "zIndex":  8,
+                                "x":  1380,
+                                "y":  690,
+                                "rotation":  0,
+                                "w":  156,
+                                "h":  167,
+                                "label":  "CANTO INFERIOR DIREITO"
+                            },
+                            {
+                                "type":  "obstacle",
+                                "zIndex":  9,
+                                "x":  140,
+                                "y":  810,
+                                "rotation":  0,
+                                "w":  1240,
+                                "h":  47,
+                                "label":  "PAREDE INFERIOR DA VAN"
+                            },
+                            {
+                                "type":  "obstacle",
+                                "zIndex":  10,
+                                "x":  190,
+                                "y":  105,
+                                "rotation":  0,
+                                "w":  495,
+                                "h":  280,
+                                "label":  "PAREDE TRASEIRA \u0026 MURAL DE AVISOS"
+                            },
+                            {
+                                "type":  "obstacle",
+                                "zIndex":  11,
+                                "x":  940,
+                                "y":  105,
+                                "rotation":  0,
+                                "w":  400,
+                                "h":  247,
+                                "label":  "PAREDE TRASEIRA \u0026 PAINEL DE CONTROLE"
+                            },
+                            {
+                                "type":  "obstacle",
+                                "zIndex":  12,
+                                "x":  224,
+                                "y":  288,
+                                "rotation":  0,
+                                "w":  115,
+                                "h":  150,
+                                "label":  "CAIXOTE \u0026 ENCOMENDA (NOROESTE)"
+                            },
+                            {
+                                "type":  "obstacle",
+                                "zIndex":  13,
+                                "x":  352,
+                                "y":  304,
+                                "rotation":  0,
+                                "w":  75,
+                                "h":  127,
+                                "label":  "PLANTA DA BASE (NOROESTE)"
+                            },
+                            {
+                                "type":  "obstacle",
+                                "zIndex":  14,
+                                "x":  416,
+                                "y":  288,
+                                "rotation":  0,
+                                "w":  115,
+                                "h":  192,
+                                "label":  "CADEIRA GIRATÃ“RIA DA ESTAÃ‡ÃƒO"
+                            },
+                            {
+                                "type":  "obstacle",
+                                "zIndex":  15,
+                                "x":  592,
+                                "y":  272,
+                                "rotation":  0,
+                                "w":  98,
+                                "h":  150,
+                                "label":  "VASO DE PLANTA TÃTICO"
+                            },
+                            {
+                                "type":  "obstacle",
+                                "zIndex":  16,
+                                "x":  704,
+                                "y":  96,
+                                "rotation":  0,
+                                "w":  240,
+                                "h":  343,
+                                "label":  "DISPENSADOR AUTOMÃTICO (LOJA DE ARMAS)"
+                            },
+                            {
+                                "type":  "obstacle",
+                                "zIndex":  17,
+                                "x":  1024,
+                                "y":  352,
+                                "rotation":  0,
+                                "w":  96,
+                                "h":  64,
+                                "label":  "MESA DO COMPUTADOR CRT"
+                            },
+                            {
+                                "type":  "obstacle",
+                                "zIndex":  18,
+                                "x":  1120,
+                                "y":  272,
+                                "rotation":  0,
+                                "w":  115,
+                                "h":  155,
+                                "label":  "BAÃšS DE CARGA \u0026 GERADOR"
+                            },
+                            {
+                                "type":  "obstacle",
+                                "zIndex":  19,
+                                "x":  112,
+                                "y":  656,
+                                "rotation":  0,
+                                "w":  240,
+                                "h":  160,
+                                "label":  "VASO \u0026 CAIXOTE INFERIOR"
+                            },
+                            {
+                                "type":  "obstacle",
+                                "zIndex":  20,
+                                "x":  330,
+                                "y":  624,
+                                "rotation":  0,
+                                "w":  395,
+                                "h":  196,
+                                "label":  "BANCADA MECÃ‚NICA \u0026 PROJETOS"
+                            },
+                            {
+                                "type":  "obstacle",
+                                "zIndex":  21,
+                                "x":  725,
+                                "y":  624,
+                                "rotation":  0,
+                                "w":  411,
+                                "h":  196,
+                                "label":  "LABORATÃ“RIO QUÃMICO \u0026 TUBOS DE ENSAIO"
+                            },
+                            {
+                                "type":  "obstacle",
+                                "zIndex":  22,
+                                "x":  1136,
+                                "y":  688,
+                                "rotation":  0,
+                                "w":  240,
+                                "h":  137,
+                                "label":  "MALETA DE CAMPO \u0026 BATERIA"
+                            },
+                            {
+                                "type":  "obstacle",
+                                "zIndex":  23,
+                                "x":  528,
+                                "y":  320,
+                                "rotation":  0,
+                                "w":  48,
+                                "h":  80,
+                                "label":  "COLISÃƒO",
+                                "id":  "van_obs_rxkk_24"
+                            },
+                            {
+                                "type":  "obstacle",
+                                "zIndex":  24,
+                                "x":  1232,
+                                "y":  352,
+                                "rotation":  0,
+                                "w":  96,
+                                "h":  64,
+                                "label":  "MESA DO COMPUTADOR CRT (CÃ³pia)",
+                                "id":  "item_copy_71a"
+                            },
+                            {
+                                "type":  "obstacle",
+                                "zIndex":  25,
+                                "x":  48,
+                                "y":  368,
+                                "rotation":  0,
+                                "w":  32,
+                                "h":  288,
+                                "label":  "COLISÃƒO",
+                                "id":  "van_obs_x47d_31"
+                            },
+                            {
+                                "type":  "obstacle",
+                                "zIndex":  26,
+                                "x":  80,
+                                "y":  624,
+                                "rotation":  0,
+                                "w":  16,
+                                "h":  48,
+                                "label":  "COLISÃƒO",
+                                "id":  "van_obs_x7q1_32"
+                            },
+                            {
+                                "type":  "obstacle",
+                                "zIndex":  27,
+                                "x":  1408,
+                                "y":  176,
+                                "rotation":  0,
+                                "w":  112,
+                                "h":  96,
+                                "label":  "COLISÃƒO",
+                                "id":  "van_obs_znfo_34"
+                            },
+                            {
+                                "type":  "obstacle",
+                                "zIndex":  28,
+                                "x":  1360,
+                                "y":  176,
+                                "rotation":  0,
+                                "w":  64,
+                                "h":  32,
+                                "label":  "COLISÃƒO",
+                                "id":  "van_obs_zsvo_35"
+                            },
+                            {
+                                "type":  "obstacle",
+                                "zIndex":  29,
+                                "x":  1376,
+                                "y":  192,
+                                "rotation":  0,
+                                "w":  48,
+                                "h":  32,
+                                "label":  "COLISÃƒO",
+                                "id":  "van_obs_zwr1_36"
+                            },
+                            {
+                                "type":  "obstacle",
+                                "zIndex":  30,
+                                "x":  1392,
+                                "y":  208,
+                                "rotation":  0,
+                                "w":  32,
+                                "h":  48,
+                                "label":  "COLISÃƒO",
+                                "id":  "van_obs_07sd_37"
+                            },
+                            {
+                                "type":  "obstacle",
+                                "zIndex":  31,
+                                "x":  1408,
+                                "y":  272,
+                                "rotation":  0,
+                                "w":  80,
+                                "h":  432,
+                                "label":  "COLISÃƒO",
+                                "id":  "van_obs_0ij1_38"
+                            },
+                            {
+                                "type":  "obstacle",
+                                "zIndex":  32,
+                                "x":  48,
+                                "y":  224,
+                                "rotation":  0,
+                                "w":  128,
+                                "h":  160,
+                                "label":  "COLISÃƒO POLIGONAL",
+                                "id":  "poly_obs_mvtkswlj_bre",
+                                "polygon":  [
+                                                {
+                                                    "x":  176,
+                                                    "y":  224
+                                                },
+                                                {
+                                                    "x":  80,
+                                                    "y":  384
+                                                },
+                                                {
+                                                    "x":  48,
+                                                    "y":  368
+                                                },
+                                                {
+                                                    "x":  128,
+                                                    "y":  224
+                                                }
+                                            ],
+                                "collisionType":  "solid"
+                            },
+                            {
+                                "type":  "obstacle",
+                                "zIndex":  33,
+                                "x":  144,
+                                "y":  176,
+                                "rotation":  0,
+                                "w":  48,
+                                "h":  368,
+                                "label":  "COLISÃƒO POLIGONAL",
+                                "id":  "poly_obs_mvtkt8fq_e18",
+                                "polygon":  [
+                                                {
+                                                    "x":  144,
+                                                    "y":  288
+                                                },
+                                                {
+                                                    "x":  144,
+                                                    "y":  544
+                                                },
+                                                {
+                                                    "x":  192,
+                                                    "y":  448
+                                                },
+                                                {
+                                                    "x":  192,
+                                                    "y":  176
+                                                }
+                                            ],
+                                "collisionType":  "solid"
+                            },
+                            {
+                                "type":  "obstacle",
+                                "zIndex":  34,
+                                "x":  192,
+                                "y":  384,
+                                "rotation":  0,
+                                "w":  32,
+                                "h":  80,
+                                "label":  "COLISÃƒO POLIGONAL",
+                                "id":  "poly_obs_mvtktg0n_vb3",
+                                "polygon":  [
+                                                {
+                                                    "x":  192,
+                                                    "y":  384
+                                                },
+                                                {
+                                                    "x":  192,
+                                                    "y":  464
+                                                },
+                                                {
+                                                    "x":  224,
+                                                    "y":  384
+                                                },
+                                                {
+                                                    "x":  224,
+                                                    "y":  384
+                                                }
+                                            ],
+                                "collisionType":  "solid"
+                            },
+                            {
+                                "type":  "obstacle",
+                                "zIndex":  35,
+                                "x":  80,
+                                "y":  288,
+                                "rotation":  0,
+                                "w":  64,
+                                "h":  208,
+                                "label":  "COLISÃƒO POLIGONAL",
+                                "id":  "poly_obs_mvtktvfk_fj9",
+                                "polygon":  [
+                                                {
+                                                    "x":  128,
+                                                    "y":  480
+                                                },
+                                                {
+                                                    "x":  128,
+                                                    "y":  480
+                                                },
+                                                {
+                                                    "x":  112,
+                                                    "y":  496
+                                                },
+                                                {
+                                                    "x":  80,
+                                                    "y":  496
+                                                },
+                                                {
+                                                    "x":  80,
+                                                    "y":  384
+                                                },
+                                                {
+                                                    "x":  144,
+                                                    "y":  288
+                                                }
+                                            ],
+                                "collisionType":  "solid"
+                            },
+                            {
+                                "type":  "obstacle",
+                                "zIndex":  36,
+                                "x":  128,
+                                "y":  336,
+                                "rotation":  0,
+                                "w":  16,
+                                "h":  144,
+                                "label":  "COLISÃƒO POLIGONAL",
+                                "id":  "poly_obs_mvtku3iv_kpy",
+                                "polygon":  [
+                                                {
+                                                    "x":  128,
+                                                    "y":  480
+                                                },
+                                                {
+                                                    "x":  128,
+                                                    "y":  480
+                                                },
+                                                {
+                                                    "x":  144,
+                                                    "y":  464
+                                                },
+                                                {
+                                                    "x":  144,
+                                                    "y":  336
+                                                }
+                                            ],
+                                "collisionType":  "solid"
+                            },
+                            {
+                                "type":  "obstacle",
+                                "zIndex":  37,
+                                "x":  1344,
+                                "y":  176,
+                                "rotation":  0,
+                                "w":  64,
+                                "h":  288,
+                                "label":  "COLISÃƒO POLIGONAL",
+                                "id":  "poly_obs_mvtkumiw_77j",
+                                "polygon":  [
+                                                {
+                                                    "x":  1344,
+                                                    "y":  176
+                                                },
+                                                {
+                                                    "x":  1344,
+                                                    "y":  464
+                                                },
+                                                {
+                                                    "x":  1360,
+                                                    "y":  464
+                                                },
+                                                {
+                                                    "x":  1408,
+                                                    "y":  432
+                                                },
+                                                {
+                                                    "x":  1408,
+                                                    "y":  288
+                                                }
+                                            ],
+                                "collisionType":  "solid"
+                            }
+                        ]
+}

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * js/enemies.js
  * Sistema de Inimigos (3 Tipos de Ratos a partir da Fase 2):
  * 1. Rato Arremessador de Queijo: Inimigo Ã  distÃ¢ncia que identifica o jogador e arremessa pedaÃ§os de queijo.
@@ -880,7 +880,7 @@ class HostileHUDScrapProjectile {
     this.lifetime = 3.8;
     this.destroyed = false;
     this.isNeutralizable = true;
-    this.neutralizeLabel = 'â™» SUCATA DEFLETIDA!';
+    this.neutralizeLabel = '\u267B SUCATA DEFLETIDA!';
     this.neutralizeColor = '#4ade80';
 
     const dx = targetX - x;
@@ -927,7 +927,7 @@ class HostileHUDScrapProjectile {
       const distY = Math.abs(this.y - player.y);
       if (distX < half + this.radius && distY < half + this.radius) {
         this.destroyed = true;
-        onHitPlayer(player, this.damage, 'â™» Ãcone de Sucata do HUD');
+        onHitPlayer(player, this.damage, '\u267B \u00CDcone de Sucata do HUD');
         return;
       }
     }
@@ -954,7 +954,7 @@ class HostileHUDScrapProjectile {
     ctx.fillStyle = '#4ade80';
     ctx.shadowColor = '#4ade80';
     ctx.shadowBlur = 8;
-    ctx.fillText('â™»', 0, 1);
+    ctx.font = '22px sans-serif'; ctx.fillStyle = '#4ade80'; ctx.fillText('\u267B', 0, 1);
 
     ctx.restore();
   }

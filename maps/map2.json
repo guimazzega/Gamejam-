@@ -1,0 +1,542 @@
+﻿{
+    "id":  "map2",
+    "name":  "MAPA 2: ESGOTO SUBTERRÃ‚NEO [SETOR BETA]",
+    "subtitle":  "Navegue pelas galerias de esgoto, elimine os ratos e colete os 16 lixos atÃ© a saÃ­da norte",
+    "width":  2048,
+    "height":  2048,
+    "isSafeRoom":  false,
+    "stageNumber":  2,
+    "imageAsset":  "assets/map2_sewer.jpg",
+    "palette":  {
+                    "bg":  "#141416",
+                    "wallFill":  "rgba(30, 41, 59, 0.85)",
+                    "wallStroke":  "rgba(74, 222, 128, 0.5)",
+                    "pathFill":  "rgba(100, 116, 139, 0.15)",
+                    "pathStroke":  "rgba(56, 189, 248, 0.25)"
+                },
+    "spawnP1":  {
+                    "x":  1540,
+                    "y":  1900
+                },
+    "spawnP2":  {
+                    "x":  1615,
+                    "y":  1900
+                },
+    "trashSpawns":  [
+                        {
+                            "id":  "map2_trash_01",
+                            "x":  260,
+                            "y":  310,
+                            "typeIndex":  1,
+                            "rotation":  0.12
+                        },
+                        {
+                            "id":  "map2_trash_02",
+                            "x":  450,
+                            "y":  350,
+                            "typeIndex":  2,
+                            "rotation":  -0.18
+                        },
+                        {
+                            "id":  "map2_trash_03",
+                            "x":  240,
+                            "y":  720,
+                            "typeIndex":  0,
+                            "rotation":  0.24
+                        },
+                        {
+                            "id":  "map2_trash_04",
+                            "x":  390,
+                            "y":  1120,
+                            "typeIndex":  3,
+                            "rotation":  -0.15
+                        },
+                        {
+                            "id":  "map2_trash_05",
+                            "x":  360,
+                            "y":  1360,
+                            "typeIndex":  4,
+                            "rotation":  0.1
+                        },
+                        {
+                            "id":  "map2_trash_06",
+                            "x":  360,
+                            "y":  1840,
+                            "typeIndex":  0,
+                            "rotation":  -0.22
+                        },
+                        {
+                            "id":  "map2_trash_07",
+                            "x":  820,
+                            "y":  490,
+                            "typeIndex":  1,
+                            "rotation":  0.16
+                        },
+                        {
+                            "id":  "map2_trash_08",
+                            "x":  1190,
+                            "y":  640,
+                            "typeIndex":  2,
+                            "rotation":  -0.12
+                        },
+                        {
+                            "id":  "map2_trash_09",
+                            "x":  860,
+                            "y":  1330,
+                            "typeIndex":  3,
+                            "rotation":  0.19
+                        },
+                        {
+                            "id":  "map2_trash_10",
+                            "x":  1180,
+                            "y":  1390,
+                            "typeIndex":  4,
+                            "rotation":  -0.25
+                        },
+                        {
+                            "id":  "map2_trash_11",
+                            "x":  840,
+                            "y":  1720,
+                            "typeIndex":  0,
+                            "rotation":  0.14
+                        },
+                        {
+                            "id":  "map2_trash_12",
+                            "x":  1520,
+                            "y":  300,
+                            "typeIndex":  1,
+                            "rotation":  -0.18
+                        },
+                        {
+                            "id":  "map2_trash_13",
+                            "x":  1620,
+                            "y":  560,
+                            "typeIndex":  2,
+                            "rotation":  0.21
+                        },
+                        {
+                            "id":  "map2_trash_14",
+                            "x":  1560,
+                            "y":  1100,
+                            "typeIndex":  3,
+                            "rotation":  -0.11
+                        },
+                        {
+                            "id":  "map2_trash_15",
+                            "x":  1660,
+                            "y":  1390,
+                            "typeIndex":  4,
+                            "rotation":  0.17
+                        },
+                        {
+                            "id":  "map2_trash_16",
+                            "x":  1024,
+                            "y":  260,
+                            "typeIndex":  0,
+                            "rotation":  -0.2
+                        }
+                    ],
+    "enemySpawns":  [
+                        {
+                            "id":  "map2_rat_01",
+                            "type":  "scratcher",
+                            "x":  360,
+                            "y":  340
+                        },
+                        {
+                            "id":  "map2_rat_02",
+                            "type":  "cheese_thrower",
+                            "x":  260,
+                            "y":  680
+                        },
+                        {
+                            "id":  "map2_rat_03",
+                            "type":  "spitter",
+                            "x":  320,
+                            "y":  1160
+                        },
+                        {
+                            "id":  "map2_rat_04",
+                            "type":  "scratcher",
+                            "x":  360,
+                            "y":  1560
+                        },
+                        {
+                            "id":  "map2_rat_05",
+                            "type":  "cheese_thrower",
+                            "x":  260,
+                            "y":  1860
+                        },
+                        {
+                            "id":  "map2_rat_06",
+                            "type":  "spitter",
+                            "x":  460,
+                            "y":  1800
+                        },
+                        {
+                            "id":  "map2_rat_07",
+                            "type":  "scratcher",
+                            "x":  920,
+                            "y":  560
+                        },
+                        {
+                            "id":  "map2_rat_08",
+                            "type":  "spitter",
+                            "x":  1180,
+                            "y":  580
+                        },
+                        {
+                            "id":  "map2_rat_09",
+                            "type":  "cheese_thrower",
+                            "x":  820,
+                            "y":  1040
+                        },
+                        {
+                            "id":  "map2_rat_10",
+                            "type":  "scratcher",
+                            "x":  1200,
+                            "y":  1060
+                        },
+                        {
+                            "id":  "map2_rat_11",
+                            "type":  "spitter",
+                            "x":  860,
+                            "y":  1440
+                        },
+                        {
+                            "id":  "map2_rat_12",
+                            "type":  "cheese_thrower",
+                            "x":  1180,
+                            "y":  1480
+                        },
+                        {
+                            "id":  "map2_rat_13",
+                            "type":  "scratcher",
+                            "x":  840,
+                            "y":  1800
+                        },
+                        {
+                            "id":  "map2_rat_14",
+                            "type":  "cheese_thrower",
+                            "x":  1520,
+                            "y":  340
+                        },
+                        {
+                            "id":  "map2_rat_15",
+                            "type":  "spitter",
+                            "x":  1680,
+                            "y":  520
+                        },
+                        {
+                            "id":  "map2_rat_16",
+                            "type":  "scratcher",
+                            "x":  1560,
+                            "y":  1080
+                        },
+                        {
+                            "id":  "map2_rat_17",
+                            "type":  "spitter",
+                            "x":  1660,
+                            "y":  1360
+                        }
+                    ],
+    "floorZones":  [
+
+                   ],
+    "transitionZone":  {
+                           "x":  930,
+                           "y":  70,
+                           "w":  190,
+                           "h":  160,
+                           "label":  "ZONA DE EXTRAÃ‡ÃƒO â†’ TÃšNEL DO REATOR",
+                           "subLabel":  "Pressione [E] ou [EspaÃ§o] para concluir a fase",
+                           "strokeColor":  "#4ade80",
+                           "fillColor":  "rgba(74, 222, 128, 0.28)"
+                       },
+    "elevatedStructures":  [
+                               {
+                                   "id":  "bridge_central_upper",
+                                   "name":  "Passarela MetÃ¡lica Superior",
+                                   "x":  748,
+                                   "y":  816,
+                                   "w":  576,
+                                   "h":  128,
+                                   "srcX":  374,
+                                   "srcY":  408,
+                                   "srcW":  288,
+                                   "srcH":  64,
+                                   "depth":  0.06
+                               },
+                               {
+                                   "id":  "bridge_central_lower",
+                                   "name":  "Passarela MetÃ¡lica Inferior",
+                                   "x":  948,
+                                   "y":  1832,
+                                   "w":  376,
+                                   "h":  128,
+                                   "srcX":  474,
+                                   "srcY":  916,
+                                   "srcW":  188,
+                                   "srcH":  64,
+                                   "depth":  0.05
+                               },
+                               {
+                                   "id":  "ramp_platform_upper",
+                                   "name":  "Plataforma Elevada Noroeste",
+                                   "x":  948,
+                                   "y":  486,
+                                   "w":  144,
+                                   "h":  80,
+                                   "srcX":  474,
+                                   "srcY":  243,
+                                   "srcW":  72,
+                                   "srcH":  40,
+                                   "depth":  0.04
+                               },
+                               {
+                                   "id":  "ramp_platform_lower",
+                                   "name":  "Plataforma Elevada Sudoeste",
+                                   "x":  948,
+                                   "y":  1320,
+                                   "w":  144,
+                                   "h":  80,
+                                   "srcX":  474,
+                                   "srcY":  660,
+                                   "srcW":  72,
+                                   "srcH":  40,
+                                   "depth":  0.04
+                               }
+                           ],
+    "obstacles":  [
+                      {
+                          "x":  0,
+                          "y":  0,
+                          "w":  2048,
+                          "h":  60,
+                          "label":  "LIMITE NORTE"
+                      },
+                      {
+                          "x":  0,
+                          "y":  1988,
+                          "w":  2048,
+                          "h":  60,
+                          "label":  "LIMITE SUL"
+                      },
+                      {
+                          "x":  0,
+                          "y":  60,
+                          "w":  60,
+                          "h":  1928,
+                          "label":  "LIMITE OESTE"
+                      },
+                      {
+                          "x":  1988,
+                          "y":  60,
+                          "w":  60,
+                          "h":  1928,
+                          "label":  "LIMITE LESTE"
+                      },
+                      {
+                          "x":  1540,
+                          "y":  1540,
+                          "w":  448,
+                          "h":  48,
+                          "label":  "PAREDE NORTE DA GARAGEM"
+                      },
+                      {
+                          "x":  1340,
+                          "y":  1540,
+                          "w":  48,
+                          "h":  90,
+                          "label":  "PAREDE OESTE GARAGEM ALTA"
+                      },
+                      {
+                          "x":  1340,
+                          "y":  1770,
+                          "w":  48,
+                          "h":  218,
+                          "label":  "PAREDE OESTE GARAGEM BAIXA"
+                      },
+                      {
+                          "x":  1550,
+                          "y":  1685,
+                          "w":  290,
+                          "h":  150,
+                          "label":  "VAN DE OPERAÃ‡Ã•ES",
+                          "customStroke":  "#f59e0b",
+                          "customFill":  "rgba(245, 158, 11, 0.2)"
+                      },
+                      {
+                          "x":  1340,
+                          "y":  60,
+                          "w":  48,
+                          "h":  380,
+                          "label":  "PILAR LESTE NORTE"
+                      },
+                      {
+                          "x":  1340,
+                          "y":  660,
+                          "w":  48,
+                          "h":  540,
+                          "label":  "PILAR LESTE CENTRO"
+                      },
+                      {
+                          "x":  660,
+                          "y":  60,
+                          "w":  48,
+                          "h":  380,
+                          "label":  "PILAR OESTE NORTE"
+                      },
+                      {
+                          "x":  660,
+                          "y":  680,
+                          "w":  48,
+                          "h":  560,
+                          "label":  "PILAR OESTE CENTRO"
+                      },
+                      {
+                          "x":  660,
+                          "y":  1480,
+                          "w":  48,
+                          "h":  440,
+                          "label":  "PILAR OESTE SUL"
+                      },
+                      {
+                          "x":  1840,
+                          "y":  260,
+                          "w":  148,
+                          "h":  220,
+                          "label":  "GERADOR NORDESTE"
+                      },
+                      {
+                          "x":  1840,
+                          "y":  1060,
+                          "w":  148,
+                          "h":  220,
+                          "label":  "CALDEIRA LESTE"
+                      },
+                      {
+                          "x":  60,
+                          "y":  1460,
+                          "w":  150,
+                          "h":  240,
+                          "label":  "MAQUINÃRIO SUDOESTE"
+                      }
+                  ],
+    "collisionBounds":  [
+                            {
+                                "x":  0,
+                                "y":  0,
+                                "w":  2048,
+                                "h":  60,
+                                "label":  "LIMITE NORTE"
+                            },
+                            {
+                                "x":  0,
+                                "y":  1988,
+                                "w":  2048,
+                                "h":  60,
+                                "label":  "LIMITE SUL"
+                            },
+                            {
+                                "x":  0,
+                                "y":  60,
+                                "w":  60,
+                                "h":  1928,
+                                "label":  "LIMITE OESTE"
+                            },
+                            {
+                                "x":  1988,
+                                "y":  60,
+                                "w":  60,
+                                "h":  1928,
+                                "label":  "LIMITE LESTE"
+                            },
+                            {
+                                "x":  1540,
+                                "y":  1540,
+                                "w":  448,
+                                "h":  48,
+                                "label":  "PAREDE NORTE DA GARAGEM"
+                            },
+                            {
+                                "x":  1340,
+                                "y":  1540,
+                                "w":  48,
+                                "h":  90,
+                                "label":  "PAREDE OESTE GARAGEM ALTA"
+                            },
+                            {
+                                "x":  1340,
+                                "y":  1770,
+                                "w":  48,
+                                "h":  218,
+                                "label":  "PAREDE OESTE GARAGEM BAIXA"
+                            },
+                            {
+                                "x":  1550,
+                                "y":  1685,
+                                "w":  290,
+                                "h":  150,
+                                "label":  "VAN DE OPERAÃ‡Ã•ES",
+                                "customStroke":  "#f59e0b",
+                                "customFill":  "rgba(245, 158, 11, 0.2)"
+                            },
+                            {
+                                "x":  1340,
+                                "y":  60,
+                                "w":  48,
+                                "h":  380,
+                                "label":  "PILAR LESTE NORTE"
+                            },
+                            {
+                                "x":  1340,
+                                "y":  660,
+                                "w":  48,
+                                "h":  540,
+                                "label":  "PILAR LESTE CENTRO"
+                            },
+                            {
+                                "x":  660,
+                                "y":  60,
+                                "w":  48,
+                                "h":  380,
+                                "label":  "PILAR OESTE NORTE"
+                            },
+                            {
+                                "x":  660,
+                                "y":  680,
+                                "w":  48,
+                                "h":  560,
+                                "label":  "PILAR OESTE CENTRO"
+                            },
+                            {
+                                "x":  660,
+                                "y":  1480,
+                                "w":  48,
+                                "h":  440,
+                                "label":  "PILAR OESTE SUL"
+                            },
+                            {
+                                "x":  1840,
+                                "y":  260,
+                                "w":  148,
+                                "h":  220,
+                                "label":  "GERADOR NORDESTE"
+                            },
+                            {
+                                "x":  1840,
+                                "y":  1060,
+                                "w":  148,
+                                "h":  220,
+                                "label":  "CALDEIRA LESTE"
+                            },
+                            {
+                                "x":  60,
+                                "y":  1460,
+                                "w":  150,
+                                "h":  240,
+                                "label":  "MAQUINÃRIO SUDOESTE"
+                            }
+                        ]
+}
