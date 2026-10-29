@@ -50,12 +50,12 @@ window.GlobalState = {
     if (!map || map.isSafeRoom || !Array.isArray(map.trashSpawns)) return [];
     this._loadSavedLayouts();
 
-    if (Array.isArray(this.savedTrashLayouts[map.id]) && this.savedTrashLayouts[map.id].length > 0) {
+    if (Array.isArray(this.savedTrashLayouts[map.id]) && this.savedTrashLayouts[map.id].length === map.trashSpawns.length) {
       return this.savedTrashLayouts[map.id];
     }
 
-    // Limita rigorosamente a no máximo 16 lixos por mapa e congela suas coordenadas
-    const fixedList = map.trashSpawns.slice(0, 16).map((item, idx) => ({
+    // Congela e formata as coordenadas de todos os lixos cadastrados no mapa
+    const fixedList = map.trashSpawns.map((item, idx) => ({
       id: item.id || `${map.id}_trash_${String(idx + 1).padStart(2, '0')}`,
       x: Math.round(item.x),
       y: Math.round(item.y),
@@ -339,9 +339,9 @@ window.GameConfig = {
     },
     {
       stateId: 'VAN_FINAL',
-      mapKey: 'van',
+      mapKey: 'van_final',
       stepIndex: 6,
-      label: 'Safe Room: A Van [Expedição Concluída]',
+      label: 'Safe Room: A Van [Expedição Concluída - Vitória]',
       isSafeRoom: true,
       vanType: 'final',
       previousMapIndex: 5,

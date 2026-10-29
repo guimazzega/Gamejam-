@@ -126,6 +126,7 @@ window.UIManager = class UIManager {
     this.badgeMuteState = document.getElementById('badge-mute-state');
     this.toggleFriendlyFire = document.getElementById('toggle-friendly-fire');
     this.badgeFriendlyFireState = document.getElementById('badge-friendly-fire-state');
+    this.btnOpenUiEditor = document.getElementById('btn-open-ui-editor');
 
     // Referências Menu de Pausa
     this.pauseMapName = document.getElementById('pause-map-name');
@@ -171,6 +172,15 @@ window.UIManager = class UIManager {
     this.btnCloseSettings.addEventListener('click', () => {
       this.closeSettingsModal();
     });
+
+    if (this.btnOpenUiEditor) {
+      this.btnOpenUiEditor.addEventListener('click', () => {
+        this.closeSettingsModal();
+        if (this.game.uiEditor) {
+          this.game.uiEditor.open();
+        }
+      });
+    }
 
     if (this.tabBtnGeneral) {
       this.tabBtnGeneral.addEventListener('click', () => {
@@ -874,5 +884,33 @@ window.UIManager = class UIManager {
     this.toastTimeout = setTimeout(() => {
       if (this.gameToast) this.gameToast.classList.add('hidden');
     }, durationMs);
+  }
+
+  /**
+   * Carrega e aplica um layout de interface em formato JSON (Sprint 10),
+   * permitindo que a State Machine monte a tela de Título ou da Van automaticamente.
+   */
+  loadUILayout(layoutData) {
+    if (!layoutData) return;
+    if (typeof layoutData === 'string') {
+      try {
+        layoutData = JSON.parse(layoutData);
+      } catch (e) {
+        console.error('Erro ao interpretar layout JSON:', e);
+        return;
+      }
+    }
+    if (this.game.uiEditor) {
+      this.game.uiEditor.elements = (layoutData.elements || []).map((item, idx) => ({
+        id: item.id || `node_${idx + 1}`,
+        type: item.type || 'Panel',
+        x: item.x || 0,
+        y: item.y || 0,
+        w: item.w || 120,
+        h: item.h || 40,
+        ...item
+      }));
+      this.showToast(`Layout carregado: ${layoutData.screenName || 'Interface'}!`);
+    }
   }
 };

@@ -152,6 +152,18 @@ window.InputManager = class InputManager {
 
     if (isRepeat) return;
 
+    if (code === 'F6') {
+      e.preventDefault();
+      if (this.callbacks.onToggleEditor) this.callbacks.onToggleEditor();
+      return;
+    }
+
+    if (code === 'F7') {
+      e.preventDefault();
+      if (this.callbacks.onToggleUIEditor) this.callbacks.onToggleUIEditor();
+      return;
+    }
+
     if (code === C.SwitchPlayer) {
       if (this.callbacks.onSwitchPlayer) this.callbacks.onSwitchPlayer();
     } else if (code === C.Pause || code === C.PauseAlt) {

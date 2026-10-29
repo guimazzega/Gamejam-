@@ -320,7 +320,8 @@ class CheeseProjectile {
     }
 
     // ColisÃ£o com obstÃ¡culos sÃ³lidos do mapa
-    for (const obs of map.obstacles) {
+    for (const obs of (map.collisionBounds || map.obstacles || [])) {
+      if (obs.isOverhead || obs.collisionType === 'overhead' || obs.layer === 3 || obs.isTrigger) continue;
       if (
         this.x + this.radius > obs.x &&
         this.x - this.radius < obs.x + obs.w &&
@@ -339,7 +340,7 @@ class CheeseProjectile {
       const distY = Math.abs(this.y - player.y);
       if (distX < half + this.radius && distY < half + this.radius) {
         this.destroyed = true;
-        onHitPlayer(player, this.damage, '🧀 Queijo Arremessado');
+        onHitPlayer(player, this.damage, '🧀 Queijo Arremessado', this.x, this.y);
         return;
       }
     }
@@ -422,7 +423,8 @@ class SpitProjectile {
     }
 
     // ColisÃ£o com obstÃ¡culos sÃ³lidos
-    for (const obs of map.obstacles) {
+    for (const obs of (map.collisionBounds || map.obstacles || [])) {
+      if (obs.isOverhead || obs.collisionType === 'overhead' || obs.layer === 3 || obs.isTrigger) continue;
       if (
         this.x + this.radius > obs.x &&
         this.x - this.radius < obs.x + obs.w &&
@@ -441,7 +443,7 @@ class SpitProjectile {
       const distY = Math.abs(this.y - player.y);
       if (distX < half + this.radius && distY < half + this.radius) {
         this.destroyed = true;
-        onHitPlayer(player, this.damage, '🧪 Cusparada Tóxica');
+        onHitPlayer(player, this.damage, '🧪 Cusparada Tóxica', this.x, this.y);
         return;
       }
     }
@@ -565,7 +567,8 @@ class RadioactiveBarrelProjectile {
     }
 
     // ColisÃ£o com obstÃ¡culos sÃ³lidos
-    for (const obs of map.obstacles) {
+    for (const obs of (map.collisionBounds || map.obstacles || [])) {
+      if (obs.isOverhead || obs.collisionType === 'overhead' || obs.layer === 3 || obs.isTrigger) continue;
       if (
         this.x + this.radius > obs.x &&
         this.x - this.radius < obs.x + obs.w &&
@@ -584,7 +587,7 @@ class RadioactiveBarrelProjectile {
       const distY = Math.abs(this.y - player.y);
       if (distX < half + this.radius && distY < half + this.radius) {
         this.destroyed = true;
-        onHitPlayer(player, this.damage, 'â˜¢ Barril Radioativo');
+        onHitPlayer(player, this.damage, '☢️ Barril Radioativo', this.x, this.y);
         return;
       }
     }
@@ -693,7 +696,8 @@ class ToxicCanisterProjectile {
       return;
     }
 
-    for (const obs of map.obstacles) {
+    for (const obs of (map.collisionBounds || map.obstacles || [])) {
+      if (obs.isOverhead || obs.collisionType === 'overhead' || obs.layer === 3 || obs.isTrigger) continue;
       if (
         this.x + this.radius > obs.x &&
         this.x - this.radius < obs.x + obs.w &&
@@ -711,7 +715,7 @@ class ToxicCanisterProjectile {
       const distY = Math.abs(this.y - player.y);
       if (distX < half + this.radius && distY < half + this.radius) {
         this.destroyed = true;
-        onHitPlayer(player, this.damage, '🧪 Resíduo Tóxico');
+        onHitPlayer(player, this.damage, '🧪 Resíduo Tóxico', this.x, this.y);
         return;
       }
     }
@@ -799,7 +803,8 @@ class HostileHUDTimerProjectile {
       return;
     }
 
-    for (const obs of map.obstacles) {
+    for (const obs of (map.collisionBounds || map.obstacles || [])) {
+      if (obs.isOverhead || obs.collisionType === 'overhead' || obs.layer === 3 || obs.isTrigger) continue;
       if (
         this.x + this.radius > obs.x &&
         this.x - this.radius < obs.x + obs.w &&
@@ -903,7 +908,8 @@ class HostileHUDScrapProjectile {
       return;
     }
 
-    for (const obs of map.obstacles) {
+    for (const obs of (map.collisionBounds || map.obstacles || [])) {
+      if (obs.isOverhead || obs.collisionType === 'overhead' || obs.layer === 3 || obs.isTrigger) continue;
       if (
         this.x + this.radius > obs.x &&
         this.x - this.radius < obs.x + obs.w &&
@@ -995,7 +1001,8 @@ class HostileHUDKeyProjectile {
       return;
     }
 
-    for (const obs of map.obstacles) {
+    for (const obs of (map.collisionBounds || map.obstacles || [])) {
+      if (obs.isOverhead || obs.collisionType === 'overhead' || obs.layer === 3 || obs.isTrigger) continue;
       if (
         this.x + this.radius > obs.x &&
         this.x - this.radius < obs.x + obs.w &&
@@ -1013,7 +1020,7 @@ class HostileHUDKeyProjectile {
       const distY = Math.abs(this.y - player.y);
       if (distX < half + this.radius && distY < half + this.radius) {
         this.destroyed = true;
-        onHitPlayer(player, this.damage, `âŒ¨ Tecla [${this.keyChar}] Hostil`);
+        onHitPlayer(player, this.damage, `🔤 Tecla [${this.keyChar}] Hostil`, this.x, this.y);
         return;
       }
     }
@@ -1089,7 +1096,8 @@ class HostileHUDCardProjectile {
       return;
     }
 
-    for (const obs of map.obstacles) {
+    for (const obs of (map.collisionBounds || map.obstacles || [])) {
+      if (obs.isOverhead || obs.collisionType === 'overhead' || obs.layer === 3 || obs.isTrigger) continue;
       if (
         this.x + this.radius > obs.x &&
         this.x - this.radius < obs.x + obs.w &&
@@ -1107,7 +1115,7 @@ class HostileHUDCardProjectile {
       const distY = Math.abs(this.y - player.y);
       if (distX < half + this.radius && distY < half + this.radius) {
         this.destroyed = true;
-        onHitPlayer(player, this.damage, '🛡️ Card de HP Hostil');
+        onHitPlayer(player, this.damage, '🛡️ Card de HP Hostil', this.x, this.y);
         return;
       }
     }
@@ -1227,15 +1235,24 @@ class BaseEnemy {
   }
 
   _moveWithCollision(dt, vx, vy, map) {
+    if (!map) return;
     const half = this.radius;
+    const mapW = map.width || 2048;
+    const mapH = map.height || 2048;
+    const obstacles = Array.isArray(map.collisionBounds)
+      ? map.collisionBounds
+      : (Array.isArray(map.obstacles) ? map.obstacles : []);
 
     // Eixo X
     if (vx !== 0) {
       let nextX = this.x + vx * dt;
-      nextX = Math.max(half, Math.min(map.width - half, nextX));
+      nextX = Math.max(half, Math.min(mapW - half, nextX));
       const boxX = { x: nextX - half, y: this.y - half, w: this.size, h: this.size };
       let collideX = false;
-      for (const obs of map.obstacles) {
+      for (const obs of obstacles) {
+        // Ignora estritamente objetos por cima / teto ou triggers (Sprint 17)
+        if (obs.isOverhead === true || obs.collisionType === 'overhead' || obs.layer === 3) continue;
+        if (obs.isTrigger || obs.collisionType === 'trigger') continue;
         if (this._aabbOverlap(boxX, obs)) {
           collideX = true;
           break;
@@ -1247,10 +1264,13 @@ class BaseEnemy {
     // Eixo Y
     if (vy !== 0) {
       let nextY = this.y + vy * dt;
-      nextY = Math.max(half, Math.min(map.height - half, nextY));
+      nextY = Math.max(half, Math.min(mapH - half, nextY));
       const boxY = { x: this.x - half, y: nextY - half, w: this.size, h: this.size };
       let collideY = false;
-      for (const obs of map.obstacles) {
+      for (const obs of obstacles) {
+        // Ignora estritamente objetos por cima / teto ou triggers (Sprint 17)
+        if (obs.isOverhead === true || obs.collisionType === 'overhead' || obs.layer === 3) continue;
+        if (obs.isTrigger || obs.collisionType === 'trigger') continue;
         if (this._aabbOverlap(boxY, obs)) {
           collideY = true;
           break;
@@ -1763,7 +1783,7 @@ class ScratcherRat extends BaseEnemy {
           if (Math.abs(diff) <= (Math.PI * 0.55)) {
             this.hasHitPlayerThisAttack = true;
             if (onHitPlayer) {
-              onHitPlayer(player, 14, '⚔️ Arranhão Brutal');
+              onHitPlayer(player, 14, '⚔️ Arranhão Brutal', this.x, this.y);
             }
           }
         }
@@ -1929,7 +1949,7 @@ class MinionRat extends BaseEnemy {
       if (!this.hasHitPlayerThisAttack && this.windupTimer >= 0.08) {
         if (distance <= this.meleeRange + player.size / 2) {
           this.hasHitPlayerThisAttack = true;
-          if (onHitPlayer) onHitPlayer(player, 8, '🐀 Mordida de Lacaio');
+          if (onHitPlayer) onHitPlayer(player, 8, '🐀 Mordida de Lacaio', this.x, this.y);
         }
       }
       if (this.windupTimer >= this.scratchDuration) {
@@ -1996,6 +2016,280 @@ class MinionRat extends BaseEnemy {
 
     if (!this.isDying) {
       this.drawHealthBar(ctx, '🐀 LACAIO', '#fca5a5');
+    }
+  }
+}
+
+/**
+ * ============================================================================
+ * DRONE DEFEITUOSO (DroneDefeituosoEnemy) - Sprint 9
+ * Patrulha de vigilância aérea instável que persegue jogadoras e emite faíscas
+ * ============================================================================
+ */
+class DroneDefeituosoEnemy extends BaseEnemy {
+  constructor(config) {
+    super({
+      ...config,
+      type: 'drone_defeituoso',
+      name: 'Drone Defeituoso',
+      radius: 18,
+      maxHp: config.maxHp !== undefined ? config.maxHp : 80,
+      speed: 125,
+      detectionRange: 440,
+      attackCooldown: 2.2
+    });
+    this.meleeRange = 46;
+    this.sparkDuration = 0.32;
+    this.hasHitPlayerThisAttack = false;
+    this.hoverSinTimer = Math.random() * Math.PI * 2;
+  }
+
+  update(dt, map, players, onSpawnProjectile, audio, onHitPlayer) {
+    if (this.isDead) return;
+
+    if (this.isDying) {
+      this.deathTimer += dt;
+      if (this.deathTimer >= this.deathDuration) {
+        this.isDead = true;
+      }
+      return;
+    }
+
+    if (this.hitFlashTimer > 0) this.hitFlashTimer -= dt;
+    if (this.currentCooldown > 0) this.currentCooldown -= dt;
+    this.hoverSinTimer += dt * 4;
+
+    const targetInfo = this.findTargetPlayer(players);
+    if (!targetInfo || !targetInfo.player) return;
+
+    const { player, distance } = targetInfo;
+
+    if (this.isAttacking) {
+      this.windupTimer += dt;
+      if (!this.hasHitPlayerThisAttack && this.windupTimer >= 0.1 && this.windupTimer <= 0.25) {
+        const hitDistance = Math.hypot(player.x - this.x, player.y - this.y);
+        if (hitDistance <= this.meleeRange + player.size / 2) {
+          this.hasHitPlayerThisAttack = true;
+          if (typeof onHitPlayer === 'function') {
+            onHitPlayer(player, 14, this, this.x, this.y);
+          }
+          if (audio && audio.playSpit) audio.playSpit();
+        }
+      }
+
+      if (this.windupTimer >= this.sparkDuration) {
+        this.isAttacking = false;
+        this.windupTimer = 0;
+        this.currentCooldown = this.attackCooldown;
+      }
+      return;
+    }
+
+    if (distance <= this.meleeRange && this.currentCooldown <= 0) {
+      this.isAttacking = true;
+      this.windupTimer = 0;
+      this.hasHitPlayerThisAttack = false;
+      return;
+    }
+
+    if (distance <= this.detectionRange) {
+      const angle = Math.atan2(player.y - this.y, player.x - this.x);
+      const vx = Math.cos(angle) * this.speed;
+      const vy = Math.sin(angle) * this.speed;
+      this._moveWithCollision(dt, vx, vy, map);
+      this.facingX = Math.cos(angle);
+    }
+  }
+
+  draw(ctx, timeSeconds) {
+    if (this.isDead) return;
+
+    const hoverY = Math.sin(this.hoverSinTimer) * 4;
+    const cx = this.x;
+    const cy = this.y + hoverY;
+
+    ctx.save();
+
+    // Sombra no chão
+    ctx.beginPath();
+    ctx.ellipse(this.x, this.y + this.radius + 6, this.radius * 0.9, 5, 0, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
+    ctx.fill();
+
+    // Efeito de faíscas / dano visual
+    if (this.isAttacking && !this.isDying) {
+      ctx.strokeStyle = '#38bdf8';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.arc(cx, cy, this.meleeRange, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    // Corpo metálico do Drone
+    ctx.fillStyle = this.hitFlashTimer > 0 ? '#ffffff' : '#334155';
+    ctx.strokeStyle = '#06b6d4';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(cx, cy, 14, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    // Rotores / Hastes
+    ctx.strokeStyle = '#64748b';
+    ctx.lineWidth = 2.5;
+    const rotorOffset = 18;
+    ctx.beginPath();
+    ctx.moveTo(cx - rotorOffset, cy - 8);
+    ctx.lineTo(cx + rotorOffset, cy + 8);
+    ctx.moveTo(cx - rotorOffset, cy + 8);
+    ctx.lineTo(cx + rotorOffset, cy - 8);
+    ctx.stroke();
+
+    // LED Sensor Central pulsante
+    ctx.fillStyle = Math.sin(this.hoverSinTimer * 3) > 0 ? '#ef4444' : '#06b6d4';
+    ctx.beginPath();
+    ctx.arc(cx + (this.facingX > 0 ? 4 : -4), cy, 4, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
+
+    if (!this.isDying) {
+      this.drawHealthBar(ctx, '🤖 DRONE DEFEITUOSO', '#06b6d4');
+    }
+  }
+}
+
+/**
+ * ============================================================================
+ * ANIMAL MUTANTE (AnimalMutanteEnemy) - Sprint 9
+ * Fera mutada de esgoto com reflexos ágeis, mordidas letais e resistência elevada
+ * ============================================================================
+ */
+class AnimalMutanteEnemy extends BaseEnemy {
+  constructor(config) {
+    super({
+      ...config,
+      type: 'animal_mutante',
+      name: 'Animal Mutante',
+      radius: 20,
+      maxHp: config.maxHp !== undefined ? config.maxHp : 120,
+      speed: 175,
+      detectionRange: 460,
+      attackCooldown: 1.8
+    });
+    this.meleeRange = 54;
+    this.biteDuration = 0.26;
+    this.hasHitPlayerThisAttack = false;
+  }
+
+  update(dt, map, players, onSpawnProjectile, audio, onHitPlayer) {
+    if (this.isDead) return;
+
+    if (this.isDying) {
+      this.deathTimer += dt;
+      if (this.deathTimer >= this.deathDuration) {
+        this.isDead = true;
+      }
+      return;
+    }
+
+    if (this.hitFlashTimer > 0) this.hitFlashTimer -= dt;
+    if (this.currentCooldown > 0) this.currentCooldown -= dt;
+
+    const targetInfo = this.findTargetPlayer(players);
+    if (!targetInfo || !targetInfo.player) return;
+
+    const { player, distance } = targetInfo;
+
+    if (this.isAttacking) {
+      this.windupTimer += dt;
+      if (!this.hasHitPlayerThisAttack && this.windupTimer >= 0.08 && this.windupTimer <= 0.2) {
+        const hitDistance = Math.hypot(player.x - this.x, player.y - this.y);
+        if (hitDistance <= this.meleeRange + player.size / 2) {
+          this.hasHitPlayerThisAttack = true;
+          if (typeof onHitPlayer === 'function') {
+            onHitPlayer(player, 18, this, this.x, this.y);
+          }
+          if (audio && audio.playScratch) audio.playScratch();
+        }
+      }
+
+      if (this.windupTimer >= this.biteDuration) {
+        this.isAttacking = false;
+        this.windupTimer = 0;
+        this.currentCooldown = this.attackCooldown;
+      }
+      return;
+    }
+
+    if (distance <= this.meleeRange && this.currentCooldown <= 0) {
+      this.isAttacking = true;
+      this.windupTimer = 0;
+      this.hasHitPlayerThisAttack = false;
+      return;
+    }
+
+    if (distance <= this.detectionRange) {
+      const angle = Math.atan2(player.y - this.y, player.x - this.x);
+      const vx = Math.cos(angle) * this.speed;
+      const vy = Math.sin(angle) * this.speed;
+      this._moveWithCollision(dt, vx, vy, map);
+      this.facingX = Math.cos(angle);
+      this.walkCycle = (this.walkCycle || 0) + dt * 10;
+    }
+  }
+
+  draw(ctx, timeSeconds) {
+    if (this.isDead) return;
+
+    let animName = 'idle';
+    let frameIndex = 0;
+
+    if (this.isDying) {
+      animName = 'death';
+      frameIndex = Math.min(6, Math.floor((this.deathTimer / this.deathDuration) * 7));
+    } else if (this.hitFlashTimer > 0) {
+      animName = 'hurt';
+      frameIndex = Math.floor(Math.min(3, (1 - this.hitFlashTimer / 0.22) * 4));
+    } else if (this.isAttacking) {
+      animName = 'attack';
+      frameIndex = Math.floor(Math.min(0.999, this.windupTimer / this.biteDuration) * 8);
+    } else if (this.walkCycle > 0) {
+      animName = 'run';
+      frameIndex = Math.floor(this.walkCycle);
+    } else {
+      animName = 'idle';
+      frameIndex = Math.floor(timeSeconds * 6);
+    }
+
+    const overrideFlipX = this.facingX < 0;
+
+    // Brilho tóxico / aura mutante púrpura
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.radius + 4, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(168, 85, 247, 0.2)';
+    ctx.fill();
+    ctx.restore();
+
+    if (window.SpriteManager) {
+      window.SpriteManager.draw(
+        ctx,
+        'rato3',
+        animName,
+        frameIndex,
+        this.x,
+        this.y + this.radius + 6,
+        {
+          overrideFlipX,
+          scale: 0.26,
+          hitFlash: this.hitFlashTimer > 0
+        }
+      );
+    }
+
+    if (!this.isDying) {
+      this.drawHealthBar(ctx, '🐺 ANIMAL MUTANTE', '#c084fc');
     }
   }
 }
@@ -2121,7 +2415,7 @@ class BossAlpha extends BaseEnemy {
           players.forEach((p) => {
             const dist = Math.hypot(p.x - this.x, p.y - this.y);
             if (dist <= 95) {
-              onHitPlayer(p, 18, '🔨 Golpe de Martelo');
+              onHitPlayer(p, 18, '🔨 Golpe de Martelo', this.x, this.y);
             }
           });
         }
@@ -2459,19 +2753,28 @@ class EnemyManager {
         y: def.y
       };
 
-      if (def.type === 'cheese_thrower') {
+      const rawType = def.enemyType || def.type || 'scratcher';
+
+      if (rawType === 'cheese_thrower') {
         enemy = new CheeseThrowerRat(cfg);
-      } else if (def.type === 'spitter') {
+      } else if (rawType === 'spitter') {
         enemy = new SpitterRat(cfg);
-      } else if (def.type === 'scratcher') {
+      } else if (rawType === 'scratcher') {
         enemy = new ScratcherRat(cfg);
-      } else if (def.type === 'boss_alpha') {
+      } else if (rawType === 'drone_defeituoso') {
+        enemy = new DroneDefeituosoEnemy(cfg);
+      } else if (rawType === 'animal_mutante') {
+        enemy = new AnimalMutanteEnemy(cfg);
+      } else if (rawType === 'boss_alpha') {
         // O Chefão Final deve aparecer estritamente apenas no último mapa (Fase 3 / Combate Final)
         const isFinalStage = map.id === 'map3' || map.stageNumber === 3 || map.isBossArena;
         if (isFinalStage) {
           enemy = new BossAlpha(cfg);
           this.boss = enemy;
         }
+      } else {
+        // Fallback genérico para manter a robustez do jogo
+        enemy = new ScratcherRat(cfg);
       }
 
       if (enemy) {
@@ -2518,20 +2821,31 @@ class EnemyManager {
     }
 
     // Callback ao acertar dano no jogador
-    const onHitPlayer = (player, damage, sourceLabel) => {
+    const onHitPlayer = (player, damage, sourceLabel, sourceX = null, sourceY = null) => {
       try {
         if (!player || player.hp <= 0) return;
         if (this.boss && this.boss.isDefeated) return;
 
+        let srcX = sourceX;
+        let srcY = sourceY;
+        let label = sourceLabel;
+        if (sourceLabel && typeof sourceLabel === 'object') {
+          if (srcX === null && typeof sourceLabel.x === 'number') srcX = sourceLabel.x;
+          if (srcY === null && typeof sourceLabel.y === 'number') srcY = sourceLabel.y;
+          label = sourceLabel.name || sourceLabel.label || 'Ataque Inimigo';
+        }
+
+        const currentMap = this.game ? this.game.currentMap : null;
+
         // No modo Singleplayer, a personagem secundária é uma companheira invulnerável:
         // os ataques dos inimigos ocorrem normalmente, mas não causam dano, nem perda de vida ou Game Over
         if (this.game && this.game.gameMode === 'singleplayer' && player.isCompanion) {
-          player.hitFlashTimer = 0.14; // feedback visual sutil sem perda de vida
+          player.takeDamage(0, srcX, srcY, currentMap);
           return;
         }
 
         const prevHp = player.hp;
-        const newHp = player.takeDamage(damage);
+        const newHp = player.takeDamage(damage, srcX, srcY, currentMap);
         if (newHp === prevHp) {
           // Jogador estava em i-frames (invulnerabilidade temporária pós-dano)
           return;
@@ -2543,7 +2857,7 @@ class EnemyManager {
 
         if (this.game && this.game.floatingTexts) {
           this.game.floatingTexts.push(
-            new window.FloatingText(player.x, player.y - 34, `-${damage} HP [${sourceLabel}]`, '#ef4444', 0.95)
+            new window.FloatingText(player.x, player.y - 34, `-${damage} HP [${label}]`, '#ef4444', 0.95)
           );
         }
 
@@ -2731,8 +3045,7 @@ class EnemyManager {
     }
   }
 
-  render(ctx, elapsedTime) {
-    // 1. Partículas
+  drawParticles(ctx) {
     for (const part of this.deathParticles) {
       const alpha = Math.max(0, part.life / part.maxLife);
       ctx.fillStyle = part.color;
@@ -2742,6 +3055,17 @@ class EnemyManager {
       ctx.fill();
     }
     ctx.globalAlpha = 1.0;
+  }
+
+  drawProjectiles(ctx) {
+    for (const p of this.projectiles) {
+      p.draw(ctx);
+    }
+  }
+
+  render(ctx, elapsedTime) {
+    // 1. Partículas
+    this.drawParticles(ctx);
 
     // 2. Inimigos
     for (const enemy of this.enemies) {
@@ -2749,9 +3073,11 @@ class EnemyManager {
     }
 
     // 3. Projéteis
-    for (const p of this.projectiles) {
-      p.draw(ctx);
-    }
+    this.drawProjectiles(ctx);
+  }
+
+  draw(ctx, elapsedTime) {
+    this.render(ctx, elapsedTime);
   }
 }
 
@@ -2759,6 +3085,8 @@ window.EnemyManager = EnemyManager;
 window.CheeseThrowerRat = CheeseThrowerRat;
 window.SpitterRat = SpitterRat;
 window.ScratcherRat = ScratcherRat;
+window.DroneDefeituosoEnemy = DroneDefeituosoEnemy;
+window.AnimalMutanteEnemy = AnimalMutanteEnemy;
 window.MinionRat = MinionRat;
 window.BossAlpha = BossAlpha;
 window.CheeseProjectile = CheeseProjectile;

@@ -1012,7 +1012,17 @@
       const animFrameH = anim.frameHeight !== undefined ? anim.frameHeight : (img.naturalHeight || config.frameHeight);
 
       const baseScale = anim.customScale !== undefined ? anim.customScale : config.defaultScale;
-      const scale = options.scale !== undefined ? options.scale : baseScale;
+      let scale;
+      if (options.scale !== undefined) {
+        if (anim.customScale !== undefined && config.defaultScale) {
+          // Mantém a proporção e dimensões exatas de animações especiais (ex: dano, afogamento)
+          scale = anim.customScale * (options.scale / config.defaultScale);
+        } else {
+          scale = options.scale;
+        }
+      } else {
+        scale = baseScale;
+      }
       const flipX = options.overrideFlipX !== undefined ? options.overrideFlipX : (anim.flipX || false);
 
       const drawW = animFrameW * scale;
@@ -1039,11 +1049,11 @@
       // Desenha o sprite com o pivô exatamente sobre os pés do personagem
       ctx.drawImage(img, -drawAnchorX, -drawAnchorY, drawW, drawH);
 
-      // Efeito de Hit Flash quando levar dano: silhueta vermelha limpa sobreposta
+      // Efeito de Hit Flash quando levar dano: silhueta vermelha limpa sobreposta exclusivamente nos pixels
       if (options.hitFlash) {
         ctx.save();
         ctx.globalCompositeOperation = 'source-atop';
-        ctx.fillStyle = 'rgba(239, 68, 68, 0.65)';
+        ctx.fillStyle = 'rgba(255, 0, 0, 0.5)';
         ctx.fillRect(-drawAnchorX, -drawAnchorY, drawW, drawH);
         ctx.restore();
       }

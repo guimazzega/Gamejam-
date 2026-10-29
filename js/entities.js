@@ -240,6 +240,18 @@ window.Player = class Player {
     this.maxHp = window.GameConfig.PLAYER_MAX_HP || 100;
     this.hp = this.maxHp;
 
+    // Dimensões e Escala do Personagem (Sprint 16)
+    this.width = this.size;
+    this.height = this.size;
+    this.scale = 1.0;
+    this.inSafeRoom = true;
+
+    // Micro-knockback físico ao sofrer dano (Sprint 16)
+    this.knockbackVx = 0;
+    this.knockbackVy = 0;
+    this.knockbackTimer = 0;
+    this.knockbackDuration = 0.05; // 2 a 3 frames (~0.05s)
+
     this.characterKey = config.id === 2 ? 'p2' : 'p1';
     this.facingX = 0;
     this.facingY = 1;
@@ -279,6 +291,9 @@ window.Player = class Player {
     this.y = y;
     this.vx = 0;
     this.vy = 0;
+    this.knockbackVx = 0;
+    this.knockbackVy = 0;
+    this.knockbackTimer = 0;
     this.clampedByViewport = false;
     this.attackTimer = 0;
     this.hitTargetsInSwing.clear();
@@ -297,18 +312,71 @@ window.Player = class Player {
     return weapon && weapon.damage ? weapon.damage : 30;
   }
 
-  takeDamage(amount) {
+  takeDamage(amount, sourceX = null, sourceY = null, map = null) {
+    // Garante que takeDamage NUNCA altere width, height ou scale do personagem (Sprint 16 - Requisito 2)
+    const currentScale = this.scale;
+    const currentWidth = this.width;
+    const currentHeight = this.height;
+
     if (this.isCompanion) {
       this.damageAnimTimer = 0.32;
-      this.hitFlashTimer = 0.22;
+      this.hitFlashTimer = 0.8;
+      this.invulnerableTimer = 0.8;
+      this._applyMicroKnockback(sourceX, sourceY);
       return this.hp;
     }
     if (this.invulnerableTimer > 0) return this.hp;
+
     this.hp = Math.max(0, Math.round((this.hp - amount) * 10) / 10);
-    this.hitFlashTimer = 0.25;
-    this.invulnerableTimer = 0.42;
+    this.hitFlashTimer = 0.8;
+    this.invulnerableTimer = 0.8;
     this.damageAnimTimer = this.damageAnimDuration;
+
+    // Aplica micro-recuo na direção oposta ao golpe ou olhar (Sprint 16 - Requisito 4)
+    this._applyMicroKnockback(sourceX, sourceY);
+
+    // Assegura preservação imutável das dimensões
+    this.scale = currentScale;
+    this.width = currentWidth;
+    this.height = currentHeight;
+
     return this.hp;
+  }
+
+  _applyMicroKnockback(sourceX = null, sourceY = null) {
+    let kx = 0;
+    let ky = 0;
+
+    if (sourceX !== null && sourceY !== null && !isNaN(sourceX) && !isNaN(sourceY)) {
+      const dx = this.x - sourceX;
+      const dy = this.y - sourceY;
+      const dist = Math.hypot(dx, dy);
+      if (dist > 0.001) {
+        kx = dx / dist;
+        ky = dy / dist;
+      }
+    }
+
+    // Se a posição da fonte não foi informada ou coincidir, recua na direção oposta ao olhar
+    if (kx === 0 && ky === 0) {
+      kx = -this.facingX;
+      ky = -this.facingY;
+      const dist = Math.hypot(kx, ky);
+      if (dist > 0.001) {
+        kx /= dist;
+        ky /= dist;
+      } else {
+        kx = 0;
+        ky = -1;
+      }
+    }
+
+    // Deslocamento sutil: 5 a 10 pixels no total ao longo de 2 ou 3 frames (~0.05s)
+    // 150 px/s * 0.05s = exatamente 7.5 pixels de deslocamento total com parada imediata
+    const KNOCKBACK_SPEED = 150;
+    this.knockbackVx = kx * KNOCKBACK_SPEED;
+    this.knockbackVy = ky * KNOCKBACK_SPEED;
+    this.knockbackTimer = 0.05;
   }
 
   heal(amount) {
@@ -322,8 +390,10 @@ window.Player = class Player {
 
   /**
    * Inicia um golpe corpo a corpo com a arma equipada
+   * (Bloqueado estritamente dentro da Van / Safe Room - Sprint 16)
    */
   triggerAttack(sourceLabel = 'Input', gameMode = 'singleplayer', customAngle = null) {
+    if (this.inSafeRoom) return false;
     if (this.attackCooldown > 0) return false;
 
     const weapon = this.getEquippedWeapon();
@@ -384,21 +454,33 @@ window.Player = class Player {
     };
   }
 
+  _isSolid(obs) {
+    if (!obs) return false;
+    return !(obs.isTrigger || obs.isOverhead || obs.layer === 3 || obs.collisionType === 'trigger' || obs.collisionType === 'overhead');
+  }
+
+  _isPolygon(obs) {
+    return Boolean(obs && obs.polygon && Array.isArray(obs.polygon) && obs.polygon.length >= 3);
+  }
+
   /**
-   * Passo de Despenetração (Minimum Translation Vector - MTV):
-   * Garante que o jogador jamais fique preso dentro de qualquer obstáculo ou parede.
+   * Passo de Despenetração (MTV - Minimum Translation Vector):
+   * Garante que o jogador jamais fique preso dentro de qualquer obstáculo ou parede,
+   * resolvendo AABBs pelo menor eixo de penetração e Polígonos via SAT MTV exato.
    */
   resolveMapCollisions(map, viewportClamp = null) {
     if (!map) return;
     const half = this.size / 2;
-    const obstacles = map.obstacles || [];
+    const obstacles = map.collisionBounds || map.obstacles || [];
+    const mapW = map.width || 2048;
+    const mapH = map.height || 2048;
 
     for (let pass = 0; pass < 3; pass++) {
       let anyOverlap = false;
 
       // Mantém dentro das bordas do mapa
-      this.x = Math.max(half, Math.min(map.width - half, this.x));
-      this.y = Math.max(half, Math.min(map.height - half, this.y));
+      this.x = Math.max(half, Math.min(mapW - half, this.x));
+      this.y = Math.max(half, Math.min(mapH - half, this.y));
 
       if (viewportClamp) {
         this.x = Math.max(viewportClamp.minX, Math.min(viewportClamp.maxX, this.x));
@@ -406,21 +488,56 @@ window.Player = class Player {
       }
 
       for (const obs of obstacles) {
+        if (!this._isSolid(obs)) continue;
+
         const box = this.getBoundingBox(this.x, this.y);
-        if (this._aabbOverlap(box, obs)) {
+
+        // A. Colisão Poligonal / Diagonal -> SAT MTV exato
+        if (this._isPolygon(obs)) {
+          const obsW = obs.w !== undefined ? obs.w : 0;
+          const obsH = obs.h !== undefined ? obs.h : 0;
+          if (obs.x !== undefined && obs.y !== undefined) {
+            if (box.x >= obs.x + obsW || box.x + box.w <= obs.x || box.y >= obs.y + obsH || box.y + box.h <= obs.y) {
+              continue;
+            }
+          }
+
+          const mtv = this._getPolygonMTV(box, obs);
+          if (mtv) {
+            anyOverlap = true;
+            this.x += mtv.x;
+            this.y += mtv.y;
+            const normVel = this.vx * mtv.nx + this.vy * mtv.ny;
+            if (normVel < 0) {
+              this.vx -= normVel * mtv.nx;
+              this.vy -= normVel * mtv.ny;
+            }
+          }
+          continue;
+        }
+
+        // B. Colisão Retangular (AABB) -> Resolução pelo menor eixo de penetração (MTV AABB)
+        if (
+          box.x < obs.x + obs.w - 0.001 &&
+          box.x + box.w > obs.x + 0.001 &&
+          box.y < obs.y + obs.h - 0.001 &&
+          box.y + box.h > obs.y + 0.001
+        ) {
           anyOverlap = true;
           const overlapLeft = (box.x + box.w) - obs.x;
           const overlapRight = (obs.x + obs.w) - box.x;
           const overlapTop = (box.y + box.h) - obs.y;
           const overlapBottom = (obs.y + obs.h) - box.y;
 
-          const minOverlapX = overlapLeft < overlapRight ? -overlapLeft : overlapRight;
-          const minOverlapY = overlapTop < overlapBottom ? -overlapTop : overlapBottom;
+          const minX = overlapLeft < overlapRight ? -overlapLeft : overlapRight;
+          const minY = overlapTop < overlapBottom ? -overlapTop : overlapBottom;
 
-          if (Math.abs(minOverlapX) < Math.abs(minOverlapY)) {
-            this.x += minOverlapX + (minOverlapX < 0 ? -0.05 : 0.05);
+          if (Math.abs(minX) < Math.abs(minY)) {
+            this.x += minX;
+            this.vx = 0;
           } else {
-            this.y += minOverlapY + (minOverlapY < 0 ? -0.05 : 0.05);
+            this.y += minY;
+            this.vy = 0;
           }
         }
       }
@@ -430,7 +547,8 @@ window.Player = class Player {
   }
 
   /**
-   * Atualiza movimentação com Sub-stepping e resolução de colisão AABB recalculada a cada obstáculo
+   * Atualiza movimentação com Resolução de Eixos Separados (AABB) e SAT MTV (Polígonos),
+   * permitindo deslizamento suave sem recuo/efeito borracha.
    */
   update(dt, inputVector, map, viewportClamp = null) {
     if (this.hitFlashTimer > 0) {
@@ -454,7 +572,7 @@ window.Player = class Player {
 
     this.clampedByViewport = false;
 
-    const { dx, dy } = inputVector;
+    const { dx = 0, dy = 0 } = inputVector || {};
     this.vx = dx * this.speed;
     this.vy = dy * this.speed;
 
@@ -476,18 +594,36 @@ window.Player = class Player {
     }
 
     const half = this.size / 2;
-    const totalMoveX = this.vx * dt;
-    const totalMoveY = this.vy * dt;
+    const obstacles = (map && (map.collisionBounds || map.obstacles)) ? (map.collisionBounds || map.obstacles) : [];
+    const mapW = (map && map.width) || 2048;
+    const mapH = (map && map.height) || 2048;
+
+    let moveVx = this.vx;
+    let moveVy = this.vy;
+
+    // Aplicação física do micro-knockback nos frames iniciais pós-dano (Sprint 16 - Requisito 4)
+    if (this.knockbackTimer > 0) {
+      this.knockbackTimer = Math.max(0, this.knockbackTimer - dt);
+      moveVx += this.knockbackVx;
+      moveVy += this.knockbackVy;
+      if (this.knockbackTimer <= 0) {
+        this.knockbackVx = 0;
+        this.knockbackVy = 0;
+      }
+    }
+
+    const totalMoveX = moveVx * dt;
+    const totalMoveY = moveVy * dt;
     const totalDist = Math.hypot(totalMoveX, totalMoveY);
     const steps = Math.max(1, Math.ceil(totalDist / 8));
     const stepX = totalMoveX / steps;
     const stepY = totalMoveY / steps;
 
     for (let s = 0; s < steps; s++) {
-      // 1. Movimento e Colisão no Eixo X
+      // 1. Movimento e Resolução no Eixo X (AABB - Deslizamento lateral)
       if (stepX !== 0) {
         let nextX = this.x + stepX;
-        nextX = Math.max(half, Math.min(map.width - half, nextX));
+        nextX = Math.max(half, Math.min(mapW - half, nextX));
 
         if (viewportClamp) {
           if (stepX < 0 && nextX < viewportClamp.minX) {
@@ -499,23 +635,42 @@ window.Player = class Player {
           }
         }
 
-        for (const obs of map.obstacles) {
-          const boxX = this.getBoundingBox(nextX, this.y);
-          if (this._aabbOverlap(boxX, obs)) {
-            if (stepX > 0) {
-              nextX = obs.x - half - 0.02;
-            } else {
-              nextX = obs.x + obs.w + half + 0.02;
+        let collidedX = false;
+        for (const obs of obstacles) {
+          if (!this._isSolid(obs) || this._isPolygon(obs)) continue;
+
+          // Checa se o obstáculo intercepta o corredor vertical do jogador
+          const overlapY = (this.y - half < obs.y + obs.h - 0.001) && (this.y + half > obs.y + 0.001);
+          if (!overlapY) continue;
+
+          if (stepX > 0) {
+            // Movendo para a direita: colisão com a face esquerda do obstáculo
+            const wasLeft = (this.x + half <= obs.x + Math.max(1, stepX));
+            if (wasLeft && (nextX + half > obs.x)) {
+              nextX = Math.min(nextX, obs.x - half);
+              collidedX = true;
+            }
+          } else if (stepX < 0) {
+            // Movendo para a esquerda: colisão com a face direita do obstáculo
+            const wasRight = (this.x - half >= obs.x + obs.w - Math.max(1, Math.abs(stepX)));
+            if (wasRight && (nextX - half < obs.x + obs.w)) {
+              nextX = Math.max(nextX, obs.x + obs.w + half);
+              collidedX = true;
             }
           }
         }
+
         this.x = nextX;
+        if (collidedX) {
+          this.vx = 0;
+          this.knockbackVx = 0;
+        }
       }
 
-      // 2. Movimento e Colisão no Eixo Y
+      // 2. Movimento e Resolução no Eixo Y (AABB - Deslizamento vertical)
       if (stepY !== 0) {
         let nextY = this.y + stepY;
-        nextY = Math.max(half, Math.min(map.height - half, nextY));
+        nextY = Math.max(half, Math.min(mapH - half, nextY));
 
         if (viewportClamp) {
           if (stepY < 0 && nextY < viewportClamp.minY) {
@@ -527,36 +682,401 @@ window.Player = class Player {
           }
         }
 
-        for (const obs of map.obstacles) {
-          const boxY = this.getBoundingBox(this.x, nextY);
-          if (this._aabbOverlap(boxY, obs)) {
-            if (stepY > 0) {
-              nextY = obs.y - half - 0.02;
-            } else {
-              nextY = obs.y + obs.h + half + 0.02;
+        let collidedY = false;
+        for (const obs of obstacles) {
+          if (!this._isSolid(obs) || this._isPolygon(obs)) continue;
+
+          // Checa se o obstáculo intercepta o corredor horizontal do jogador
+          const overlapX = (this.x - half < obs.x + obs.w - 0.001) && (this.x + half > obs.x + 0.001);
+          if (!overlapX) continue;
+
+          if (stepY > 0) {
+            // Movendo para baixo: colisão com a face superior do obstáculo
+            const wasAbove = (this.y + half <= obs.y + Math.max(1, stepY));
+            if (wasAbove && (nextY + half > obs.y)) {
+              nextY = Math.min(nextY, obs.y - half);
+              collidedY = true;
+            }
+          } else if (stepY < 0) {
+            // Movendo para cima: colisão com a face inferior do obstáculo
+            const wasBelow = (this.y - half >= obs.y + obs.h - Math.max(1, Math.abs(stepY)));
+            if (wasBelow && (nextY - half < obs.y + obs.h)) {
+              nextY = Math.max(nextY, obs.y + obs.h + half);
+              collidedY = true;
             }
           }
         }
+
         this.y = nextY;
+        if (collidedY) {
+          this.vy = 0;
+          this.knockbackVy = 0;
+        }
+      }
+
+      // 3. Resolução Poligonal via SAT MTV (Diagonais e Formas Complexas)
+      for (const obs of obstacles) {
+        if (!this._isSolid(obs) || !this._isPolygon(obs)) continue;
+
+        const box = this.getBoundingBox(this.x, this.y);
+        const obsW = obs.w !== undefined ? obs.w : 0;
+        const obsH = obs.h !== undefined ? obs.h : 0;
+        if (obs.x !== undefined && obs.y !== undefined) {
+          if (box.x >= obs.x + obsW || box.x + box.w <= obs.x || box.y >= obs.y + obsH || box.y + box.h <= obs.y) {
+            continue;
+          }
+        }
+
+        const mtv = this._getPolygonMTV(box, obs);
+        if (mtv) {
+          // Empurra o jogador APENAS a distância exata da penetração (depth) ao longo da normal da superfície
+          this.x += mtv.x;
+          this.y += mtv.y;
+
+          // Projeta a velocidade na tangente da parede diagonal para permitir deslizamento suave
+          const normVel = this.vx * mtv.nx + this.vy * mtv.ny;
+          if (normVel < 0) {
+            this.vx -= normVel * mtv.nx;
+            this.vy -= normVel * mtv.ny;
+          }
+          const normKnock = this.knockbackVx * mtv.nx + this.knockbackVy * mtv.ny;
+          if (normKnock < 0) {
+            this.knockbackVx -= normKnock * mtv.nx;
+            this.knockbackVy -= normKnock * mtv.ny;
+          }
+        }
       }
     }
 
-    // 3. Garantia final contra sobreposição residual
+    // 4. Garantia final contra sobreposição residual (relaxamento de contato no final do update, antes do draw)
     this.resolveMapCollisions(map, viewportClamp);
   }
 
   _aabbOverlap(a, b) {
-    return (
-      a.x < b.x + b.w &&
+    if (!a || !b) return false;
+    if (!this._isSolid(b)) return false;
+
+    const bW = b.w !== undefined ? b.w : 0;
+    const bH = b.h !== undefined ? b.h : 0;
+    const broadOverlap = (
+      a.x < b.x + bW &&
       a.x + a.w > b.x &&
-      a.y < b.y + b.h &&
+      a.y < b.y + bH &&
       a.y + a.h > b.y
     );
+
+    if (!broadOverlap) return false;
+
+    if (this._isPolygon(b)) {
+      return this._getPolygonMTV(a, b) !== null;
+    }
+
+    return true;
+  }
+
+  /**
+   * Cálculo de Vetor de Translação Mínima (MTV) para Colisão Poligonal via SAT (Separating Axis Theorem)
+   */
+  _getPolygonMTV(box, obs) {
+    if (!obs) return null;
+    const vertices = obs.polygon || (Array.isArray(obs) ? obs : null);
+    if (!vertices || vertices.length < 3) return null;
+
+    const parts = this._getConvexParts(obs, vertices);
+    if (!parts || parts.length === 0) return null;
+
+    if (parts.length === 1) {
+      return this._satConvexVsBox(box, parts[0]);
+    }
+
+    let bestMTV = null;
+    for (const part of parts) {
+      const mtv = this._satConvexVsBox(box, part);
+      if (mtv) {
+        if (!bestMTV || mtv.depth > bestMTV.depth) {
+          bestMTV = mtv;
+        }
+      }
+    }
+    return bestMTV;
+  }
+
+  _getConvexParts(obs, vertices) {
+    if (obs && obs.polygon) {
+      const p0 = obs.polygon[0];
+      if (
+        obs._convexParts &&
+        obs._convexPartsCount === obs.polygon.length &&
+        obs._cachedFirstX === p0.x &&
+        obs._cachedFirstY === p0.y
+      ) {
+        return obs._convexParts;
+      }
+      obs._convexParts = this._triangulatePolygon(obs.polygon);
+      obs._convexPartsCount = obs.polygon.length;
+      obs._cachedFirstX = p0.x;
+      obs._cachedFirstY = p0.y;
+      return obs._convexParts;
+    }
+    return this._triangulatePolygon(vertices);
+  }
+
+  /**
+   * Teorema dos Eixos Separadores (SAT) entre AABB (box) e Polígono Convexo (poly)
+   */
+  _satConvexVsBox(box, poly) {
+    const boxCorners = [
+      { x: box.x, y: box.y },
+      { x: box.x + box.w, y: box.y },
+      { x: box.x + box.w, y: box.y + box.h },
+      { x: box.x, y: box.y + box.h }
+    ];
+
+    const boxCenterX = box.x + box.w * 0.5;
+    const boxCenterY = box.y + box.h * 0.5;
+
+    let polyCenterX = 0;
+    let polyCenterY = 0;
+    const n = poly.length;
+    for (let i = 0; i < n; i++) {
+      polyCenterX += poly[i].x;
+      polyCenterY += poly[i].y;
+    }
+    polyCenterX /= n;
+    polyCenterY /= n;
+
+    // Eixos a testar:
+    // 1. Normais da Box: (1, 0) e (0, 1)
+    const axes = [
+      { x: 1, y: 0 },
+      { x: 0, y: 1 }
+    ];
+
+    // 2. Normais das arestas do polígono
+    for (let i = 0; i < n; i++) {
+      const p1 = poly[i];
+      const p2 = poly[(i + 1) % n];
+      const dx = p2.x - p1.x;
+      const dy = p2.y - p1.y;
+      const len = Math.hypot(dx, dy);
+      if (len < 1e-6) continue;
+      const nx = -dy / len;
+      const ny = dx / len;
+
+      let duplicate = false;
+      for (const a of axes) {
+        if (Math.abs(a.x * nx + a.y * ny) > 0.9999) {
+          duplicate = true;
+          break;
+        }
+      }
+      if (!duplicate) {
+        axes.push({ x: nx, y: ny });
+      }
+    }
+
+    let minOverlap = Infinity;
+    let bestAxis = null;
+
+    for (const axis of axes) {
+      let minA = Infinity;
+      let maxA = -Infinity;
+      for (let i = 0; i < 4; i++) {
+        const dot = boxCorners[i].x * axis.x + boxCorners[i].y * axis.y;
+        if (dot < minA) minA = dot;
+        if (dot > maxA) maxA = dot;
+      }
+
+      let minB = Infinity;
+      let maxB = -Infinity;
+      for (let i = 0; i < n; i++) {
+        const dot = poly[i].x * axis.x + poly[i].y * axis.y;
+        if (dot < minB) minB = dot;
+        if (dot > maxB) maxB = dot;
+      }
+
+      // Se houver eixo separador, não há penetração
+      if (maxA <= minB + 0.001 || maxB <= minA + 0.001) {
+        return null;
+      }
+
+      const overlap = Math.min(maxA, maxB) - Math.max(minA, minB);
+      if (overlap < minOverlap) {
+        minOverlap = overlap;
+        const dirX = boxCenterX - polyCenterX;
+        const dirY = boxCenterY - polyCenterY;
+        let sign = dirX * axis.x + dirY * axis.y;
+        if (Math.abs(sign) < 1e-4) {
+          sign = (minA + maxA) - (minB + maxB);
+        }
+        if (sign < 0) {
+          bestAxis = { x: -axis.x, y: -axis.y };
+        } else {
+          bestAxis = { x: axis.x, y: axis.y };
+        }
+      }
+    }
+
+    if (bestAxis && minOverlap > 0.001 && minOverlap < Infinity) {
+      return {
+        x: bestAxis.x * minOverlap,
+        y: bestAxis.y * minOverlap,
+        depth: minOverlap,
+        nx: bestAxis.x,
+        ny: bestAxis.y
+      };
+    }
+
+    return null;
+  }
+
+  /**
+   * Decomposição Ear-Clipping para triangulação de polígonos côncavos em partes convexas
+   */
+  _triangulatePolygon(vertices) {
+    if (!vertices || vertices.length < 3) return [];
+    if (vertices.length === 3) return [[vertices[0], vertices[1], vertices[2]]];
+
+    const pts = vertices.map(v => ({ x: v.x, y: v.y }));
+    const n = pts.length;
+
+    let area = 0;
+    for (let i = 0; i < n; i++) {
+      const j = (i + 1) % n;
+      area += pts[i].x * pts[j].y - pts[j].x * pts[i].y;
+    }
+    if (area < 0) pts.reverse();
+
+    let isConvex = true;
+    for (let i = 0; i < n; i++) {
+      const p0 = pts[(i + n - 1) % n];
+      const p1 = pts[i];
+      const p2 = pts[(i + 1) % n];
+      const cross = (p1.x - p0.x) * (p2.y - p1.y) - (p1.y - p0.y) * (p2.x - p1.x);
+      if (cross < -1e-5) {
+        isConvex = false;
+        break;
+      }
+    }
+
+    if (isConvex) {
+      return [pts];
+    }
+
+    const triangles = [];
+    const indices = [];
+    for (let i = 0; i < n; i++) indices.push(i);
+
+    let count = indices.length;
+    let iterations = 0;
+    const maxIterations = count * count * 2;
+
+    while (count > 3 && iterations < maxIterations) {
+      iterations++;
+      let earFound = false;
+
+      for (let i = 0; i < count; i++) {
+        const prevIdx = indices[(i + count - 1) % count];
+        const currIdx = indices[i];
+        const nextIdx = indices[(i + 1) % count];
+
+        const a = pts[prevIdx];
+        const b = pts[currIdx];
+        const c = pts[nextIdx];
+
+        const cross = (b.x - a.x) * (c.y - b.y) - (b.y - a.y) * (c.x - b.x);
+        if (cross <= 1e-6) continue;
+
+        let hasPointInside = false;
+        for (let j = 0; j < count; j++) {
+          if (j === (i + count - 1) % count || j === i || j === (i + 1) % count) continue;
+          const p = pts[indices[j]];
+          if (this._pointInTriangle(p, a, b, c)) {
+            hasPointInside = true;
+            break;
+          }
+        }
+
+        if (!hasPointInside) {
+          triangles.push([a, b, c]);
+          indices.splice(i, 1);
+          count--;
+          earFound = true;
+          break;
+        }
+      }
+
+      if (!earFound) break;
+    }
+
+    if (indices.length === 3) {
+      triangles.push([pts[indices[0]], pts[indices[1]], pts[indices[2]]]);
+    } else if (triangles.length === 0) {
+      for (let i = 1; i < pts.length - 1; i++) {
+        triangles.push([pts[0], pts[i], pts[i + 1]]);
+      }
+    }
+
+    return triangles;
+  }
+
+  _pointInTriangle(p, a, b, c) {
+    const d1 = (p.x - b.x) * (a.y - b.y) - (a.x - b.x) * (p.y - b.y);
+    const d2 = (p.x - c.x) * (b.y - c.y) - (b.x - c.x) * (p.y - c.y);
+    const d3 = (p.x - a.x) * (c.y - a.y) - (c.x - a.x) * (p.y - a.y);
+    const hasNeg = (d1 < -1e-5) || (d2 < -1e-5) || (d3 < -1e-5);
+    const hasPos = (d1 > 1e-5) || (d2 > 1e-5) || (d3 > 1e-5);
+    return !(hasNeg && hasPos);
+  }
+
+  _polygonAabbOverlap(box, vertices) {
+    if (!box || !vertices || vertices.length < 3) return false;
+    return this._getPolygonMTV(box, { polygon: vertices }) !== null;
+  }
+
+  _pointInPolygon(px, py, vertices) {
+    let inside = false;
+    for (let i = 0, j = vertices.length - 1; i < vertices.length; j = i++) {
+      const xi = vertices[i].x, yi = vertices[i].y;
+      const xj = vertices[j].x, yj = vertices[j].y;
+      const intersect = ((yi > py) !== (yj > py)) &&
+        (px < (xj - xi) * (py - yi) / (yj - yi) + xi);
+      if (intersect) inside = !inside;
+    }
+    return inside;
+  }
+
+  _lineSegmentsIntersect(p0x, p0y, p1x, p1y, p2x, p2y, p3x, p3y) {
+    const s1x = p1x - p0x;
+    const s1y = p1y - p0y;
+    const s2x = p3x - p2x;
+    const s2y = p3y - p2y;
+
+    const denom = (-s2x * s1y + s1x * s2y);
+    if (Math.abs(denom) < 1e-6) return false;
+
+    const s = (-s1y * (p0x - p2x) + s1x * (p0y - p2y)) / denom;
+    const t = ( s2x * (p0y - p2y) - s2y * (p0x - p2x)) / denom;
+
+    return (s >= 0 && s <= 1 && t >= 0 && t <= 1);
   }
 
   isTouchingZone(zone) {
     if (!zone) return false;
-    return this._aabbOverlap(this.getBoundingBox(), zone);
+    const a = this.getBoundingBox();
+    const bW = zone.w !== undefined ? zone.w : 0;
+    const bH = zone.h !== undefined ? zone.h : 0;
+    const broadOverlap = (
+      a.x < zone.x + bW &&
+      a.x + a.w > zone.x &&
+      a.y < zone.y + bH &&
+      a.y + a.h > zone.y
+    );
+    if (!broadOverlap) return false;
+    if (this._isPolygon(zone)) {
+      return this._getPolygonMTV(a, zone) !== null;
+    }
+    return true;
   }
 
   /**
@@ -652,10 +1172,6 @@ window.Player = class Player {
 
     ctx.save();
 
-    if (this.invulnerableTimer > 0 && Math.floor(this.invulnerableTimer * 22) % 2 === 0) {
-      ctx.globalAlpha = 0.45;
-    }
-
     // 1. Aura suave sob a personagem ativa
     if (isControlled) {
       const pulse = 1 + Math.sin(timeSeconds * 5.5) * 0.06;
@@ -749,6 +1265,11 @@ window.Player = class Player {
       frameIndex = 0;
     }
 
+    // Feedback Visual de Dano (Sprint 16 - Requisito 3):
+    // Alterna o piscar vermelho (source-atop) exclusivamente nos pixels do sprite por 0.5 a 1.0s
+    const isHitOrInvulnerable = (this.invulnerableTimer > 0) || (this.hitFlashTimer > 0);
+    const isDamageFlicker = isHitOrInvulnerable && (Math.floor(Math.max(this.invulnerableTimer, this.hitFlashTimer) * 14) % 2 === 0);
+
     if (window.SpriteManager) {
       window.SpriteManager.draw(
         ctx,
@@ -759,12 +1280,12 @@ window.Player = class Player {
         this.y + half,
         {
           overrideFlipX,
-          scale: 0.75,
-          hitFlash: this.hitFlashTimer > 0
+          scale: this.scale || 0.75,
+          hitFlash: isDamageFlicker
         }
       );
     } else {
-      ctx.fillStyle = this.hitFlashTimer > 0 ? '#ef4444' : this.secondaryColor;
+      ctx.fillStyle = this.secondaryColor;
       ctx.fillRect(this.x - 15, this.y - 15, 30, 30);
     }
 

@@ -2289,3 +2289,1462 @@ code {
   75% { transform: translate(2px, -1px); filter: hue-rotate(45deg); }
   100% { transform: translate(0, 0); filter: hue-rotate(0deg); }
 }
+
+/* ==========================================================================
+   ESTILOS DO EDITOR DE MAPAS INTEGRADO (F6)
+   ========================================================================== */
+
+/* Botão fixo no canto da tela para abrir o editor via mouse ou touch */
+.editor-screen-toggle-btn {
+  position: fixed;
+  top: 18px;
+  right: 22px;
+  z-index: 999;
+  background: rgba(15, 23, 42, 0.92);
+  color: #38bdf8;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 8px 14px;
+  border: 1.5px solid #38bdf8;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
+  transition: all 0.2s ease;
+  backdrop-filter: blur(6px);
+}
+
+.editor-screen-toggle-btn:hover {
+  background: #38bdf8;
+  color: #0f172a;
+  transform: translateY(-2px);
+  box-shadow: 0 0 16px rgba(56, 189, 248, 0.6);
+}
+
+.editor-screen-toggle-btn.editor-active {
+  background: #ef4444;
+  color: #ffffff;
+  border-color: #f87171;
+}
+
+/* Camada Geral do Editor (Pass-through de cliques para o canvas) */
+.map-editor-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Barra Superior */
+.editor-header-bar {
+  pointer-events: auto;
+  background: rgba(15, 23, 42, 0.95);
+  border-bottom: 2px solid #38bdf8;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 18px;
+  gap: 16px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+}
+
+.editor-bar-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.editor-badge {
+  background: linear-gradient(135deg, #0284c7, #38bdf8);
+  color: #0f172a;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  font-weight: 900;
+  padding: 4px 10px;
+  border-radius: 6px;
+  letter-spacing: 0.05em;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+}
+
+.editor-tag-pill {
+  font-size: 0.78rem;
+  font-family: var(--font-mono);
+  color: #cbd5e1;
+  background: rgba(30, 41, 59, 0.85);
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  padding: 3px 8px;
+  border-radius: 4px;
+}
+
+/* Indicador HUD da Camada Ativa (Requisito 1) */
+.editor-layer-hud-tag {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(15, 23, 42, 0.95);
+  border: 1.5px solid #facc15;
+  color: #f8fafc;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 6px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+  letter-spacing: 0.02em;
+}
+
+.layer-hud-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  display: inline-block;
+  box-shadow: 0 0 8px currentColor;
+}
+
+.editor-layer-hud-tag strong {
+  color: #facc15;
+}
+
+.editor-layer-hud-tag small {
+  color: #94a3b8;
+}
+
+/* Navegação e Seletor de Camadas 0 a 3 (Requisito 1) */
+.editor-layer-nav-section {
+  display: flex;
+  align-items: center;
+}
+
+.editor-layer-selector {
+  display: flex;
+  align-items: center;
+  background: rgba(8, 14, 26, 0.8);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  padding: 3px;
+  border-radius: 8px;
+  gap: 4px;
+}
+
+.editor-layer-btn {
+  background: transparent;
+  color: #94a3b8;
+  font-family: var(--font-ui);
+  font-size: 0.82rem;
+  font-weight: 700;
+  border: none;
+  padding: 6px 11px;
+  border-radius: 5px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.18s ease;
+}
+
+.editor-layer-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #f8fafc;
+}
+
+.editor-layer-btn.active {
+  background: #0284c7;
+  color: #ffffff;
+  box-shadow: 0 0 10px rgba(2, 132, 199, 0.6);
+}
+
+.layer-key-chip {
+  background: rgba(0, 0, 0, 0.4);
+  color: #facc15;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 1px 5px;
+  border-radius: 4px;
+  border: 1px solid rgba(250, 204, 21, 0.3);
+}
+
+.editor-coords-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: #38bdf8;
+  background: rgba(8, 14, 26, 0.8);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  padding: 4px 10px;
+  border-radius: 6px;
+}
+
+.editor-snap-chip {
+  color: #4ade80;
+  font-weight: 700;
+  font-size: 0.75rem;
+  background: rgba(74, 222, 128, 0.15);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.editor-snap-chip.tag-free {
+  color: #facc15;
+  background: rgba(250, 204, 21, 0.2);
+}
+
+/* Snap à Grade e Ajuste Fino (Requisito 4) */
+.editor-snap-dropdown {
+  background: #1e293b;
+  color: #f8fafc;
+  border: 1px solid #475569;
+  padding: 5px 8px;
+  border-radius: 6px;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  outline: none;
+  cursor: pointer;
+}
+
+.snap-active {
+  background: #065f46 !important;
+  color: #6ee7b7 !important;
+  border-color: #34d399 !important;
+  box-shadow: 0 0 10px rgba(52, 211, 153, 0.3) !important;
+}
+
+.snap-free {
+  background: #78350f !important;
+  color: #fde047 !important;
+  border-color: #facc15 !important;
+  box-shadow: 0 0 10px rgba(250, 204, 21, 0.4) !important;
+}
+
+.editor-zoom-tag {
+  color: #facc15;
+  font-weight: 700;
+}
+
+/* Abas de Modo (Colisões, Lixos, Sprites) */
+.editor-mode-selector {
+  background: rgba(8, 14, 26, 0.6);
+  padding: 4px;
+  border-radius: 8px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.editor-tab-btn {
+  background: transparent;
+  color: #94a3b8;
+  font-family: var(--font-ui);
+  font-size: 0.84rem;
+  font-weight: 700;
+  border: none;
+  padding: 7px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.editor-tab-btn:hover {
+  color: #f8fafc;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.editor-tab-btn.active {
+  background: #0284c7;
+  color: #ffffff;
+  box-shadow: 0 0 12px rgba(2, 132, 199, 0.5);
+}
+
+.editor-tab-btn .btn-icon {
+  font-size: 1rem;
+}
+
+#editor-trash-count-badge.count-optimal {
+  color: #4ade80;
+  font-weight: 900;
+}
+
+/* Snap à Grade e Ações da Barra */
+.editor-snap-control {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  color: #cbd5e1;
+}
+
+.editor-snap-control select {
+  background: #1e293b;
+  color: #f8fafc;
+  border: 1px solid #475569;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  outline: none;
+  cursor: pointer;
+}
+
+.editor-action-btn {
+  background: rgba(30, 41, 59, 0.9);
+  color: #f8fafc;
+  font-family: var(--font-ui);
+  font-size: 0.82rem;
+  font-weight: 700;
+  border: 1px solid #475569;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.editor-action-btn:hover {
+  background: #334155;
+  border-color: #94a3b8;
+}
+
+.btn-export-highlight {
+  background: linear-gradient(135deg, #16a34a, #22c55e);
+  color: #ffffff;
+  border-color: #86efac;
+  box-shadow: 0 0 12px rgba(34, 197, 94, 0.4);
+}
+
+.btn-export-highlight:hover {
+  background: linear-gradient(135deg, #15803d, #16a34a);
+  box-shadow: 0 0 18px rgba(34, 197, 94, 0.7);
+  transform: translateY(-1px);
+}
+
+.btn-close-editor {
+  background: #dc2626;
+  border-color: #f87171;
+  color: #ffffff;
+}
+
+.btn-close-editor:hover {
+  background: #b91c1c;
+}
+
+/* Barra Contextual */
+.editor-context-bar {
+  pointer-events: auto;
+  background: rgba(15, 23, 42, 0.88);
+  border-bottom: 1px solid rgba(56, 189, 248, 0.3);
+  padding: 7px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  backdrop-filter: blur(6px);
+}
+
+.context-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.context-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #94a3b8;
+}
+
+.context-pill-btn {
+  background: rgba(30, 41, 59, 0.8);
+  color: #f1f5f9;
+  font-family: var(--font-ui);
+  font-size: 0.8rem;
+  font-weight: 600;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  padding: 5px 11px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.context-pill-btn:hover {
+  background: #334155;
+  border-color: #38bdf8;
+  color: #38bdf8;
+}
+
+.context-pill-btn.active {
+  background: #0369a1;
+  color: #ffffff;
+  border-color: #38bdf8;
+}
+
+.context-pill-btn.btn-tool-enemy.active {
+  background: #991b1b;
+  color: #ffffff;
+  border-color: #ef4444;
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.45);
+}
+
+.context-enemy-selector {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(30, 41, 59, 0.75);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+
+.enemy-type-quick-btn {
+  background: #1e293b;
+  border: 1px solid #ef4444;
+  color: #fca5a5;
+  font-family: var(--font-ui);
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+}
+
+.enemy-type-quick-btn:hover {
+  background: #7f1d1d;
+  color: #ffffff;
+  border-color: #f87171;
+}
+
+.enemy-type-quick-btn .key-pill {
+  background: rgba(0, 0, 0, 0.4);
+  padding: 1px 4px;
+  border-radius: 3px;
+  color: #fde047;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+}
+
+.context-help {
+  font-size: 0.78rem;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Paleta de Lixos */
+.trash-palette-grid {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.trash-palette-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(30, 41, 59, 0.7);
+  color: #cbd5e1;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  padding: 4px 8px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.trash-palette-btn:hover {
+  background: #334155;
+  color: #ffffff;
+}
+
+.trash-palette-btn.selected {
+  background: #1e293b;
+  border-color: #facc15;
+  color: #facc15;
+  box-shadow: 0 0 8px rgba(250, 204, 21, 0.3);
+}
+
+.trash-palette-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+/* Doca Flutuante de Propriedades (Inspector) */
+.editor-properties-dock {
+  pointer-events: auto;
+  position: absolute;
+  bottom: 24px;
+  right: 24px;
+  width: 320px;
+  background: rgba(15, 23, 42, 0.94);
+  border: 2px solid #38bdf8;
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.75);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+}
+
+.properties-dock-header {
+  background: rgba(8, 14, 26, 0.9);
+  border-bottom: 1px solid rgba(56, 189, 248, 0.3);
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.properties-dock-header strong {
+  font-size: 0.78rem;
+  font-family: var(--font-mono);
+  color: #38bdf8;
+  letter-spacing: 0.04em;
+}
+
+.prop-btn-icon {
+  background: transparent;
+  color: #94a3b8;
+  border: none;
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.prop-btn-icon:hover {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.15);
+}
+
+.properties-dock-body {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.prop-field-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.prop-field-row label,
+.prop-field-col label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+}
+
+.prop-field-row input[type="text"],
+.prop-field-row select,
+.prop-field-col input[type="number"] {
+  background: #0f172a;
+  border: 1px solid #334155;
+  color: #f8fafc;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  padding: 5px 8px;
+  border-radius: 4px;
+  outline: none;
+}
+
+.prop-field-row input[type="text"]:focus,
+.prop-field-row select:focus,
+.prop-field-col input[type="number"]:focus {
+  border-color: #38bdf8;
+  box-shadow: 0 0 6px rgba(56, 189, 248, 0.4);
+}
+
+.prop-field-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.prop-field-col {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* Controles de Z-Index e Rotação no Inspector (Requisitos 2 e 3) */
+.properties-dock-z-rotate {
+  background: rgba(8, 14, 26, 0.85);
+  border-top: 1px solid rgba(56, 189, 248, 0.2);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.prop-action-subrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.prop-subrow-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #94a3b8;
+  min-width: 60px;
+  text-transform: uppercase;
+}
+
+.prop-zindex-text {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #38bdf8;
+  background: rgba(15, 23, 42, 0.9);
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+}
+
+.prop-rotation-badge {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: #facc15;
+  background: rgba(120, 53, 15, 0.5);
+  border: 1px solid #facc15;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.btn-xs {
+  padding: 4px 8px !important;
+  font-size: 0.72rem !important;
+}
+
+.properties-dock-footer {
+  background: rgba(8, 14, 26, 0.7);
+  border-top: 1px solid rgba(148, 163, 184, 0.15);
+  padding: 10px 12px;
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.btn-sm {
+  padding: 6px 12px !important;
+  font-size: 0.78rem !important;
+}
+
+/* Modal de Exportação (.JSON) */
+.editor-export-modal-backdrop {
+  pointer-events: auto;
+  position: fixed;
+  inset: 0;
+  background: rgba(3, 7, 18, 0.82);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  backdrop-filter: blur(6px);
+}
+
+.editor-export-panel {
+  max-width: 680px;
+  width: 90%;
+  display: flex;
+  flex-direction: column;
+  padding: 24px;
+}
+
+.export-modal-title {
+  font-size: 1.4rem;
+  color: #f8fafc;
+  margin-top: 8px;
+  margin-bottom: 4px;
+  font-weight: 800;
+}
+
+.export-modal-desc {
+  font-size: 0.88rem;
+  color: #cbd5e1;
+  margin-bottom: 14px;
+  line-height: 1.45;
+}
+
+.export-stats-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.export-stat-chip {
+  background: rgba(30, 41, 59, 0.8);
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  padding: 4px 10px;
+  border-radius: 6px;
+  color: #e2e8f0;
+}
+
+.export-code-box {
+  width: 100%;
+  margin-bottom: 16px;
+}
+
+.export-code-box textarea {
+  width: 100%;
+  height: 240px;
+  background: #020617;
+  color: #38bdf8;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  line-height: 1.45;
+  padding: 12px;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  resize: vertical;
+  outline: none;
+}
+
+.export-code-box textarea:focus {
+  border-color: #38bdf8;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
+}
+
+.export-modal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.btn-copy-glow {
+  background: linear-gradient(135deg, #0284c7, #38bdf8) !important;
+  color: #0f172a !important;
+  font-weight: 800 !important;
+  box-shadow: 0 0 14px rgba(56, 189, 248, 0.5) !important;
+}
+
+/* =========================================================================
+   SPRINT 10: ESTILOS DO EDITOR DE MENUS E INTERFACE UI
+   ========================================================================= */
+
+/* Camada Geral do Editor de UI (Pass-through de cliques para o canvas) */
+.ui-editor-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1100;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Barra Superior */
+.ui-editor-header-bar {
+  pointer-events: auto;
+  background: rgba(15, 23, 42, 0.96);
+  border-bottom: 2px solid #38bdf8;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 18px;
+  gap: 16px;
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(10px);
+}
+
+.ui-editor-bar-section {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ui-editor-badge {
+  background: linear-gradient(135deg, #0284c7, #38bdf8);
+  color: #0f172a;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  font-weight: 900;
+  padding: 4px 10px;
+  border-radius: 6px;
+  letter-spacing: 0.05em;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+}
+
+.ui-editor-dropdown {
+  background: #1e293b;
+  color: #f8fafc;
+  border: 1px solid #475569;
+  padding: 5px 10px;
+  border-radius: 6px;
+  font-family: var(--font-ui);
+  font-size: 0.8rem;
+  font-weight: 600;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.ui-editor-dropdown:focus {
+  border-color: #38bdf8;
+}
+
+.ui-editor-tag-pill {
+  font-size: 0.78rem;
+  font-family: var(--font-mono);
+  color: #cbd5e1;
+  background: rgba(30, 41, 59, 0.85);
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  padding: 4px 10px;
+  border-radius: 6px;
+  max-width: 320px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ui-editor-tag-pill.active {
+  color: #facc15;
+  border-color: #facc15;
+  background: rgba(120, 53, 15, 0.25);
+}
+
+.ui-editor-action-btn {
+  background: rgba(30, 41, 59, 0.9);
+  color: #f8fafc;
+  font-family: var(--font-ui);
+  font-size: 0.8rem;
+  font-weight: 700;
+  border: 1px solid #475569;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.ui-editor-action-btn:hover {
+  background: #334155;
+  border-color: #94a3b8;
+}
+
+.btn-hitbox-active {
+  background: #7f1d1d !important;
+  color: #fca5a5 !important;
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.5) !important;
+}
+
+.btn-preview-mode.active {
+  background: #065f46 !important;
+  color: #86efac !important;
+  border-color: #22c55e !important;
+  box-shadow: 0 0 12px rgba(34, 197, 94, 0.5) !important;
+}
+
+/* Barra Contextual de Paleta de Nós */
+.ui-editor-context-bar {
+  pointer-events: auto;
+  background: rgba(15, 23, 42, 0.92);
+  border-bottom: 1px solid rgba(56, 189, 248, 0.3);
+  padding: 7px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  backdrop-filter: blur(6px);
+}
+
+.ui-context-pill-btn {
+  background: rgba(30, 41, 59, 0.85);
+  color: #f1f5f9;
+  font-family: var(--font-ui);
+  font-size: 0.8rem;
+  font-weight: 600;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  padding: 5px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ui-context-pill-btn:hover {
+  background: #334155;
+  border-color: #38bdf8;
+  color: #38bdf8;
+  transform: translateY(-1px);
+}
+
+.btn-action-accent {
+  background: #0284c7 !important;
+  color: #ffffff !important;
+  border-color: #38bdf8 !important;
+}
+
+.btn-action-accent:hover {
+  background: #0369a1 !important;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+}
+
+.btn-action-lightning {
+  background: #d97706 !important;
+  color: #ffffff !important;
+  border-color: #facc15 !important;
+}
+
+.btn-action-lightning:hover {
+  background: #b45309 !important;
+  box-shadow: 0 0 10px rgba(250, 204, 21, 0.5);
+}
+
+/* Banner de Modo Preview / Teste */
+.ui-preview-banner {
+  pointer-events: auto;
+  background: linear-gradient(90deg, rgba(6, 95, 70, 0.95), rgba(16, 185, 129, 0.95));
+  color: #ffffff;
+  padding: 8px 18px;
+  font-size: 0.85rem;
+  text-align: center;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+  font-family: var(--font-ui);
+}
+
+.ui-preview-banner code {
+  background: rgba(0, 0, 0, 0.3);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: bold;
+}
+
+/* Doca de Propriedades (Inspector de UI) */
+.ui-editor-properties-dock {
+  pointer-events: auto;
+  position: absolute;
+  bottom: 24px;
+  right: 24px;
+  width: 330px;
+  background: rgba(15, 23, 42, 0.95);
+  border: 2px solid #38bdf8;
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+  z-index: 1200;
+}
+
+.ui-action-badge {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #facc15;
+  background: rgba(120, 53, 15, 0.5);
+  border: 1px solid #facc15;
+  padding: 2px 8px;
+  border-radius: 4px;
+  max-width: 140px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Modais de UI (Edição e Ação) */
+.ui-modal-card {
+  max-width: 620px;
+  width: 92%;
+}
+
+.ui-field-row {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-bottom: 12px;
+}
+
+.ui-field-row label,
+.ui-field-col label,
+.ui-input-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+}
+
+.ui-field-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.ui-field-grid-3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.ui-field-grid-4 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.ui-field-col {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.ui-text-input,
+.ui-textarea,
+.ui-dropdown {
+  background: #0f172a;
+  border: 1px solid #334155;
+  color: #f8fafc;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  padding: 6px 10px;
+  border-radius: 6px;
+  outline: none;
+  width: 100%;
+}
+
+.ui-text-input:focus,
+.ui-textarea:focus,
+.ui-dropdown:focus {
+  border-color: #38bdf8;
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.4);
+}
+
+.ui-color-picker {
+  width: 38px;
+  height: 34px;
+  border: 1px solid #334155;
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+  padding: 2px;
+}
+
+/* Modal de Vinculação de Eventos (Action Triggers) */
+.ui-action-target-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(30, 41, 59, 0.7);
+  padding: 10px 14px;
+  border-radius: 8px;
+  margin-bottom: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.ui-target-label {
+  font-size: 0.8rem;
+  color: #94a3b8;
+}
+
+.ui-target-curr code {
+  color: #facc15;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+}
+
+.ui-action-input-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.ui-action-presets-block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ui-action-chips-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 8px;
+  max-height: 230px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.ui-action-chip {
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 6px;
+  padding: 8px 10px;
+  cursor: pointer;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  transition: all 0.15s ease;
+}
+
+.ui-action-chip strong {
+  font-size: 0.78rem;
+  font-family: var(--font-mono);
+  color: #38bdf8;
+}
+
+.ui-action-chip small {
+  font-size: 0.7rem;
+  color: #94a3b8;
+}
+
+.ui-action-chip:hover {
+  background: #1e293b;
+  border-color: #38bdf8;
+  transform: translateY(-1px);
+}
+
+.ui-action-chip.selected {
+  background: #0c4a6e;
+  border-color: #38bdf8;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
+}
+
+.ui-action-chip.selected strong {
+  color: #facc15;
+}
+
+/* Configurações - Linha Destaque para o Editor de UI */
+.setting-feature-row {
+  border-left: 3px solid #38bdf8 !important;
+  background: rgba(56, 189, 248, 0.05);
+}
+
+.setting-state-badge.state-special {
+  background: linear-gradient(135deg, #0284c7, #38bdf8);
+  color: #0f172a;
+  font-weight: 900;
+}
+
+/* ==========================================================================
+ * Sprint 14: Ferramenta de Colisão Poligonal & Menu de Contexto (Editor de Mapas)
+ * ========================================================================== */
+
+.editor-context-menu {
+  position: fixed;
+  z-index: 10005;
+  background: rgba(15, 23, 42, 0.96);
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.65), 0 0 15px rgba(56, 189, 248, 0.22);
+  border-radius: 8px;
+  min-width: 250px;
+  padding: 6px 0;
+  backdrop-filter: blur(10px);
+  pointer-events: auto;
+  user-select: none;
+  font-family: var(--font-sans, system-ui, sans-serif);
+}
+
+.context-menu-header {
+  padding: 6px 14px 4px;
+  display: flex;
+  flex-direction: column;
+}
+
+.context-menu-title {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #38bdf8;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.context-menu-id {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #94a3b8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 230px;
+}
+
+.context-menu-divider {
+  height: 1px;
+  background: rgba(56, 189, 248, 0.15);
+  margin: 4px 0;
+}
+
+.context-menu-item {
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  padding: 7px 14px;
+  font-size: 0.8rem;
+  color: #f1f5f9;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+
+.context-menu-item:hover {
+  background: rgba(56, 189, 248, 0.2);
+  color: #38bdf8;
+}
+
+.context-menu-item.active {
+  background: rgba(56, 189, 248, 0.12);
+  font-weight: 700;
+  color: #38bdf8;
+}
+
+.context-menu-item.item-danger:hover {
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+}
+
+.context-menu-item .menu-icon {
+  font-size: 0.95rem;
+  width: 18px;
+  text-align: center;
+}
+
+.context-menu-item .menu-check {
+  margin-left: auto;
+  font-weight: 800;
+  color: #38bdf8;
+}
+
+.btn-tool-polygon.active {
+  background: rgba(56, 189, 248, 0.3) !important;
+  border-color: #38bdf8 !important;
+  color: #f0f9ff !important;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.4) !important;
+}
+
+.btn-toggle-show-collisions.active {
+  border-color: #4ade80 !important;
+  color: #4ade80 !important;
+}
+
+
+
+/* ==========================================================================
+   SPRINT 13: MENU DE CONTEXTO, MODAIS DE IA E SISTEMA DE MÚLTIPLAS CENAS
+   ========================================================================== */
+
+/* Seletor de Cenas na Barra Superior */
+.editor-scene-nav-section {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.editor-scene-selector {
+  display: flex;
+  align-items: center;
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  border-radius: 6px;
+  padding: 2px 6px;
+  gap: 6px;
+}
+
+.scene-label {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #38bdf8;
+  letter-spacing: 0.5px;
+}
+
+.editor-scene-select {
+  background: #0f172a;
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  color: #f8fafc;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  outline: none;
+  max-width: 170px;
+}
+
+.editor-scene-select:focus {
+  border-color: #38bdf8;
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.4);
+}
+
+.btn-add-scene {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.3), rgba(5, 150, 105, 0.4)) !important;
+  border-color: #10b981 !important;
+  color: #a7f3d0 !important;
+}
+
+.btn-add-scene:hover {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.5), rgba(5, 150, 105, 0.6)) !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.5) !important;
+}
+
+/* Modais do Editor (Triggers, Animações, Cenas) */
+.editor-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(3, 7, 18, 0.84);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10010;
+  backdrop-filter: blur(8px);
+  pointer-events: auto;
+  user-select: none;
+}
+
+.editor-modal-backdrop.hidden {
+  display: none !important;
+}
+
+.editor-submodal-panel {
+  max-width: 540px;
+  width: 90%;
+  background: #0f172a;
+  border: 2px solid rgba(56, 189, 248, 0.5);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.85), 0 0 25px rgba(56, 189, 248, 0.3);
+  border-radius: 10px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  position: relative;
+  animation: modalScaleUp 0.18s ease-out;
+}
+
+@keyframes modalScaleUp {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.modal-subheading {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #f8fafc;
+  letter-spacing: 0.5px;
+}
+
+.modal-subdesc {
+  margin: 0;
+  font-size: 0.82rem;
+  color: #94a3b8;
+  line-height: 1.4;
+}
+
+.editor-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.editor-form-label {
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: #cbd5e1;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+
+.editor-textarea-prompt {
+  width: 100%;
+  background: #020617;
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  border-radius: 6px;
+  color: #f1f5f9;
+  font-family: inherit;
+  font-size: 0.85rem;
+  padding: 10px 12px;
+  resize: vertical;
+  min-height: 80px;
+  box-sizing: border-box;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.editor-textarea-prompt:focus {
+  border-color: #38bdf8;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
+}
+
+.editor-input-text {
+  width: 100%;
+  background: #020617;
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  border-radius: 6px;
+  color: #f1f5f9;
+  font-family: inherit;
+  font-size: 0.85rem;
+  padding: 8px 12px;
+  box-sizing: border-box;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.editor-input-text:focus {
+  border-color: #38bdf8;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
+}
+
+.modal-buttons-row {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+/* Destaque das Opções do Menu de Contexto (Sprint 13) */
+.context-menu-item[data-action="action-overhead"]:hover,
+.context-menu-item[data-action="action-overhead"].active {
+  background: rgba(168, 85, 247, 0.25);
+  color: #c084fc;
+}
+
+.context-menu-item[data-action="action-trigger"]:hover,
+.context-menu-item[data-action="action-trigger"].active {
+  background: rgba(245, 158, 11, 0.25);
+  color: #fbbf24;
+}
+
+.context-menu-item[data-action="action-animation"]:hover {
+  background: rgba(56, 189, 248, 0.25);
+  color: #38bdf8;
+}
+
+.context-menu-item[data-action="action-scenes"]:hover {
+  background: rgba(16, 185, 129, 0.25);
+  color: #34d399;
+}
