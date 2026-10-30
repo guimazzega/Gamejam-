@@ -57,6 +57,11 @@ window.UIManager = class UIManager {
     this.btnVanStay = document.getElementById('btn-van-stay');
     this.vanNextStageDesc = document.getElementById('van-next-stage-desc');
     this.vanReplayStageDesc = document.getElementById('van-replay-stage-desc');
+    // Modal de Confirmação de Reinício da Van (Porta Esquerda)
+    this.vanRestartModal = document.getElementById('van-restart-modal-overlay');
+    this.vanRestartDesc = document.getElementById('van-restart-desc');
+    this.btnVanRestartConfirm = document.getElementById('btn-van-restart-confirm');
+    this.btnVanRestartCancel = document.getElementById('btn-van-restart-cancel');
 
     // Loja (Shop) de Armas Melee
     this.shopModal = document.getElementById('shop-modal-overlay');
@@ -276,6 +281,24 @@ window.UIManager = class UIManager {
       });
     }
 
+    if (this.btnVanRestartConfirm) {
+      this.btnVanRestartConfirm.addEventListener('click', () => {
+        this.hideVanRestartModal();
+        if (this.game && typeof this.game.confirmVanReplayPrevious === 'function') {
+          this.game.confirmVanReplayPrevious();
+        }
+      });
+    }
+
+    if (this.btnVanRestartCancel) {
+      this.btnVanRestartCancel.addEventListener('click', () => {
+        this.hideVanRestartModal();
+        if (this.game && typeof this.game.dismissVanRestartAndStepBack === 'function') {
+          this.game.dismissVanRestartAndStepBack();
+        }
+      });
+    }
+
     if (this.btnCloseShop) {
       this.btnCloseShop.addEventListener('click', () => {
         this.hideShopModal();
@@ -447,6 +470,20 @@ window.UIManager = class UIManager {
   hideVanTransitionChoice() {
     if (this.vanTransitionModal) {
       this.vanTransitionModal.classList.add('hidden');
+    }
+  }
+
+  showVanRestartModal(desc) {
+    if (!this.vanRestartModal) return;
+    if (this.vanRestartDesc && desc) {
+      this.vanRestartDesc.textContent = desc;
+    }
+    this.vanRestartModal.classList.remove('hidden');
+  }
+
+  hideVanRestartModal() {
+    if (this.vanRestartModal) {
+      this.vanRestartModal.classList.add('hidden');
     }
   }
 

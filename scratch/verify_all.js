@@ -244,7 +244,8 @@ const testGame = {
   _drawTransitionZone: () => {},
   _drawElevatedParallaxStructures: () => {},
   _drawMapAnimationMarkers: () => {},
-  _drawSafeRoomStationFloatingNotice: () => {}
+  _drawSafeRoomStationFloatingNotice: () => {},
+  _drawOverheadItem: (ctx, item, map) => { drawCalls.push('overhead_' + item.id); }
 };
 
 // Bind _renderScene from Game prototype
@@ -260,8 +261,8 @@ console.log('Sequence of draw calls:', drawCalls);
 const playerIdx = drawCalls.indexOf('player_draw');
 const enemyIdx = drawCalls.indexOf('enemy_draw');
 const furnitureIdx = drawCalls.indexOf('sprite_furniture_mid');
-const pipeIdx = drawCalls.indexOf('sprite_pipe_overhead');
-const beamIdx = drawCalls.indexOf('sprite_ceiling_beam');
+const pipeIdx = drawCalls.indexOf('overhead_pipe_overhead') !== -1 ? drawCalls.indexOf('overhead_pipe_overhead') : drawCalls.indexOf('sprite_pipe_overhead');
+const beamIdx = drawCalls.indexOf('overhead_ceiling_beam') !== -1 ? drawCalls.indexOf('overhead_ceiling_beam') : drawCalls.indexOf('sprite_ceiling_beam');
 
 console.log('Draw call indices:', { enemyIdx, playerIdx, furnitureIdx, pipeIdx, beamIdx });
 
