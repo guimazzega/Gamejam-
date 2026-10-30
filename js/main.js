@@ -1,4 +1,4 @@
-﻿/**
+/**
  * js/main.js
  * Motor Principal do Protótipo 2D Top-Down ("ScienceEco Girls"):
  * - Máquina de Estados e Fluxo: Van Inicial -> Mapa 1 -> Van -> Mapa 2 -> Van -> Mapa 3 -> Van Final
@@ -439,7 +439,8 @@ class Game {
   }
 
   /**
-   * Mecânica da Fase 1: Drena a água do canal quando 50% dos lixos (8 lixos) são coletados
+   * Mecânica da Fase 1: Drena a água do canal após coletar 5 lixos,
+   * desativa a "Colisão água", mantém as tremidas de tela e muda para o cenário sem água.
    */
   _drainMap1Water(notify = true) {
     const map = window.GameMaps ? window.GameMaps.map1 : null;
@@ -458,6 +459,20 @@ class Game {
       if (typeof window.buildMapCollisionBounds === 'function') {
         window.buildMapCollisionBounds(map);
       }
+    }
+
+    // Garante que qualquer obstáculo de água residual seja desativado do array de colisões
+    const isWaterObs = (obs) =>
+      obs &&
+      (obs.id === 'poly_obs_mvtmuz3u_ibe' ||
+        obs.id === 'poly_obs_mvv6beug_xd6' ||
+        (obs.label && /colis[aã]o\s*[aá]gua|[aá]gua\s*parte\s*1|lago\s*leste/i.test(obs.label)));
+
+    if (Array.isArray(map.collisionBounds)) {
+      map.collisionBounds = map.collisionBounds.filter((obs) => !isWaterObs(obs));
+    }
+    if (Array.isArray(map.obstacles)) {
+      map.obstacles = map.obstacles.filter((obs) => !isWaterObs(obs));
     }
 
     if (notify) {
@@ -1095,15 +1110,14 @@ class Game {
         return;
       }
 
-      // InteraÃ§Ã£o com Trigger Zones (Sprint 21 - Prompts permanentemente ocultados)
+      // Interação com Trigger Zones (Sprint 21 - Prompts permanentemente ocultados)
       if (this.currentMap && Array.isArray(this.currentMap.triggerZones)) {
         for (const trigger of this.currentMap.triggerZones) {
-          if (this.players.some(p => p.isTouchingZone(trigger))) {
+          const touchingPlayer = this.players.find(p => p.isTouchingZone(trigger));
+          if (touchingPlayer) {
             const now = this.elapsedTime || 0;
             trigger._lastFired = now;
-            if (typeof trigger.onTrigger === 'function') {
-              trigger.onTrigger(this.players.find(p => p.isTouchingZone(trigger)), this);
-            }
+            this._executeMapTrigger(trigger, touchingPlayer);
             return;
           }
         }
@@ -1196,6 +1210,10 @@ class Game {
     } finally {
       requestAnimationFrame((ts) => this._gameLoop(ts));
     }
+  }
+
+  update(dt = 0.016) {
+    return this._updateGameplay(dt);
   }
 
   _updateGameplay(dt) {
@@ -1298,7 +1316,7 @@ class Game {
       }
     }
 
-    // VerificaÃ§Ã£o de Trigger Zones ativas no mapa - OperaÃ§Ã£o 100% invisÃ­vel (Sprint 21 - Requisito 3)
+    // Verificação de Trigger Zones ativas no mapa - Operação 100% invisível (Sprint 21 - Requisito 3)
     if (this.currentMap && Array.isArray(this.currentMap.triggerZones)) {
       for (const trigger of this.currentMap.triggerZones) {
         for (const player of this.players) {
@@ -1306,9 +1324,7 @@ class Game {
             const now = this.elapsedTime || 0;
             if (!trigger._lastFired || now - trigger._lastFired > 3.0) {
               trigger._lastFired = now;
-              if (typeof trigger.onTrigger === 'function') {
-                trigger.onTrigger(player, this);
-              }
+              this._executeMapTrigger(trigger, player);
             }
             break;
           }
@@ -2033,6 +2049,39 @@ class Game {
         }
       }
     }
+
+    // Preload dos sprites da Animação do Bueiro (sprites_bueiro.zip)
+    this.manholeFrames = [];
+    for (let i = 1; i <= 18; i++) {
+      const num = String(i).padStart(2, '0');
+      const fImg = new Image();
+      fImg.src = `assets/sprites_bueiro/bueiro_jorrando_${num}.png`;
+      this.manholeFrames.push(fImg);
+    }
+    this.manholeClosedImg = new Image();
+    this.manholeClosedImg.src = 'assets/sprites_bueiro/bueiro_tampa_fechada.png';
+  }
+
+  /**
+   * Executa a ação lógica associada a uma Trigger Zone do mapa (ex: "Em breve...", Van, etc.)
+   */
+  _executeMapTrigger(trigger, player) {
+    if (!trigger) return;
+    if (typeof trigger.onTrigger === 'function') {
+      trigger.onTrigger(player, this);
+      return;
+    }
+    const instr = String(trigger.ai_instruction || trigger.label || '');
+    if (trigger.id === 'trigger_044f' || /em\s*breve/i.test(instr)) {
+      if (this.ui && typeof this.ui.showToast === 'function') {
+        this.ui.showToast('🚧 Em breve...', 2800);
+      }
+      if (player && Array.isArray(this.floatingTexts) && window.FloatingText) {
+        this.floatingTexts.push(
+          new window.FloatingText(player.x, player.y - 36, 'Em breve...', '#facc15', 2.0)
+        );
+      }
+    }
   }
 
   _drawElevatedParallaxStructures(ctx, map) {
@@ -2171,8 +2220,10 @@ class Game {
   }
 
   /**
-   * Renderiza Marcadores de Animação e Indicadores Flutuantes do Cenário
-   * (ex: Ponto de Exclamação flutuando sobre o Mural de Avisos da Van)
+   * Renderiza Marcadores de Animação e Indicadores Flutuantes do Cenário:
+   * - Animação do Bueiro (sprites_bueiro) em anim_zwgr (1616, 928)
+   * - Folhinhas mexendo estilo Pokémon FireRed nos arbustos (anim_um3x e cópias)
+   * - Ponto de Exclamação flutuando sobre o Mural de Avisos da Van (anim_414z)
    */
   _drawMapAnimationMarkers(ctx, map) {
     if (!map) return;
@@ -2195,7 +2246,24 @@ class Game {
     if (markers.length === 0) return;
 
     ctx.save();
-    for (const marker of markers) {
+    for (let idx = 0; idx < markers.length; idx++) {
+      const marker = markers[idx];
+      const idStr = String(marker.id || '');
+      const instr = String(marker.ai_instruction || '');
+
+      // 1. Animação do Bueiro (anim_zwgr em 1616, 928)
+      if (idStr === 'anim_zwgr' || /bueiro/i.test(instr)) {
+        this._drawManholeMarker(ctx, marker, map);
+        continue;
+      }
+
+      // 2. Efeito de folhinhas mexendo estilo arbustos do Pokémon FireRed (anim_um3x e cópias)
+      if (idStr.startsWith('anim_um3x') || /folinhas|arbustos|pokemon/i.test(instr)) {
+        this._drawPokemonBushLeaves(ctx, marker, idx);
+        continue;
+      }
+
+      // 3. Indicador de Exclamação Padrão (ex: Mural de Avisos da Van)
       const bobOffset = Math.sin(this.elapsedTime * 4.5) * 5;
       const pulse = 1 + Math.sin(this.elapsedTime * 6) * 0.08;
       const drawX = marker.x;
@@ -2205,7 +2273,6 @@ class Game {
       ctx.translate(drawX, drawY);
       ctx.scale(pulse, pulse);
 
-      // 1. Halo / Glow suave pulsante dourado
       const aura = ctx.createRadialGradient(0, 0, 2, 0, 0, 26);
       aura.addColorStop(0, 'rgba(250, 204, 21, 0.55)');
       aura.addColorStop(0.65, 'rgba(250, 204, 21, 0.18)');
@@ -2215,7 +2282,6 @@ class Game {
       ctx.arc(0, 0, 26, 0, Math.PI * 2);
       ctx.fill();
 
-      // 2. Base em Badge circular tático escuro com anel ouro reluzente
       ctx.beginPath();
       ctx.arc(0, 0, 15, 0, Math.PI * 2);
       ctx.fillStyle = 'rgba(15, 23, 42, 0.94)';
@@ -2226,7 +2292,6 @@ class Game {
       ctx.shadowBlur = 10;
       ctx.stroke();
 
-      // 3. Ponto de Exclamação Flutuante '!' nítido e vibrante
       ctx.shadowBlur = 0;
       ctx.fillStyle = '#fde047';
       ctx.font = '900 17px "Segoe UI", Arial, sans-serif';
@@ -2237,6 +2302,148 @@ class Game {
       ctx.restore();
     }
     ctx.restore();
+  }
+
+  /**
+   * Renderiza a animação de 18 frames do Bueiro Jorrando (sprites_bueiro) em (1616, 928).
+   * Para imediatamente assim que os lixos são coletados (água drenada) e roda em velocidade reduzida.
+   */
+  _drawManholeMarker(ctx, marker, map) {
+    if (!this.manholeFrames || this.manholeFrames.length === 0) return;
+
+    // Para imediatamente os sprites do bueiro logo após coletar os lixos (drenagem da água)
+    if ((map && map.isWaterDrained) || (this.trashItems && this.trashItems.length === 0 && this.stageTrashCollectedInRun > 0)) {
+      this._lastManholeFrameDrawn = null;
+      return;
+    }
+
+    const totalFrames = this.manholeFrames.length;
+    // Animação mais lenta (5 FPS em vez de 12 FPS)
+    const frameIdx = Math.floor((this.elapsedTime || 0) * 5) % totalFrames;
+    const frameImg = this.manholeFrames[frameIdx];
+    if (!frameImg || !frameImg.complete || frameImg.naturalWidth <= 0) return;
+
+    const scale = 1.62;
+    const baseRingH = 148 * scale;
+    const cx = marker.x + 1;
+    const bottomY = marker.y + 7 + baseRingH * 0.5;
+    const drawW = frameImg.naturalWidth * scale;
+    const drawH = frameImg.naturalHeight * scale;
+
+    ctx.save();
+    ctx.drawImage(frameImg, cx - drawW * 0.5, bottomY - drawH, drawW, drawH);
+    ctx.restore();
+    this._lastManholeFrameDrawn = frameIdx;
+  }
+
+  /**
+   * Renderiza o efeito de folhinhas mexendo estilo os arbustos de Pokémon FireRed:
+   * Ocorre exclusivamente quando as personagens passam por cima dos arbustos e em ritmo mais suave/lento.
+   */
+  _drawPokemonBushLeaves(ctx, marker, idx = 0) {
+    const mx = marker.x;
+    const my = marker.y;
+
+    // Verifica se alguma personagem está passando por cima do arbusto
+    let isPlayerOverBush = false;
+    if (Array.isArray(this.players)) {
+      for (const p of this.players) {
+        if (Math.hypot((p.x || 0) - mx, (p.y || 0) - my) <= 44) {
+          isPlayerOverBush = true;
+          break;
+        }
+      }
+    }
+
+    // Só executa e desenha a animação das folhas quando a personagem passa por cima do arbusto
+    if (!isPlayerOverBush) return;
+
+    const t = (this.elapsedTime || 0) + idx * 0.45;
+    const rustleSpeed = 6.5;
+    const sway = Math.sin(t * rustleSpeed) * 2.4;
+
+    ctx.save();
+    ctx.translate(mx, my);
+
+    // 1. Tufos de folhas na base do arbusto que balançam suavemente (pixel-art GBA style)
+    const tufts = [
+      { ox: -10, oy: 2, rot: -0.35, s: 1.0 },
+      { ox: 0, oy: -3, rot: 0.05, s: 1.12 },
+      { ox: 10, oy: 2, rot: 0.38, s: 0.96 }
+    ];
+
+    for (let i = 0; i < tufts.length; i++) {
+      const tf = tufts[i];
+      const localSway = sway * (i === 1 ? -1 : 1);
+      ctx.save();
+      ctx.translate(tf.ox + localSway, tf.oy);
+      ctx.rotate(tf.rot + localSway * 0.05);
+      ctx.scale(tf.s, tf.s);
+
+      // Contorno verde escuro clássico de FireRed
+      ctx.fillStyle = '#14532d';
+      ctx.beginPath();
+      ctx.moveTo(0, -8);
+      ctx.quadraticCurveTo(6, -3, 4, 5);
+      ctx.quadraticCurveTo(0, 7, -4, 5);
+      ctx.quadraticCurveTo(-6, -3, 0, -8);
+      ctx.fill();
+
+      // Preenchimento verde vibrante
+      ctx.fillStyle = '#22c55e';
+      ctx.beginPath();
+      ctx.moveTo(0, -6.5);
+      ctx.quadraticCurveTo(4.5, -2, 3, 4);
+      ctx.quadraticCurveTo(0, 5.5, -3, 4);
+      ctx.quadraticCurveTo(-4.5, -2, 0, -6.5);
+      ctx.fill();
+
+      // Brilho superior e nervura central
+      ctx.fillStyle = '#86efac';
+      ctx.fillRect(-1, -4, 2, 6);
+      ctx.restore();
+    }
+
+    // 2. Folhinhas soltas saltando e flutuando lentamente ao passar pelo arbusto
+    const leafCount = 4;
+    const leafPeriod = 2.4;
+    for (let l = 0; l < leafCount; l++) {
+      const leafTime = (t * 0.55 + l * (leafPeriod / leafCount)) % leafPeriod;
+      const progress = leafTime / leafPeriod; // 0 -> 1
+
+      // Sobe suavemente e desce balançando devagar como uma folha leve
+      const jumpArc = Math.sin(progress * Math.PI);
+      const lx = (l - (leafCount - 1) * 0.5) * 8 + Math.sin(progress * Math.PI * 2 + l * 1.5) * 6;
+      const ly = -4 - jumpArc * 14 + progress * 5;
+      const lRot = Math.sin(progress * Math.PI * 2 + l) * 0.45 + (l % 2 === 0 ? 0.25 : -0.25);
+      const alpha = progress < 0.18 ? progress / 0.18 : (progress > 0.72 ? (1 - progress) / 0.28 : 1);
+
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, Math.min(1, alpha * 0.95));
+      ctx.translate(lx, ly);
+      ctx.rotate(lRot);
+
+      // Sombra/borda pixelada da folhinha
+      ctx.fillStyle = '#14532d';
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 4.8, 2.7, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Corpo da folhinha
+      ctx.fillStyle = l % 2 === 0 ? '#4ade80' : '#22c55e';
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 3.6, 1.8, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Ponto de luz na ponta da folha
+      ctx.fillStyle = '#bbf7d0';
+      ctx.fillRect(-2, -0.8, 2.5, 1.2);
+
+      ctx.restore();
+    }
+
+    ctx.restore();
+    this._lastBushLeavesDrawn = (this._lastBushLeavesDrawn || 0) + 1;
   }
 
   _drawTrashItems(ctx) {
@@ -2261,7 +2468,7 @@ class Game {
     // =========================================================================
     // CASO 1: SAFE ROOM / VAN (Porta de saída com feixe de luz e chevrons - Sem caixas!)
     // =========================================================================
-    if (map.isSafeRoom || stageMeta.isSafeRoom || z.hideBox) {
+    if (map.isSafeRoom || stageMeta.isSafeRoom) {
       // 1. Feixe de luz ambiente suave derramando da porta para dentro da Van
       const lightGrad = ctx.createLinearGradient(z.x + z.w, centerY, z.x - 36, centerY);
       lightGrad.addColorStop(0, `rgba(56, 189, 248, ${0.32 + pulse * 0.16})`);
